@@ -1,0 +1,21 @@
+{
+  "name": "timqwees/qweescore",
+  "description": "Qwees_CorePro: Максимально простой для изучения, полностью вынесенное за пределы webroot ядро проекта. Многофункциональный PHP-фреймворк, который постоянно развивается и расширяется. Позволяет создавать любые приложения и решать любые задачи независимо от направления, специальности или уровня — от инженера до SEO-специалиста. С Qwees_CorePro возможно всё. | Qwees_CorePro: The easiest-to-learn, fully webroot-independent core for your project. A multifunctional PHP framework that is constantly updated with new features. Enables you to build any kind of application and solve any problems regardless of your field, specialty, or experience level — perfect for engineers and SEO specialists alike. With Qwees_CorePro, everything is possible.",
+  "type": "project",
+  "version": "2.1.0",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "php": ">=7.4",
+    "ext-pdo": "*",
+    "ext-json": "*",
+    "phpmailer/phpmailer": "^7.0",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "Setting\\": "setting/"
+    }
+  },
+  "scripts": {}
+}

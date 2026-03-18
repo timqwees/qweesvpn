@@ -1,0 +1,33 @@
+{
+  "name": "qweescore",
+  "version": "2.1.0",
+  "description": "Qwees_CorePro is a modern PHP framework: easy to learn, fully webroot-independent, rich in features, with constant updates. Enables building any application and solving problems of any complexity. Ideal for engineers, SEO professionals, and everyone who values simplicity and power. | Qwees_CorePro — современный PHP-фреймворк: простой в изучении, независимый от webroot, с богатым набором функций и постоянными обновлениями. Позволяет создавать любые приложения и решать задачи любого уровня сложности. Идеален для инженеров, SEO-специалистов и всех, кто ценит простоту и мощь инструмента.",
+  "keywords": [
+    "qweescore",
+    "qwees",
+    "php",
+    "framework"
+  ],
+  "homepage": "https://github.com/timqwees/QweesCore#readme",
+  "bugs": {
+    "url": "https://github.com/timqwees/QweesCore/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/timqwees/QweesCore.git"
+  },
+  "license": "MIT",
+  "author": "timqwees",
+  "type": "commonjs",
+  "main": "index.php",
+  "bin": {
+    "qwees": "./app/Config/CLI/qwees",
+    "run": "./app/Config/CLI/run"
+  },
+  "scripts": {
+    "qwees:start": "php -S localhost:8000"
+  },
+  "dependencies": {
+    "php": "^8.0.0"
+  }
+}

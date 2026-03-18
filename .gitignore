@@ -1,0 +1,42 @@
+# Ignore system and IDE files
+.DS_Store
+.idea/
+.vscode/
+
+# Ignore environment files
+.env
+
+# Ignore vendor files
+/vendor/
+
+/node_modules/
+
+/composer.lock
+
+# Ignore system files
+Thumbs.db
+
+# Ignore log files
+*.log
+
+# Ignore cache and temp files
+*.cache
+*.tmp
+
+# Ignore OS generated files
+ehthumbs.db
+Icon?
+
+# Ignore test coverage files
+coverage/
+*.cover
+
+# Ignore PHPUnit cache
+.phpunit.result.cache
+
+# Ignore user uploads (example, modify as needed)
+storage/uploads/
+
+# Ignore migration artefacts (if any)
+/setting/schema/*.bak
+/setting/schema/*.tmp
