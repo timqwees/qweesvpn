@@ -1,0 +1,147 @@
+/* Font Urbanist */
+@font-face {
+  font-family: 'qwees-urbanist-bold';
+  src: url('/public/assets/fonts/Urbanist/Urbanist-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-urbanist-medium';
+  src: url('/public/assets/fonts/Urbanist/Urbanist-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-urbanist-regular';
+  src: url('/public/assets/fonts/Urbanist/Urbanist-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-urbanist-semibold';
+  src: url('/public/assets/fonts/Urbanist/Urbanist-SemiBold.ttf') format('truetype');
+}
+
+/* Font Poppins */
+@font-face {
+  font-family: 'qwees-poppins-bold';
+  src: url('/public/assets/fonts/Poppins/Poppins-Bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-poppins-medium';
+  src: url('/public/assets/fonts/Poppins/Poppins-Medium.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-poppins-regular';
+  src: url('/public/assets/fonts/Poppins/Poppins-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'qwees-poppins-semibold';
+  src: url('/public/assets/fonts/Poppins/Poppins-SemiBold.ttf') format('truetype');
+}
+
+/* MENU ASIDE */
+.desktop>.bg_active {
+  background-color: #16201b;
+}
+
+.desktop>.bg_active>span:first-child {
+  position: absolute;
+  height: 60%;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0.5rem;
+  width: 0.4rem;
+  border-radius: 0.75rem;
+  background-color: #b5efb0;
+  transition: cubic-bezier(0.68, -0.55, 0.265, 1.55) .5s;
+}
+
+.mobile>.bg_active {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12.5px);
+  border-radius: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* bg_active = mobile */
+.buy>.bg_active {
+  backdrop-filter: blur(12.5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 1px -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* monoblock aimation */
+
+.animation_monoblock_off {
+  animation: monoblock_off 2s ease-in-out infinite;
+}
+
+@keyframes monoblock_off {
+  0% {
+    transform: translateY(30%);
+  }
+
+  50% {
+    transform: translateY(27%);
+  }
+
+  100% {
+    transform: translateY(30%);
+  }
+}
+
+/* word_hidden */
+.word_hidden {
+  display: block;
+}
+
+@media (max-width: 374px) {
+  .word_hidden {
+    display: none;
+  }
+}
+
+/* border_light - тонкие линии */
+.border_light_t:after {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 0.5px;
+  background: linear-gradient(to left, transparent, white, transparent);
+  top: 0;
+  left: 10%;
+  z-index: 1;
+}
+
+.border_light_b:after {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 0.5px;
+  background: linear-gradient(to left, transparent, white, transparent);
+  bottom: 0;
+  left: 10%;
+  z-index: 1;
+}
+
+.border_light_r:before {
+  content: '';
+  position: absolute;
+  width: 0.5px;
+  height: 80%;
+  background: linear-gradient(to bottom, transparent, white, transparent);
+  right: 0;
+  top: 10%;
+  z-index: 1;
+}
+
+.border_light_l:before {
+  content: '';
+  position: absolute;
+  width: 0.5px;
+  height: 80%;
+  background: linear-gradient(to bottom, transparent, white, transparent);
+  left: 0;
+  top: 10%;
+  z-index: 1;
+}

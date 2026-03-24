@@ -1,0 +1,89 @@
+<?php
+use App\Models\Network\Message;
+use Setting\Route\Function\Functions;
+use App\Config\Session;
+
+include_once dirname(__DIR__, 3) . '/assets/script/script.php';
+// Инициализация сессии
+
+$client = (new Functions())->client($_SESSION['client'] ?? 0);
+$price = (new Functions())->isPrice();
+
+$INSTALL_OS = getV2RayTunInstallUrl();
+// Улучшенная проверка и оформление кнопки "Попробовать бесплатно" или выбора ОС
+$isFreeKeyAvailable = isset($client['vpn_freekey']) && $client['vpn_freekey'] === 'no_used';
+$osName = isset($INSTALL_OS['os']) && $INSTALL_OS['os'] ? htmlspecialchars($INSTALL_OS['os']) : 'Скачать';
+
+$verefy_start_cient = $isFreeKeyAvailable
+  ? '<span class="bg-gradient-to-r from-[#8A2BE2]/80 to-[#00D2FF]/90 text-white px-3 py-1 rounded-lg font-extrabold shadow border text-sm border-none transition duration-200 hover:from-[#9A4DFF] hover:to-[#36EDFF] hover:shadow-lg cursor-pointer">
+		Бесплатно
+	  </span>'
+  : '<span class="bg-gradient-to-r from-[#6CE2FF] to-[#6440e0] text-white px-4 py-1.5 rounded-lg font-bold shadow-lg border-0 text-sm transition duration-300 hover:from-[#89f0ff] hover:to-[#9786ff] hover:scale-105 cursor-pointer flex items-center gap-2">
+		<i class="fa fa-download text-white text-base"></i>'
+  . $osName .
+  '</span>';
+?>
+  <!-- ###animation появления ### -->
+  <script src="/public/assets/script/script.js"></script>
+<!-- удалить можно -->
+  <?php
+  // Короткое уведомление (toast) сообщения с верху
+  $notification = Message::controll();
+  $types = ['refer_success' => 'success', 'refer_error' => 'error'];
+  $type = $types[$notification['type']] ?? '';
+  $msg = !empty($notification['message']) ? htmlspecialchars($notification['message'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '';
+  ?>
+  <?php if ($msg): ?>
+    <div id="mini-toast"
+      class="fixed top-4 right-4 z-[9999] shadow flex items-center gap-2 px-3 py-2 rounded-md border text-xs font-normal
+      <?= $type === 'success' ? 'bg-green-500/90 border-green-500 text-white' : 'bg-red-500/90 border-red-500 text-white' ?>"
+      style="display: none; min-width: 160px; max-width: 320px; pointer-events: auto; animation:fadeToast .25s;">
+      <span>
+        <?php if ($type === 'success'): ?>
+          <i class="fas fa-check-circle text-white" style="font-size:1.1em"></i>
+        <?php else: ?>
+          <i class="fas fa-exclamation-triangle text-white" style="font-size:1.1em"></i>
+        <?php endif; ?>
+      </span>
+      <span class="flex-1" style="line-height:1.25"><?= $msg ?></span>
+      <button onclick="closeToast()" class="ml-2 bg-transparent border-0 p-0 hover:opacity-60 focus:outline-none">
+        <i class="fas fa-times text-white" style="font-size:.95em"></i>
+      </button>
+    </div>
+    <style>
+      @keyframes fadeToast {
+        0% {
+          opacity: 0;
+          transform: translateY(-16px) scale(0.97);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      #mini-toast {
+        box-shadow: 0 5px 20px 0 rgba(67, 56, 202, .13);
+        font-size: 13px !important;
+        padding: 9px 14px !important;
+      }
+    </style>
+    <script>
+      window.addEventListener('DOMContentLoaded', function () {
+        var toast = document.getElementById('mini-toast');
+        if (toast) {
+          toast.style.display = 'flex';
+          setTimeout(function () { toast.style.opacity = '1'; }, 8);
+          setTimeout(closeToast, 6500);
+        }
+      });
+      function closeToast() {
+        var toast = document.getElementById('mini-toast');
+        if (toast) {
+          toast.style.opacity = '0';
+          setTimeout(function () { toast.style.display = 'none'; }, 130);
+        }
+      }
+    </script>
+  <?php endif; ?>

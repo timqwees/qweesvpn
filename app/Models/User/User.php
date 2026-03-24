@@ -50,7 +50,7 @@ class User extends Network
 
   public function __construct()
   {
-    $this->table_name = isset($_ENV['DB_USERS_TABLE']) ? $_ENV['DB_USERS_TABLE'] : 'users';
+    $this->table_name = isset($_ENV['DB_USERS_TABLE']) ? $_ENV['DB_USERS_TABLE'] : 'qwees_users';
   }
 
   /**
@@ -106,7 +106,7 @@ class User extends Network
           break;
         case 'email':
         case 'mail':
-          $result = Database::send("SELECT * FROM " . $this->table_name . " WHERE mail = ?", [$value]);
+          $result = Database::send("SELECT * FROM " . $this->table_name . " WHERE email = ?", [$value]);
           break;
       }
       return is_array($result) && !empty($result) ? $result[0] : false;
