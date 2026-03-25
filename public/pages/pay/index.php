@@ -3,7 +3,7 @@ use Setting\Route\Function\Controllers\Auth\Auth;
 Auth::auth();
 ?>
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 
 <head>
   <meta charset="UTF-8" />
@@ -18,6 +18,7 @@ Auth::auth();
   <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
   <link rel="stylesheet" href="/public/assets/styles/style.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="/public/assets/scripts/theme/main.js"></script>
   <!--  -->
 </head>
 

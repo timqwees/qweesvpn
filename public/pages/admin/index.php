@@ -363,7 +363,7 @@ $price = (new Functions())->isPrice();
 ?>
 
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark">
 
 <head>
   <meta charset="UTF-8">
@@ -1656,6 +1656,7 @@ $price = (new Functions())->isPrice();
   </div>
 
   <script src="/public/pages/telegram/admin/src/main.js"></script>
+  <script src="/public/assets/scripts/theme/main.js"></script>
   <script>
     function setQuery(query) {
       document.querySelector('textarea[name="sql_query"]').value = query;
