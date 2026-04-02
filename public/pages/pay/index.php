@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 use Setting\Route\Function\Controllers\Auth\Auth;
 Auth::auth();
 ?>
@@ -18,7 +18,6 @@ Auth::auth();
   <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
   <link rel="stylesheet" href="/public/assets/styles/style.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-  <script src="/public/assets/scripts/theme/main.js"></script>
   <!--  -->
 </head>
 
@@ -42,7 +41,6 @@ Auth::auth();
 
       <!-- ################# CONTENT DESCKTOP ####################-->
       <div class="hidden sm:block w-full text-white">
-        <!-- содержание -->
       </div>
 
       <!-- ################# CONTENT MOBILE ####################-->
@@ -112,7 +110,158 @@ Auth::auth();
                     var sectionId = $(this).attr('data-select2-section');
                     $('#main').attr('data-toggle2-section', sectionId);
                   });
+                  
+                  // Payment processing
+                  $('.payment-submit-btn').on('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Собираем данные формы
+                    const selectedTariff = $('input[name="subscription"]:checked').val();
+                    const selectedPayment = $('input[name="payment"]:checked').val();
+                    
+                    if (!selectedTariff || !selectedPayment) {
+                      alert('Пожалуйста, выберите тариф и способ оплаты');
+                      return;
+                    }
+                    
+                    // Определяем сумму на основе тарифа
+                    let amount = 0;
+                    let tariffType = '';
+                    switch(selectedTariff) {
+                      case '1month_1':
+                        amount = 150;
+                        tariffType = '1month_1';
+                        break;
+                      case '1month_4':
+                        amount = 180;
+                        tariffType = '1month_4';
+                        break;
+                      case '1month_10':
+                        amount = 200;
+                        tariffType = '1month_10';
+                        break;
+                      case '6months_1':
+                        amount = 720;
+                        tariffType = '6months_1';
+                        break;
+                      case '6months_4':
+                        amount = 900;
+                        tariffType = '6months_4';
+                        break;
+                      case '6months_10':
+                        amount = 1200;
+                        tariffType = '6months_10';
+                        break;
+                      case '12months_1':
+                        amount = 1188;
+                        tariffType = '12months_1';
+                        break;
+                      case '12months_4':
+                        amount = 1800;
+                        tariffType = '12months_4';
+                        break;
+                      case '12months_10':
+                        amount = 2400;
+                        tariffType = '12months_10';
+                        break;
+                      default:
+                        amount = 150;
+                        tariffType = '1month_1';
+                    }
+                    
+                    // Показываем индикатор загрузки
+                    const btn = $(this);
+                    const originalText = btn.html();
+                    btn.html('<i class="fas fa-spinner fa-spin"></i> Обработка...').prop('disabled', true);
+                    
+                    // Отправляем запрос на создание платежа
+                    $.ajax({
+                      url: '/api/payment/create',
+                      method: 'POST',
+                      contentType: 'application/json',
+                      data: JSON.stringify({
+                        tariff: tariffType,
+                        paymentMethod: selectedPayment,
+                        amount: amount,
+                        email: $('#user-email').val(),
+                        phone: $('#user-phone').val(),
+                        saveCard: $('#save-card').is(':checked')
+                      }),
+                      success: function(response) {
+                        if (response.success) {
+                          // Если есть QR-код (для СБП), показываем его
+                          if (response.qr_code) {
+                            showQrCode(response.qr_code, response.payment_id);
+                          } else if (response.payment_url) {
+                            // Перенаправляем на страницу оплаты
+                            window.location.href = response.payment_url;
+                          }
+                        } else {
+                          alert('Ошибка при создании платежа: ' + response.error);
+                          btn.html(originalText).prop('disabled', false);
+                        }
+                      },
+                      error: function(xhr, status, error) {
+                        console.error('Payment error:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText,
+                            statusCode: xhr.status
+                        });
+                        
+                        // Handle authentication error
+                        if (xhr.status === 401) {
+                            const response = xhr.responseJSON || {};
+                            if (response.redirect) {
+                                alert('Требуется авторизация. Перенаправляем на страницу входа...');
+                                setTimeout(() => {
+                                    window.location.href = response.redirect;
+                                }, 1500);
+                                return;
+                            }
+                        }
+                        
+                        // Показываем детальную ошибку для отладки
+                        let errorMessage = 'Произошла ошибка. Пожалуйста, попробуйте еще раз.';
+                        
+                        if (xhr.responseJSON) {
+                            errorMessage = xhr.responseJSON.error || errorMessage;
+                            console.log('Server error details:', xhr.responseJSON.debug);
+                        } else if (xhr.responseText) {
+                            console.log('Raw response:', xhr.responseText);
+                        }
+                        
+                        alert(errorMessage);
+                        btn.html(originalText).prop('disabled', false);
+                      }
+                    });
+                  });
+                  
+                  // Функция показа QR-кода для СБП
+                  function showQrCode(qrUrl, paymentId) {
+                    // Создаем модальное окно для QR-кода
+                    const modal = `
+                      <div id="qr-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                        <div class="bg-gray-900 rounded-2xl p-6 max-w-sm w-full">
+                          <h3 class="text-white text-xl font-bold mb-4 text-center">Оплата через СБП</h3>
+                          <div class="bg-white p-4 rounded-xl mb-4">
+                            <img src="${qrUrl}" alt="QR Code" class="w-full h-auto">
+                          </div>
+                          <p class="text-white/70 text-sm text-center mb-4">Отсканируйте QR-код в банковском приложении</p>
+                          <div class="text-white/50 text-xs text-center mb-4">ID платежа: ${paymentId}</div>
+                          <button onclick="closeQrModal()" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition">
+                            Закрыть
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                    $('body').append(modal);
+                  }
                 });
+                
+                function closeQrModal() {
+                  $('#qr-modal').remove();
+                }
               </script>
               <!-- input 1 -->
               <label data-select-section="next_1"
@@ -155,7 +304,7 @@ Auth::auth();
                   </div>
                   <!-- radio button -->
                   <div class="flex items-center justify-center">
-                    <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                    <input type="radio" name="subscription" value="6months" class="sr-only peer" />
                     <div
                       class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                     </div>
@@ -179,7 +328,7 @@ Auth::auth();
                   </div>
                   <!-- radio button -->
                   <div class="flex items-center justify-center">
-                    <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                    <input type="radio" name="subscription" value="12months" class="sr-only peer" />
                     <div
                       class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                     </div>
@@ -234,7 +383,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="1month_1" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -251,7 +400,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">1 устройство (для себя)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">150₽</span></p>
               </label>
               <!-- input 2 -->
               <label
@@ -272,7 +421,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="1month_4" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -289,7 +438,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">180₽</span></p>
               </label>
               <!-- input 3 -->
               <label
@@ -310,7 +459,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="1month_10" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -327,7 +476,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">200₽</span></p>
               </label>
             </div>
             <!-- button next to -->
@@ -381,7 +530,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="6months_1" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -398,7 +547,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">1 устройство (для себя)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">720₽</span></p>
               </label>
               <!-- input 2 -->
               <label
@@ -419,7 +568,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="6months_4" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -436,7 +585,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">900₽</span></p>
               </label>
               <!-- input 3 -->
               <label
@@ -457,7 +606,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="6months_10" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -528,7 +677,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="12months_1" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -545,7 +694,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">1 устройство (для себя)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1188₽</span></p>
               </label>
               <!-- input 2 -->
               <label
@@ -566,7 +715,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="12months_4" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -583,7 +732,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1800₽</span></p>
               </label>
               <!-- input 3 -->
               <label
@@ -604,7 +753,7 @@ Auth::auth();
                     </div>
                     <!-- radio button -->
                     <div class="flex items-center justify-center">
-                      <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                      <input type="radio" name="subscription" value="12months_10" class="sr-only peer" />
                       <div
                         class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                       </div>
@@ -621,7 +770,7 @@ Auth::auth();
                   </div>
                   <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                 </div>
-                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">1200₽</span></p>
+                <p class="absolute bottom-2 right-4 text-sm">Итого: <span class="text-white/70">2400₽</span></p>
               </label>
             </div>
             <!-- button next to -->
@@ -732,8 +881,8 @@ Auth::auth();
             </div>
 
             <!-- button next to -->
-            <button type="submit"
-              class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
+            <button type="button"
+              class="payment-submit-btn flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
               завершить и купить <i class="fa-solid fa-cart-shopping"></i>
             </button>
 
@@ -748,6 +897,7 @@ Auth::auth();
       </div>
     </main>
     <script src="/public/assets/scripts/main/main.js"></script>
+    <script src="/public/assets/scripts/theme/main.js"></script>
   </div>
 </body>
 

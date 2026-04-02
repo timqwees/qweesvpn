@@ -7,9 +7,7 @@ use App\Config\Session;
 use App\Controllers\MailController;
 use App\Models\Network\Network;
 use App\Models\User\User;
-// use App\Models\Network\Message;
 
-//TODO: MVP -> БЕЗОПАСНЫЙ
 class Auth extends Network
 {
 
@@ -28,13 +26,37 @@ class Auth extends Network
    */
   public function onMail(): void
   {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST')
-      echo json_encode(false);
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+      echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+      return;
+    }
 
     $email = isset($_POST['email']) && !empty($_POST['email']) ? strval(trim($_POST['email'])) : '';
     $code = mt_rand(1000, 9999);
-    (new MailController())->onMail($email, 'test', "$code");
-    echo json_encode($code);
+    
+    // Записываем в лог для отладки
+    file_put_contents(
+      $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+      sprintf(
+        "[%s] [AUTH] Попытка отправки кода %s на %s\n",
+        date('Y-m-d H:i:s'),
+        $code,
+        $email
+      ),
+      FILE_APPEND
+    );
+    
+    $result = (new MailController())->onMail($email, 'Код верификации', "Ваш код верификации: $code");
+    
+    if ($result) {
+      echo json_encode(['success' => true, 'code' => $code]);
+    } else {
+      // Получаем ошибки из Message
+      $notification = \App\Models\Network\Message::controll();
+      $errorMessage = !empty($notification['message']) ? $notification['message'] : 'Ошибка отправки почты. Проверьте настройки SMTP.';
+      
+      echo json_encode(['success' => false, 'error' => $errorMessage]);
+    }
   }
 
   /**
@@ -75,6 +97,7 @@ class Auth extends Network
       $user = Database::send('SELECT uniID FROM qwees_users WHERE email = ?', [$email]);
       Session::init(null);
       Session::init('user', $user[0]);
+      Session::init('lang', 'ru');
       Network::onRedirect('/');
     } catch (\Exception $e) {
       return;
@@ -97,11 +120,13 @@ class Auth extends Network
     $first_name = isset($_POST['first_name']) ? (string) trim($_POST['first_name']) : '';
     $last_name = isset($_POST['last_name']) ? (string) trim($_POST['last_name']) : '';
     $email = isset($_POST['email']) ? (string) trim($_POST['email']) : '';
+    $uniID = uniqid('qws');//по умолчанию more_entropy (false) = генераци 13 символов
     try {
-      Database::send("INSERT INTO qwees_users (first_name, last_name, email) VALUES (?, ?, ?)", [
+      Database::send("INSERT INTO qwees_users (first_name, last_name, email, uniID) VALUES (?, ?, ?, ?)", [
         $first_name,
         $last_name,
-        $email
+        $email,
+        $uniID
       ]);
       self::onRedirect($_ENV['REDIRECT_LOG_UNSIGN_USER']);
     } catch (\PDOException $e) {

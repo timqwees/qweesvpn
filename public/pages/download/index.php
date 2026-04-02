@@ -1,587 +1,145 @@
+<?php
+use Setting\Route\Function\Controllers\Auth\Auth;
+Auth::auth();
+?>
 <!DOCTYPE html>
 <html lang="ru">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoraVpn Download</title>
+  <title>Профиль</title>
+  <!-- fonts + tailwind + normalize + styles + JQuary -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script>
-  <!-- Подключение Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tailwindplus/elements@1" type="module"></script> -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    ::-webkit-scrollbar {
-      width: 0;
-    }
-
-    .arrow-back {
-      position: fixed;
-      top: 24px;
-      left: 24px;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(55, 55, 69, 0.95);
-      border-radius: 12px;
-      padding: 8px 13px 8px 10px;
-      box-shadow: 0 2px 10px 0 rgba(99, 86, 255, 0.10);
-      cursor: pointer;
-      transition: background 0.2s, color 0.13s;
-      border: 1px solid #5B44B9;
-      color: #beb8ff;
-      font-weight: 600;
-    }
-
-    .arrow-back:hover {
-      background: #413ba1;
-      color: #fff;
-    }
-
-    .arrow-home {
-      margin-left: 5px;
-      color: #fff;
-      background: #917fff;
-      border-radius: 30px;
-      padding: 4px 9px;
-      font-size: 15px;
-      transition: background 0.15s;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      text-decoration: none !important;
-    }
-
-    .arrow-back svg {
-      stroke: #9b94fa;
-      width: 22px;
-      height: 22px;
-      display: flex;
-    }
-
-    /* ...custom styles as before... */
-    .hidden_content {
-      display: none;
-    }
-
-    .show_content {
-      display: block;
-      animation: 1s ease content_show;
-    }
-
-    @keyframes content_show {
-      0% {
-        transform: translateY(200px);
-      }
-
-      100% {
-        transform: translateY(0px);
-      }
-    }
-
-    body {
-      background-image:
-        linear-gradient(rgba(255, 255, 255, .07) 2px, transparent 2px),
-        linear-gradient(90deg, rgba(255, 255, 255, .07) 2px, transparent 2px),
-        linear-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, .06) 1px, transparent 1px);
-      background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-      background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
-      font-family: "Unica One", sans-serif;
-      color: white;
-      font-weight: 300;
-      letter-spacing: .5px;
-      line-height: 1;
-    }
-
-    body {
-      background-color: #121212;
-      color: #ffffff;
-      padding: 20px;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 720px !important;
-      border-radius: 16px;
-      /* border: 1px solid #838383; */
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .profile-header {
-      text-align: center;
-      padding: 20px 0;
-      border-bottom: 1px solid #333;
-    }
-
-    .avatar {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      margin: 0 auto 10px;
-      border: 2px solid #a492ff;
-    }
-
-    .user-id {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 14px;
-      color: #aaa;
-      margin-top: 5px;
-    }
-
-    .menu-item {
-      display: flex;
-      align-items: center;
-      padding: 15px 20px;
-      border-bottom: 1px solid #333;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
-
-    .menu-item:hover {
-      background-color: #222;
-    }
-
-    .menu-icon {
-      width: 24px;
-      height: 24px;
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .menu-text {
-      font-size: 16px;
-    }
-
-    .section {
-      background-color: #1e1e1e;
-      border-radius: 12px;
-      padding: 20px;
-      margin: 20px 0;
-    }
-
-    .section-title {
-      font-size: 14px;
-      color: #aaa;
-      margin-bottom: 10px;
-    }
-
-    .link-input {
-      display: flex;
-      align-items: center;
-      background-color: #222;
-      border-radius: 8px;
-      padding: 10px 15px;
-      margin-bottom: 10px;
-    }
-
-    .link-input input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 14px;
-      outline: none;
-    }
-
-    .copy-btn {
-      background: none;
-      border: none;
-      color: #aaa;
-      cursor: pointer;
-      font-size: 16px;
-    }
-
-    .action-button {
-      width: 100%;
-      padding: 15px;
-      background-color: #222;
-      border-radius: 12px;
-      text-align: center;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .action-button:hover {
-      background-color: #333;
-    }
-
-    #modal-content::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    #modal-content::-webkit-scrollbar-thumb {
-      background: #333;
-      border-radius: 6px;
-    }
-
-    #modal-content::-webkit-scrollbar-track {
-      background: #222;
-      border-radius: 6px;
-    }
-
-    #modal-content {
-      scrollbar-width: thin;
-      scrollbar-color: #333 #222;
-    }
-
-    .modal-hidden {
-      opacity: 0;
-      transform: translateY(100vh);
-      z-index: -9999;
-    }
-
-    /* ===  animation hidden */
-
-    /* исчезает вниз */
-    .ihidden-bottom {
-      transition: 1.25s ease all;
-      transform: translateY(200px);
-      opacity: 0;
-    }
-
-    /* просто исчезает */
-    .ihidden {
-      transition: 1.25s ease all;
-      opacity: 0;
-    }
-
-    /* просто появляеться */
-    .ishow {
-      transition: 1.25s ease all;
-      opacity: 1 !important;
-      animation: ishow ease-in 1.25s;
-    }
-
-    @keyframes ishow {
-      0% {
-        transform: scale(0);
-      }
-
-      100% {
-        transform: scale(0.725);
-      }
-    }
-
-    /* просто появляеться */
-    .ishow2 {
-      transition: 1.25s ease all;
-      opacity: 1 !important;
-      animation: ishow2 ease-in 1.25s;
-    }
-
-    @keyframes ishow2 {
-      0% {
-        transform: scale(0);
-      }
-
-      100% {
-        transform: scale(1);
-      }
-    }
-
-    /* === content */
-
-    /* скрываем контент */
-    .hidden_content {
-      display: none;
-    }
-
-    /* показываем контент */
-    .show_content {
-      display: block;
-      animation: 1s ease content_show;
-    }
-
-    @keyframes content_show {
-      0% {
-        transform: translateY(200px);
-      }
-
-      100% {
-        transform: translateY(0px);
-      }
-    }
-
-    /* смена цвета */
-    .next_color:first-child::before {
-      content: '';
-      animation: progress 1.5s forwards;
-    }
-
-    .next_color::before {
-      content: '';
-      animation: progress_up 1.5s forwards;
-    }
-
-    @keyframes progress {
-      0% {
-        width: 15px;
-      }
-
-      100% {
-        width: 100%;
-        background: #a492ff;
-        border-top-right-radius: 0px;
-        border-bottom-right-radius: 0px;
-      }
-    }
-
-    @keyframes progress_up {
-      0% {
-        width: 15px;
-      }
-
-      100% {
-        width: 100%;
-        background: #a492ff;
-        border-radius: 0px;
-      }
-    }
-  </style>
+  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/public/assets/styles/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <!--  -->
 </head>
 
-<body>
+<body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
+  <div class="min-h-screen flex flex-col w-full container mx-auto">
+    <!-- navbar top -->
+    <header class="fixed z-50 left-0 top-2 right-0 h-16 px-6 flex items-center justify-between">
+      <!-- refresh -->
+      <i class="fa fa-refresh text-white"></i>
+      <!-- logo -->
+      <div class="flex items-center gap-2">
+        <img class="w-auto h-7 object-contain" src="/public/assets/images/icons/logo/qweesvpn.svg" alt="qweesvpn">
+        <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">QWEES <span
+            class="text-green-400">VPN</span></h2>
+      </div>
+      <!-- version -->
+      <span class="text-white text-sm">v1.0.0</span>
+    </header>
+    <main class="flex sm:my-2 w-full">
+      <!-- КОНЕЦ БЕЗ ИЗМЕНЕНИЙ -->
 
-  <!-- ### TG_SDK CONNECT ### -->
-  <script>
-    // Ждём загрузки Telegram SDK
-    const checkTelegram = () => {
-      if (window.Telegram?.WebApp) {
-        try {
-          window.Telegram.WebApp.ready();
-          const initData = window.Telegram.WebApp.initData;
+      <!-- ################# CONTENT DESCKTOP ####################-->
+      <div class="hidden sm:block w-full text-white">
+        <!-- содержание -->
+      </div>
 
-          if (!initData) {
-            showError('Нет данных от Telegram');
-            return;
-          }
+      <!-- ################# CONTENT MOBILE ####################-->
+      <div class="sm:hidden w-full text-white">
+        <!-- main -->
+        <section data-section="main"
+          class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] bg-gradient-to-t from-black via-green-950 to-black">
+          <!-- background -->
+          <img class="absolute top-0 bottom-0 mx-auto w-full h-full opacity-70 z-0"
+            src="/public/assets/images/background/light.svg" alt="backgroud">
 
-          // Парсим данные
-          const params = new URLSearchParams(initData);
-          const userStr = params.get('user');
-          const user = userStr ? JSON.parse(userStr) : null;
+          <!-- text -->
+          <div class="px-4 py-[40%] mx-auto right-0 left-0 flex flex-col justify-center items-center gap-3 z-10">
+            <div class="p-8 bg-[#181818] aspect-square rounded-[30px]">
+              <img class="w-14" src="/public/assets/images/icons/logo/qweesvpn.svg" alt="logo">
+            </div>
+            <h3 class="font-[qwees-poppins-semibold] text-2xl">QWEES VPN</h3>
+            <p class="text-sm text-center w-[70%] break-world">Начнем установку VPN на ваше устройство IOS</p>
+          </div>
 
-          if (!user) {
-            showError('Ошибка данных пользователя');
-            return;
-          }
+          <div class="px-4 flex flex-col gap-4 mb-6 justify-center items-center w-full z-10">
+            <button data-toggle-section="start"
+              class="bg-white cursor-pointer flex justify-center text-black text-lg rounded-xl flex p-3 w-[90%]">Начать
+              установку</button>
+            <p class="text-[13px]">Установка пройдет в 2 шага</p>
+          </div>
 
-          // Показываем результат
-          document.body.innerHTML = `<? include_once __DIR__ . '/service.php'; ?>`;
+        </section>
 
-          fetch('/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json; charset=utf-8'
-            },
-            body: JSON.stringify(user)
-          });
+        <!-- start -->
+        <section data-section="start"
+          class="hidden overflow-hidden relative flex flex-col gap-2 justify-end items-center pt-[95px] pb-4 box-border w-full min-h-[100dvh] bg-black">
+          <!-- background -->
+          <img src="/public/assets/images/background/map.svg" alt="map" class="absolute right-0 top-0 h-full z-0">
 
-        } catch (e) {
-          showError('Ошибка: ' + e.message);
-        }
+          <div class="flex flex-col justify-between items-center px-6 pb-4 z-10">
+            <div class="flex flex-col items-center justify-start gap-16">
 
-      } else {
-        // Если не в Telegram — показываем ошибку
-        showError('Вход не в телеграме! Переадресация...');
-      }
-    };
+              <div class="flex flex-col items-start justify-start gap-3">
+                <!-- logo -->
+                <img src="/public/assets/images/icons/logo/qweesvpn.svg" alt="logo"
+                  class="w-10 aspert-square animate-pulse">
+                <h3 class="text-2xl font-medium">Установка приложения</h3>
+                <p class="text-[13px] text-white/70">Первым делом установим приложения, которое обеспечит связь с VPN
+                  сервером.
+                </p>
+              </div>
 
-    checkTelegram();
+              <div class="flex gap-4 w-full">
+                <button data-toggle-section="start"
+                  class="w-full bg-transparent border border-solid border-white cursor-pointer flex justify-center text-white text-lg rounded-xl flex p-2 w-[90%]">
+                  Скачать</button>
+                <button data-toggle-section="finish"
+                  class="w-full bg-white cursor-pointer flex justify-center text-black text-lg rounded-xl flex p-2 w-[90%]">
+                  Далее</button>
+              </div>
+            </div>
+          </div>
 
-    function showError(message) {
-      window.location.href = '/site';
-    }
-  </script>
+        </section>
 
-  <!-- redirect success -->
-  <?php
-  if (isset($emailSuccess) && $emailSuccess && !empty($_SESSION['redirect_url'])) {
-    $redirect = $_SESSION['redirect_url'];
-    unset($_SESSION['redirect_url']);
-    ?>
-    <script>
-      window.open("<?= htmlspecialchars($redirect) ?>", "_self");
-    </script>
-    <?php
-  }
-  ?>
+        <!-- finish -->
+        <section data-section="finish"
+          class="hidden overflow-hidden relative flex flex-col gap-2 justify-end items-center pt-[95px] pb-4 box-border w-full min-h-[100dvh] bg-black">
+          <!-- background -->
+          <img src="/public/assets/images/background/map.svg" alt="map" class="absolute right-0 top-0 h-full z-0">
 
-  <!-- ### LOCAL componets ### -->
-  <script src="/public/pages/download/assets/script.js" defer="true"></script>
-  <!-- ### MAIN componet ### -->
-  <script src="/public/assets/script/script.js" defer="true"></script>
+          <div class="flex flex-col justify-between items-center px-6 pb-4 z-10">
+            <div class="flex flex-col items-center justify-start gap-16">
 
-  <!-- local script -->
-  <script>
-    // lines progress
-    const line_1 = document.getElementById('line-1');
-    const line_2 = document.getElementById('line-2');
-    const line_3 = document.getElementById('line-3');
-    // progress rounded
-    const progress_rouded_1 = document.getElementById('progress_rouded_1');
-    const progress_rouded_2 = document.getElementById('progress_rouded_2');
-    const progress_rouded_3 = document.getElementById('progress_rouded_3');
-    const progress_rouded_main = document.getElementById('progress_rouded_main');
-    // contents
-    const content_start = document.getElementById('content_start');
-    const content_two = document.getElementById('content_two');
-    const content_three = document.getElementById('content_three');
-    const content_for = document.getElementById('content_for');
-    // icon
-    const icon = document.getElementById('icon');
-    // index
-    let stepIndex = 0;
+              <div class="flex flex-col items-start justify-start gap-3">
+                <!-- logo -->
+                <img src="/public/assets/images/icons/logo/qweesvpn.svg" alt="logo"
+                  class="w-10 aspert-square animate-pulse">
+                <h3 class="text-2xl font-medium">Установим ваш VPN</h3>
+                <p class="text-[13px] text-white/70">Установим приобретенный вами VPN-ключ в приложение и завершим на
+                  этом настройку
+                </p>
+              </div>
 
-    const steps = [
-      "content_start",
-      "content_two",
-      "content_three",
-      "content_for"
-    ];
-    const progress_roundeds = [
-      progress_rouded_3,
-      progress_rouded_2,
-      progress_rouded_1,
-      null // no round for the last step
-    ];
-    const lines = [
-      line_1,
-      line_2,
-      line_3
-    ];
+              <div class="flex gap-4 w-full">
+                <button data-toggle-section="start"
+                  class="w-full bg-transparent border border-solid border-white cursor-pointer flex justify-center items-center text-white text-2sm rounded-xl flex p-2 w-[90%]">
+                  Установить VPN</button>
+                <button onclick="window.location.href = '/';"
+                  class="w-full bg-white cursor-pointer flex justify-center items-center text-black text-lg rounded-xl flex p-2 w-[90%]">
+                  Завершить</button>
+              </div>
+            </div>
+          </div>
 
-    function setStepClasses(idx, direction) {
-      // direction = 1 (forward), -1 (back), 0 (init)
-      // resets/hides/shows all contents & progresses/hovers as needed
+        </section>
 
-      // --- Content Panels ---
-      [content_start, content_two, content_three, content_for].forEach((el, i) => {
-        // clean up dynamic state for every panel
-        el.classList.remove('ihidden-bottom', 'show_content', 'hidden_content');
-        el.style.display = '';
-      });
+    </main>
+  </div>
 
-      if (idx >= 0 && idx < steps.length) {
-        [content_start, content_two, content_three, content_for].forEach((el, i) => {
-          if (i === idx) {
-            el.classList.add('show_content');
-            el.classList.remove('hidden_content');
-          } else {
-            el.classList.add('hidden_content');
-            el.classList.remove('show_content');
-          }
-        });
-      }
-
-      // --- Progress Circles ---
-      [progress_rouded_3, progress_rouded_2, progress_rouded_1].forEach((el, i) => {
-        if (!el) return;
-        // Показываем все, кроме тех что шаг дальше текущего
-        if (i < idx) {
-          el.classList.add('ihidden');
-          setTimeout(() => {
-            if (el) el.style.display = 'none';
-          }, 1000);
-        } else {
-          el.classList.remove('ihidden');
-          setTimeout(() => {
-            if (el) el.style.display = 'flex';
-          }, 800);
-        }
-      });
-
-      // --- Lines ---
-      [line_1, line_2, line_3].forEach((line, i) => {
-        line.classList.remove('next_color');
-        if (i < idx) {
-          line.classList.add('next_color');
-        }
-      });
-
-      // --- Icon state ---
-      if (idx === 3) {
-        icon.classList.remove('fa-plug');
-        icon.classList.add('fa-check-circle');
-        icon.classList.remove('ihidden');
-        icon.classList.add('ishow');
-        icon.classList.add('rotate-[0deg]');
-      } else {
-        icon.classList.remove('fa-check-circle', 'ishow', 'ihidden', 'rotate-[0deg]');
-        icon.classList.add('fa-plug');
-      }
-    }
-
-    function Start() {
-      // Перейти вперед на шаг
-      if (stepIndex < steps.length - 1) {
-        console.log(`[DEBUG] Увеличение индекса шага: ${stepIndex} -> ${stepIndex + 1}`);
-        stepIndex++;
-        setStepClasses(stepIndex, 1);
-      }
-    }
-
-    function showStep(idx) {
-      stepIndex = idx;
-      setStepClasses(stepIndex, 0);
-      updateBackBtnText();
-    }
-
-    function goBack() {
-      if (stepIndex === 0) {
-        window.location.href = "/";
-        return;
-      }
-      stepIndex--;
-      setStepClasses(stepIndex, -1);
-      updateBackBtnText();
-    }
-
-    function updateBackBtnText() {
-      const btnText = document.getElementById('backBtnText');
-      const arrowHome = document.getElementById('arrowHomeLink');
-      if (btnText) {
-        if (stepIndex === 0) {
-          btnText.textContent = "Вернуться";
-          if (arrowHome) arrowHome.style.display = "";
-        } else {
-          btnText.textContent = "Назад";
-          if (arrowHome) arrowHome.style.display = "none";
-        }
-      }
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      showStep(0);
-      updateBackBtnText();
-      const backBtn = document.getElementById('globalArrowBack');
-      if (backBtn) {
-        backBtn.addEventListener('click', function () {
-          goBack();
-        });
-      }
-      document.addEventListener('keydown', (ev) => {
-        if ((ev.key === "ArrowLeft")) {
-          ev.preventDefault();
-          goBack();
-        }
-      });
-    });
-  </script>
-
+  <script src="/public/assets/scripts/main/main.js"></script>
+  <script src="/public/assets/scripts/theme/main.js"></script>
 </body>
 
 </html>

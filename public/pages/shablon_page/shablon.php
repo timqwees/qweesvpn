@@ -55,6 +55,7 @@ Auth::auth();
 
     </main>
     <script src="/public/assets/scripts/main/main.js"></script>
+    <script src="/public/assets/scripts/theme/main.js"></script>
   </div>
 </body>
 

@@ -27,11 +27,5 @@ CREATE TABLE IF NOT EXISTS qwees_refer (
   count VARCHAR(255) NOT NULL DEFAULT ''
 );
 
--- -- Таблица подтверждений кода
--- CREATE TABLE IF NOT EXISTS qwees_users_verefy_code (
---   uniID VARCHAR(50) NOT NULL DEFAULT '',
---   code VARCHAR(10) DEFAULT NULL
--- );
-
 --добавление цен по умолчанию
 INSERT INTO qwees_price ("name", "price") VALUES ('basic', 100), ('clasic', 200), ('pro', 300);

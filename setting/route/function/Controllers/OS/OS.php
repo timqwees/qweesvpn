@@ -1,5 +1,8 @@
-<?php
-function getV2RayTunInstallUrl()
+<?php declare(strict_types=1);
+namespace Setting\Route\Function\Controllers\OS;
+class OS
+{
+public static function getV2RayTunInstallUrl()
 {
   $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
@@ -73,4 +76,5 @@ function getV2RayTunInstallUrl()
     'os' => 'Other',
     'url' => 'https://github.com/DigneZzZ/v2raytun/releases/latest/download/v2RayTun_universal.apk'
   ];
+}
 }

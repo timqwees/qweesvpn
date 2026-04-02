@@ -1,17 +1,16 @@
+$(document).ready(function () {
+  const $html = $('html');
+  const theme = localStorage.getItem('theme');
+  const $darkModeToggle = $('[data-darkModeToggle]');
 
-const html = document.documentElement;
-const theme = localStorage.getItem('theme');
-const darkModeToggle = document.getElementById('darkModeToggle');
+  if (theme === 'light') {
+    $html.addClass('light');
+    if ($darkModeToggle.length) $darkModeToggle.prop('checked', true);
+  }
 
-if (theme === 'light' || !theme) {
-  html.classList.add('light');
-  if (darkModeToggle) darkModeToggle.checked = true;
-}
-
-if (darkModeToggle) {
-  darkModeToggle.addEventListener('change', () => {
-    const isDarkMode = darkModeToggle.checked;
-    html.classList.toggle('light', isDarkMode);
+  $darkModeToggle.on('change', function () {
+    const isDarkMode = $(this).prop('checked');
+    $html.toggleClass('light', isDarkMode);
     localStorage.setItem('theme', isDarkMode ? 'light' : '');
   });
-}
+});

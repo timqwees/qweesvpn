@@ -19,22 +19,29 @@ $(document).ready(function () {
         email: email.val()
       },
       success: (data) => {
-        const status = JSON.parse(data);//get JSON [****]
-        // событие написания в поле верефикации
-        $('#verefy').on('input', function () {
-          if ($('#verefy').val() == status) {//true - reight
-            $('#verefy_status').addClass('hidden');
-            $('#verefy').removeClass('border-red-500');
-            $('#verefy').addClass('border-green-500');
-            $('[data-button="verefy"]').removeAttr('disabled');
-          } else {//false - no right
-            $('#verefy_status').removeClass('hidden');
-            $('#verefy').addClass('border-red-500');
-            $('#verefy').removeClass('border-green-500');
-            $('#verefy_status').text(prefix_message_status + 'Неверный код верефикации');
-            $('[data-button="verefy"]').attr('disabled', 'disabled');
-          }
-        });
+        const response = JSON.parse(data);
+        if (response.success) {
+          const status = response.code;
+          // событие написания в поле верефикации
+          $('#verefy').on('input', function () {
+            if ($('#verefy').val() == status) {//true - reight
+              $('#verefy_status').addClass('hidden');
+              $('#verefy').removeClass('border-red-500');
+              $('#verefy').addClass('border-green-500');
+              $('[data-button="verefy"]').removeAttr('disabled');
+            } else {//false - no right
+              $('#verefy_status').removeClass('hidden');
+              $('#verefy').addClass('border-red-500');
+              $('#verefy').removeClass('border-green-500');
+              $('#verefy_status').text(prefix_message_status + 'Неверный код верефикации');
+              $('[data-button="verefy"]').attr('disabled', 'disabled');
+            }
+          });
+        } else {
+          message_status.removeClass('hidden');
+          message_status.text(prefix_message_status + 'Ошибка отправки почты: ' + (response.error || 'Неизвестная ошибка'));
+          button_email.attr('disabled', 'disabled');
+        }
       },
       error: (error) => {
         message_status.removeClass('hidden');

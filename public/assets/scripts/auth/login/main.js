@@ -22,7 +22,7 @@ $(document).ready(function () {
         const status = JSON.parse(data);//get JSON [****]
         // событие написания в поле верефикации
         $('#verefy').on('input', function () {
-          if ($('#verefy').val() == status) {//true - reight
+          if ($('#verefy').val() == status.code) {//true - reight
             $('#verefy_status').addClass('hidden');
             $('#verefy').removeClass('border-red-500');
             $('#verefy').addClass('border-green-500');
