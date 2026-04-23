@@ -52,6 +52,7 @@ Routes::get('/auth/regist', 'on_Regist');
 //post
 Routes::post('/auth/login', [Auth::class, 'onLogin']);
 Routes::post('/auth/regist', [Auth::class, 'onRegist']);
+Routes::post('/auth/logout', [Auth::class, 'onLogout']);
 //helpers
 Routes::post('/auth/mail', [Auth::class, 'onMail']);
 Routes::post('/auth/find', [Auth::class, 'isFindUser']);

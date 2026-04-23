@@ -36,7 +36,7 @@ class ReferConfig
      */
     public static function getCodeLength(): int
     {
-        return 7;
+        return 10;
     }
     
     /**
@@ -44,6 +44,6 @@ class ReferConfig
      */
     public static function getCodePattern(): string
     {
-        return 'QWE###';
+        return 'QWE#####';
     }
 }

@@ -156,7 +156,7 @@ class Auth extends Network
      * Summary of logout
      * @return void
      */
-    public static function logout(): void
+    public static function onLogout(): void
     {
         Session::init(null);
         self::onRedirect($_ENV['REDIRECT_LOG_UNSIGN_USER']);
