@@ -1,209 +1,169 @@
 <?php declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\refer;
 
 use App\Config\Database;
-use Setting\Route\Function\Controllers\client\Client;
+use App\Config\Session;
 use App\Models\Network\Network;
-use App\Models\Network\Message;
-use setting\route\function\Controllers\refer\config\ReferConfig;
+use Setting\Route\Function\Controllers\refer\config\ReferConfig;
+use Setting\Route\Function\Controllers\refer\bonus\Bonus;
+use Setting\Route\Function\Controllers\Client\getUser;
 
+/**
+ * Refer - Корневой файл реферальной системы (как главный класс плагина)
+ * 
+ * Логика:
+ * 1. Через ввод кода → activateRefer() POST /api/referral/activate
+ * 2. Через ссылку /reflink={code} → GET маршрут вызывает тот же activateRefer()
+ */
 class Refer
 {
-    private string $reflink = '';
 
     /**
-     * Генерация реферальной ссылки
-     *
-     * @return string
+     * Внутренняя логика активации (используется API и handleReferLink)
+     */
+    private static function doActivate(string $code, int $userId, getUser $user): array
+    {
+        $code = trim(strtoupper($code));
+
+        if (empty($code)) {
+            return ['status' => false, 'error' => 'Пожалуйста, введите код'];
+        }
+
+        if (!empty($user->getRefer())) {
+            return ['status' => false, 'error' => 'Реферальный код уже активирован'];
+        }
+
+        if ($code === $user->getMyRefer()) {
+            return ['status' => false, 'error' => 'Заприщено использовать свою реферальную ссылку!'];
+        }
+
+        $referrer = Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]);
+        if (!$referrer) {
+            return ['status' => false, 'error' => 'Реферальный код не найден!'];
+        }
+
+        $referrerId = (int) $referrer['id'];
+        if ($referrerId === $userId) {
+            return ['status' => false, 'error' => 'Нельзя использовать свой реферальный код!'];
+        }
+
+        Database::send("UPDATE users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
+
+        $bonus = new Bonus();
+        $bonus->giveToNewReferral($userId, $referrerId);
+        $bonus->giveToReferrer($referrerId, $userId);
+
+        return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
+    }
+
+    /**
+     * Генерация уникального реферального кода для нового пользователя
      */
     public function generationRefer(): string
     {
-        $this->reflink = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 7);
-        return $this->reflink;
+        $pattern = ReferConfig::getCodePattern();
+
+        do {
+            $code = '';
+            for ($i = 0; $i < strlen($pattern); $i++) {
+                $code .= $pattern[$i] === '#' ? chr(rand(65, 90)) : $pattern[$i];
+            }
+        } while (Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]));
+
+        return $code;
     }
 
     /**
-     * Проверяет наличие уникальной реферальной ссылки у всех пользователей.
-     * Если ссылки нет или она пуста, генерирует новую для каждого такого пользователя.
-     * Возвращает массив uniID => refer_link для всех пользователей.
+     * Установка реферального кода для нового пользователя (после регистрации)
+     * Работает напрямую с БД, не требует авторизации
      */
-    public function globalCheckRefer(): array
+    public function setRefer(string $uniID, string $code, bool $silent = true): array
     {
-        // Получаем всех пользователей с uniID и refer_link
-        $sql = Database::send('SELECT uniID, refer_link FROM qwees_users');
-        $users = [];
-        if (is_array($sql)) {
-            if (isset($sql[0]) && is_array($sql[0]) && array_keys($sql[0]) === range(0, count($sql[0]) - 1)) {
-                $users = $sql[0];
-            } elseif (array_keys($sql) === range(0, count($sql) - 1)) {
-                $users = $sql;
-            }
+        // получаем свой id и refer
+        $user = Database::send("SELECT id, refer FROM users WHERE uniID = ?", [$uniID]);
+
+        if (!$user) {
+            return ['status' => false, 'error' => 'Пользователь не найден'];
         }
 
-        if (empty($users) || !is_array($users)) {
-            return [];
+        if (!empty($user['refer'])) {
+            return ['status' => false, 'error' => 'Реферальный код уже активирован'];
         }
 
-        $result = [];
+        $code = trim(strtoupper($code));
+        // получаем id реферала
+        $referrer = Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]);
 
-        foreach ($users as $user) {
-            $uniID = $user['uniID'];
-            $current_link = isset($user['refer_link']) ? $user['refer_link'] : '';
-            if (empty($current_link)) {
-                $newRefer = $this->generationRefer();
-                Database::send('UPDATE qwees_users SET refer_link = ? WHERE uniID = ?', [$newRefer, strval($uniID)]);
-                $result[$uniID] = $newRefer;
-            } else {
-                $result[$uniID] = $current_link;
-            }
+        // если не нашли такого реферала
+        if (!$referrer) {
+            return ['status' => false, 'error' => 'Реферальный код не найден'];
         }
 
-        return $result;
+        // итоговые данные
+        $userId = (int) $user['id'];//свой id
+        $referrerId = (int) $referrer['id']; //реферала id
+
+        // записываем реферала
+        Database::send("UPDATE users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
+
+        // начисляем бонусы
+        $bonus = new Bonus();
+        $bonus->giveToNewReferral($userId, $referrerId);//для себя бонус
+        $bonus->giveToReferrer($referrerId, $userId);//для реферела бонус
+
+        return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
     }
 
     /**
-     * Активирует реферальную ссылку для пользователя.
-     *
-     * @param string $myUniID Уникальный ID пользователя, который активирует ссылку
-     * @param string $refer_link Реферальная ссылка (без префикса 'ref=')
-     * @param string $type Тип перенаправления после успешного активации
-     * @param bool $skipRedirect Если true, не выполнять редирект (для использования в Listener)
-     * @return bool true, если активация успешна, false в случае ошибки
+     * Обработка перехода по реферальной ссылке /reflink={code}
+     * Маршрутизатор перехватывает и вызывает эту функцию с параметром code
      */
-    public function setRefer(
-        string $myUniID,
-        string $refer_link,
-        string $type = '/profile',
-        bool $skipRedirect = false
-    ): bool {
-        // Проверка: пользователь не может активировать свою собственную ссылку
-        $client_user = Client::get($myUniID);
-
-        // ВАЖНО: Проверяем, существует ли пользователь в базе данных
-        // Если uniID пустой, значит пользователя нет в БД
-        if (empty($client_user['uniID']) || $client_user['uniID'] === '') {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Пользователь не найден. Пожалуйста, сначала зарегистрируйтесь.');
-                Network::onRedirect($type);
+    public function onValidateCode(string|null $code = null, string|null $online = null)
+    {
+        if (empty($code)) {
+            if (!($online === 'on')) {
+                Network::onRedirect('/');
             }
-
-            // Логируем попытку активации несуществующим пользователем
-            file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                sprintf(
-                    "[%s] [ОШИБКА - РЕФЕРАЛ] setRefer: Попытка активации реферальной ссылки несуществующим пользователем uniID=%s, refer_link=%s\n",
-                    date('Y-m-d H:i:s'),
-                    $myUniID,
-                    $refer_link
-                ),
-                FILE_APPEND
-            );
-
-            return false;
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status' => false,
+                'message' => 'Пожалуйста, введите код'
+            ]);
+            exit;
         }
 
-        // Уже есть активированная ссылка у пользователя? (не даём заново активировать)
-        if (!empty($client_user['refer_link'])) {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Вы уже активировали реферальную ссылку!');
-                Network::onRedirect($type);
+        Session::init('pending_refer_code', $code);
+
+        // Если пользователь уже авторизован - активируем сразу
+        $user = new getUser();
+        if ($user->getID() > 0) {
+            $result = self::doActivate($code, $user->getID(), $user);
+            $status = $result['status'] ? 'success' : 'error';
+            $msg = $result['error'] ?? $result['message'] ?? '';
+            if (!($online === 'on')) {
+                Network::onRedirect("/?ref_status={$status}&ref_msg={$msg}");
+            } else {
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'status' => $result['status'],
+                    'message' => $msg
+                ]);
+                exit;
             }
-            return false;
         }
 
-        // ========= Разделяем ссылку вида ref=xxxxxxx и извлекаем id (xxxxxxx)
-        if (strpos($refer_link, 'ref=') === 0) {
-            $refer_link = substr($refer_link, strlen('ref='));
-        }
-        // ======================================================
-
-        // Проверка, существует ли реферальная ссылка и чья она
-        $result = Database::send('SELECT * FROM qwees_users WHERE refer_link = ? LIMIT 1', [$refer_link]);
-        if (!is_array($result) || count($result) === 0) {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Реферальная ссылка не найдена');
-                Network::onRedirect($type);
-            }
-            return false;
+        // Если не авторизован - редиректим на регистрацию
+        // Код уже в сессии, активируется после регистрации
+        if (!($online === 'on')) {
+            Network::onRedirect('/auth/regist');
         }
 
-        $client_refer = Client::get($result[0]['uniID']);
-
-        // Нельзя активировать свою же ссылку
-        if ($client_refer['uniID'] === $myUniID) {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Нельзя использовать свою собственную реферальную ссылку');
-                Network::onRedirect($type);
-            }
-            return false;
-        }
-
-        // Нельзя активировать повторно ту же ссылку (дублирование безопасности)
-        if (!empty($client_user['refer_link'])) {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Вы уже активировали реферальную ссылку!');
-                Network::onRedirect($type);
-            }
-            return false;
-        }
-
-        // Активируем: увеличиваем счетчик рефера и сохраняем для пользователя активированную ссылку
-        $updateReferCount = Database::send('UPDATE qwees_users SET refer_count = refer_count + 1 WHERE uniID = ?', [$client_refer['uniID']]);
-        
-        // Получаем множитель скидки из конфигурации
-        $discountMultiplier = ReferConfig::getInvitedDiscountMultiplier();
-        
-        // Устанавливаем реферальную ссылку и применяем скидку для пользователя
-        $updateUserRefer = Database::send(
-            'UPDATE qwees_users SET refer_link = ?, amount = amount * ? WHERE uniID = ?', 
-            [$refer_link, $discountMultiplier, $myUniID]
-        );
-
-        // Проверяем, что обновления прошли успешно
-        if ($updateReferCount === false || $updateUserRefer === false) {
-            if (!$skipRedirect) {
-                Message::set('refer_error', 'Ошибка при активации реферальной ссылки. Попробуйте позже.');
-                Network::onRedirect($type);
-            }
-
-            // Логируем ошибку обновления
-            file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                sprintf(
-                    "[%s] [ОШИБКА - РЕФЕРАЛ] setRefer: Ошибка обновления БД при активации реферальной ссылки. uniID=%s, refer_link=%s\n",
-                    date('Y-m-d H:i:s'),
-                    $myUniID,
-                    $refer_link
-                ),
-                FILE_APPEND
-            );
-
-            return false;
-        }
-
-        if (!$skipRedirect) {
-            $discountPercent = ReferConfig::getInvitedDiscountPercent();
-            Message::set('refer_success', "Реферальная ссылка успешно активирована! Вы получили скидку {$discountPercent}% на все тарифы!");
-        }
-
-        //ЛОГИРОВАНИЕ
-        $discountPercent = ReferConfig::getInvitedDiscountPercent();
-        file_put_contents(
-            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-            sprintf(
-                "[%s] [SUCCESS] setRefer: Пользователь с uniID=%s активировал реферальную ссылку '%s' (рефер: uniID=%s). Скидка %d%% применена.\n",
-                date('Y-m-d H:i:s'),
-                $myUniID,
-                $refer_link,
-                $client_refer['uniID'],
-                $discountPercent
-            ),
-            FILE_APPEND
-        );
-
-        if (!$skipRedirect) {
-            Network::onRedirect($type);
-        }
-        return true;
+        header('Content-Type: application/json');
+        echo json_encode([
+            'status' => false,
+            'message' => 'Требуется авторизация для активации реферального кода'
+        ]);
+        exit;
     }
 }

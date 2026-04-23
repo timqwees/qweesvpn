@@ -1,80 +1,89 @@
 <?php declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\OS;
+
 class OS
 {
-public static function getV2RayTunInstallUrl()
-{
-  $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-  // iOS/iPadOS devices
-  if (preg_match('/iPhone|iPad|iPod|iOS|iPadOS/i', $ua)) {
-    return [
-      'os' => 'iOS',
-      'url' => 'https://apps.apple.com/us/app/v2raytun/id6476628951'
-    ];
-  }
-  // MacOS
-  if (preg_match('/Macintosh|Mac OS|Macintosh; Intel Mac OS/i', $ua)) {
-    return [
-      'os' => 'macOS',
-      'url' => 'https://apps.apple.com/us/app/v2raytun/id6476628951'
-    ];
-  }
+    public string $UA;
 
-  // Windows
-  if (preg_match('/Windows NT/i', $ua)) {
-    return [
-      'os' => 'Windows',
-      'url' => 'https://storage.v2raytun.com/v2RayTun_Setup.exe'
-    ];
-  }
+    public function __construct()
+    {
+        $this->UA = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    }
 
-  // Linux
-  if (preg_match('/Linux/i', $ua) && !preg_match('/Android/i', $ua)) {
-    return [
-      'os' => 'Linux',
-      'url' => 'https://github.com/mdf45/v2raytun/archive/refs/tags/v2.5.8.tar.gz'
-    ];
-  }
+    public function getOS()
+    {
 
-  // Huawei new models (2019+), MatePad, HMS, AppGallery
-  if (
-    preg_match('/HUAWEI|Huawei|HONOR|MatePad/i', $ua)
-    && !preg_match('/Google/i', $ua)
-  ) {
-    return [
-      'os' => 'Huawei',
-      'url' => 'https://github.com/DigneZzZ/v2raytun/releases/latest/download/v2RayTun_universal.apk'
-    ];
-  }
+        // iOS/iPadOS devices
+        if (preg_match('/iPhone|iPad|iPod|iOS|iPadOS/i', self::$UA)) {
+            return [
+                'os' => 'iOS',
+                'url' => 'https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973'
+            ];
+        }
+        // MacOS
+        if (preg_match('/Macintosh|Mac OS|Macintosh; Intel Mac OS/i', self::$UA)) {
+            return [
+                'os' => 'macOS',
+                'url' => 'https://apps.apple.com/sv/app/happ-proxy-utility/id6504287215'
+            ];
+        }
 
-  // Android with Google Play
-  if (
-    preg_match('/Android/i', $ua) &&
-    (
-      preg_match('/Samsung|SM-|Galaxy|Pixel|Mi|Redmi|POCO|OnePlus|OPPO|Vivo|Realme|Motorola|Sony|Nokia/i', $ua)
-      || preg_match('/Google/i', $ua)
-      || preg_match('/GMS/i', $ua)
-    )
-  ) {
-    return [
-      'os' => 'Android',
-      'url' => 'https://play.google.com/store/apps/details?id=com.v2raytun.android'
-    ];
-  }
+        // Windows
+        if (preg_match('/Windows NT/i', self::$UA)) {
+            return [
+                'os' => 'Windows',
+                'url' => 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/setup-Happ.x64.exe'
+            ];
+        }
 
-  // Other Android
-  if (preg_match('/Android/i', $ua)) {
-    return [
-      'os' => 'Android',
-      'url' => 'https://play.google.com/store/apps/details?id=com.v2raytun.android'
-    ];
-  }
+        // Linux
+        if (preg_match('/Linux/i', self::$UA) && !preg_match('/Android/i', self::$UA)) {
+            return [
+                'os' => 'Linux',
+                'url' => 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/Happ.linux.x64.pkg.tar.zst'
+            ];
+        }
 
-  // Fallback
-  return [
-    'os' => 'Other',
-    'url' => 'https://github.com/DigneZzZ/v2raytun/releases/latest/download/v2RayTun_universal.apk'
-  ];
-}
+        // Huawei new models (2019+), MatePad, HMS, AppGallery
+        if (
+            preg_match('/HUAWEI|Huawei|HONOR|MatePad/i', self::$UA)
+            && !preg_match('/Google/i', self::$UA)
+        ) {
+            return [
+                'os' => 'Huawei',
+                'url' => 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk'
+            ];
+        }
+
+        // Android with Google Play
+        if (
+            preg_match('/Android/i', self::$UA) &&
+            (
+                preg_match('/Samsung|SM-|Galaxy|Pixel|Mi|Redmi|POCO|OnePlus|OPPO|Vivo|Realme|Motorola|Sony|Nokia/i', self::$UA)
+                || preg_match('/Google/i', self::$UA)
+                || preg_match('/GMS/i', self::$UA)
+            )
+        ) {
+            return [
+                'os' => 'Android',
+                'url' => 'https://play.google.com/store/apps/details?id=com.happproxy'
+            ];
+        }
+
+        // Other Android
+        if (preg_match('/Android/i', self::$UA)) {
+            return [
+                'os' => 'Android',
+                'url' => 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk'
+            ];
+        }
+
+        // Fallback
+        return [
+            'os' => 'Other',
+            'url' => 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk'
+        ];
+    }
 }

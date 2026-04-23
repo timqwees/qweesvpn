@@ -134,6 +134,12 @@ class Routes extends Network
   public static function dispatch(): void
   {
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if ($method === 'POST' && empty($_POST)) {
+      $raw = file_get_contents('php://input');
+      $decoded = json_decode($raw ?: '', true);
+      if (is_array($decoded))
+        $_POST = $decoded;
+    }
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
     if ($uri === '') {
       $uri = '/';
@@ -175,6 +181,10 @@ class Routes extends Network
           if ($isStatic) {
             // Вызываем статический метод напрямую
             if (method_exists($controllerClass, $action)) {
+              if ($method === 'POST' && !empty($_POST)) {
+                $postData = (object) $_POST;
+                array_unshift($matches, $postData);
+              }
               if (isset($callback[2])) {
                 $params_string = $callback[2];
                 $params = [];
@@ -194,6 +204,10 @@ class Routes extends Network
             // Вызываем метод через экземпляр
             $controller = is_string($controllerClass) ? new $controllerClass : $controllerClass;
             if (method_exists($controller, $action)) {
+              if ($method === 'POST' && !empty($_POST)) {
+                $postData = (object) $_POST;
+                array_unshift($matches, $postData);
+              }
               // Если есть третий элемент (параметры для метода класса)
               if (isset($callback[2])) {
                 $params_string = $callback[2];

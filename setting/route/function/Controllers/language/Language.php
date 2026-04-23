@@ -3,7 +3,6 @@ namespace Setting\Route\Function\Controllers\language;
 
 use App\Config\Database;
 use App\Config\Session;
-use Setting\Route\Function\Controllers\client\Client;
 
 class Language
 {
@@ -43,7 +42,12 @@ class Language
                 'active' => 'Активен',
                 'inactive' => 'Неактивен',
                 'yes' => 'Да',
-                'no' => 'Нет'
+                'no' => 'Нет',
+                'remaining' => 'Осталось',
+                'days' => 'дней',
+                'theme' => 'Тема',
+                'dark' => 'Темная',
+                'light' => 'Светлая'
             ],
             'en' => [
                 'main' => 'Main',
@@ -59,7 +63,12 @@ class Language
                 'active' => 'Active',
                 'inactive' => 'Inactive',
                 'yes' => 'Yes',
-                'no' => 'No'
+                'no' => 'No',
+                'remaining' => 'Remaining',
+                'days' => 'days',
+                'theme' => 'Theme',
+                'dark' => 'Dark',
+                'light' => 'Light'
             ]
         ];
 
