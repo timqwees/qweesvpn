@@ -1,94 +1,89 @@
 <?php declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\refer\bonus;
 
 use App\Config\Database;
-use setting\route\function\Controllers\client\Client;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
-use setting\route\function\Controllers\refer\config\ReferConfig;
+use Setting\Route\Function\Controllers\refer\config\ReferConfig;
 
+/**
+ * Bonus - Обработка бонусов реферальной системы
+ * Простая логика начисления наград
+ */
 class Bonus
 {
     /**
-     * Добавляет бонусные дни рефералу при покупке
-     * @param string $buyerUniID Уникальный ID покупателя
-     * @return array Результат операции с информацией о бонусе
+     * Дать бонус новому рефералу (кто пришёл по ссылке)
      */
-    public function add_bonus_days(string $buyerUniID): array
+    public function giveToNewReferral(int $userId, int $referrerId): void
     {
-        // Получаем данные покупателя
-        $buyer = Client::get($buyerUniID);
-        if (empty($buyer['refer_link'])) {
-            return [
-                'success' => false,
-                'message' => 'У покупателя нет реферальной ссылки',
-                'bonus_days' => 0
-            ];
+        $config = ReferConfig::getNewReferralBonus();
+
+        // Добавляем бонусные дни к подписке
+        if ($config['days_added'] > 0) {
+            $this->addBonusDays($userId, $config['days_added']);
         }
 
-        // Находим реферала по реферному коду
-        $ref = Database::send(
-            "SELECT * FROM qwees_users WHERE refer_link=? LIMIT 1",
-            [$buyer['refer_link']]
-        );
-        
-        if (!is_array($ref) || empty($ref[0])) {
-            return [
-                'success' => false,
-                'message' => 'Реферал не найден',
-                'bonus_days' => 0
-            ];
+        // Записываем скидку в профиль
+        if ($config['discount_percent'] > 0) {
+            Database::send("UPDATE users SET discount_percent = ? WHERE id = ?", [$config['discount_percent'], $userId]);
+        }
+    }
+
+    /**
+     * Дать бонус пригласившему (реферреру)
+     */
+    public function giveToReferrer(int $referrerId, int $newReferralId): void
+    {
+        $config = ReferConfig::getReferrerBonus();
+
+        // Добавляем бонусные дни пригласившему
+        if ($config['days_per_referral'] > 0) {
+            $this->addBonusDays($referrerId, $config['days_per_referral']);
         }
 
-        $refUniID = $ref[0]['uniID']; // uniID реферала
-        $days_buy = intval($buyer['count_days'] ?? 0); // дни покупки клиента
+        // Увеличиваем счётчик и бонус (с ограничением максимума)
+        Database::send("
+            UPDATE users 
+            SET refer_count = refer_count + 1,
+                bonus_percent = MIN(bonus_percent + ?, ?)
+            WHERE id = ?
+        ", [$config['bonus_percent'], $config['max_discount_cap'], $referrerId]);
+    }
 
-        if ($days_buy <= 0) {
-            return [
-                'success' => false,
-                'message' => 'Количество дней покупки не указано',
-                'bonus_days' => 0
-            ];
+    /**
+     * Добавить бонусные дни к подписке пользователя
+     */
+    private function addBonusDays(int $userId, int $days): void
+    {
+        // Получаем текущую дату окончания
+        $result = Database::send("SELECT date_end FROM users WHERE id = ?", [$userId]);
+        $currentEnd = $result['date_end'] ?? null;
+
+        // Если подписка активна - продлеваем, если нет - отсчёт от сегодня
+        if ($currentEnd && strtotime($currentEnd) > time()) {
+            $newEnd = date('Y-m-d H:i:s', strtotime($currentEnd . " +{$days} days"));
+        } else {
+            $newEnd = date('Y-m-d H:i:s', strtotime("+{$days} days"));
         }
 
-        // Получаем процент бонусных дней из конфигурации
-        $percent = ReferConfig::getReferralDaysBonus();
-        $bonus = (int) floor($days_buy * $percent / 100); // считаем процент дней от клиента
+        Database::send("UPDATE users SET date_end = ? WHERE id = ?", [$newEnd, $userId]);
+    }
 
-        if ($bonus <= 0) {
-            return [
-                'success' => false,
-                'message' => "Бонусные дни равны 0 (покупка: {$days_buy} дней, процент: {$percent}%)",
-                'bonus_days' => 0
-            ];
-        }
+    /**
+     * Получить общую скидку пользователя (реферальная + другие)
+     */
+    public static function getTotalDiscount(int $userId): int
+    {
+        $result = Database::send("SELECT discount_percent FROM users WHERE id = ?", [$userId]);
+        return (int) ($result['discount_percent'] ?? 0);
+    }
 
-        // Запускаем обновление через Xray класс
-        $xray = new Xray();
-        $updateResult = $xray->xui_update($refUniID, $bonus);
-
-        // Логируем успешное начисление бонуса
-        file_put_contents(
-            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-            sprintf(
-                "[%s] [REFER_BONUS] Реферал %s получил %d бонусных дней от покупки клиента %s (%d дней, %d%%)\n",
-                date('Y-m-d H:i:s'),
-                $refUniID,
-                $bonus,
-                $buyerUniID,
-                $days_buy,
-                $percent
-            ),
-            FILE_APPEND
-        );
-
-        return [
-            'success' => $updateResult['status'] === 'ok',
-            'message' => $updateResult['message'] ?? 'Ошибка при начислении бонуса',
-            'bonus_days' => $bonus,
-            'referral_uniid' => $refUniID,
-            'buyer_uniid' => $buyerUniID,
-            'purchase_days' => $days_buy,
-            'bonus_percent' => $percent
-        ];
+    /**
+     * Получить бонусный процент пользователя
+     */
+    public static function getBonusPercent(int $userId): int
+    {
+        $result = Database::send("SELECT bonus_percent FROM users WHERE id = ?", [$userId]);
+        return (int) ($result['bonus_percent'] ?? 0);
     }
 }

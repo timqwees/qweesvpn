@@ -11,9 +11,16 @@ use YooKassa\Model\MonetaryAmount;
 use App\Config\Database;
 use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
 
-class Kassa 
+class Kassa
 {
     private Client $client;
+
+    /** URL подписки X-UI из .env (единый формат без разных доменов/портов в коде). */
+    private static function subscriptionUrl(string $uniID): string
+    {
+        $base = rtrim($_ENV['XUI_URL_SUBSCRIPTION'] ?? '', '/');
+        return $base . '/' . $uniID;
+    }
 
     public function __construct()
     {
@@ -58,14 +65,14 @@ class Kassa
         try {
             // Создание запроса на платеж
             $paymentRequest = new CreatePaymentRequest();
-            
+
             // Установка суммы
             $amountValue = ['value' => $amount, 'currency' => 'RUB'];
             $paymentRequest->setAmount($amountValue);
-            
+
             // Установка описания
             $paymentRequest->setDescription(mb_substr($description, 0, 128, 'UTF-8'));
-            
+
             // Установка подтверждения
             $paymentRequest->setConfirmation([
                 'type' => 'redirect',
@@ -108,12 +115,12 @@ class Kassa
 
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log', 
+                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
                 sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] createPayment: %s\n", 
-                    date('Y-m-d H:i:s'), 
+                    "[%s] [ОШИБКА - YOOKASSA] createPayment: %s\n",
+                    date('Y-m-d H:i:s'),
                     $e->getMessage()
-                ), 
+                ),
                 FILE_APPEND
             );
 
@@ -153,8 +160,11 @@ class Kassa
         // Логируем начало проверки статуса
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-            sprintf("[%s] [DEBUG] Начало проверки статуса платежа: %s\n", 
-                date('Y-m-d H:i:s'), $paymentId),
+            sprintf(
+                "[%s] [DEBUG] Начало проверки статуса платежа: %s\n",
+                date('Y-m-d H:i:s'),
+                $paymentId
+            ),
             FILE_APPEND
         );
 
@@ -172,8 +182,12 @@ class Kassa
 
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                sprintf("[%s] [DEBUG] Статус платежа: %s, оплачен: %s\n", 
-                    date('Y-m-d H:i:s'), $payment->getStatus(), $payment->getPaid() ? 'YES' : 'NO'),
+                sprintf(
+                    "[%s] [DEBUG] Статус платежа: %s, оплачен: %s\n",
+                    date('Y-m-d H:i:s'),
+                    $payment->getStatus(),
+                    $payment->getPaid() ? 'YES' : 'NO'
+                ),
                 FILE_APPEND
             );
 
@@ -182,7 +196,7 @@ class Kassa
                 $metadata = $payment->getMetadata();
                 $uniID = $metadata['uniID'] ?? null;
                 $tariff = $metadata['tariff'] ?? null;
-                
+
                 if ($uniID && $tariff) {
                     // Конфигурация тарифов
                     $tariffConfig = [
@@ -199,38 +213,51 @@ class Kassa
                         '12months_4' => ['days' => 365, 'devices' => 4],
                         '12months_10' => ['days' => 365, 'devices' => 10]
                     ];
-                    
+
                     $config = $tariffConfig[$tariff] ?? ['days' => 30, 'devices' => 1];
-                    
+
                     // Проверяем, не была ли уже выдана подписка для этого платежа
                     $existingUserData = Database::send("SELECT status, date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
                     $existingUser = $existingUserData[0] ?? null;
-                    
+
                     if ($existingUser && $existingUser['status'] === 'on' && strtotime($existingUser['date_end']) > time()) {
                         // Подписка уже активна, не создаем новую
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                            sprintf("[%s] [ПОДПИСКА] %s: Подписка уже активна до %s, пропуск создания\n", 
-                                date('Y-m-d H:i:s'), $uniID, $existingUser['date_end']),
+                            sprintf(
+                                "[%s] [ПОДПИСКА] %s: Подписка уже активна до %s, пропуск создания\n",
+                                date('Y-m-d H:i:s'),
+                                $uniID,
+                                $existingUser['date_end']
+                            ),
                             FILE_APPEND
                         );
-                        
+
                         $result['subscription_issued'] = true;
                         $result['subscription_days'] = $config['days'];
                         $result['subscription_devices'] = $config['devices'];
                         $result['subscription_end_date'] = $existingUser['date_end'];
-                        $result['vpn_data'] = ['subscription_url' => "https://nl.coravpn.online/sub/{$uniID}"];
-                        
+                        $result['vpn_data'] = ['subscription_url' => self::subscriptionUrl($uniID)];
+
                         return $result;
                     }
-                    
+
                     // Создаем VPN подписку
                     $xray = new Xray();
                     $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
-                    
+
                     if ($vpnResult && $vpnResult['success']) {
-                        $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
-                        
+                        // Проверяем текущую дату окончания (учитываем бонусные дни от рефералки)
+                        $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
+                        $currentEnd = $userData['date_end'] ?? null;
+
+                        // Если подписка активна (включая бонусные дни) - прибавляем, иначе отсчёт от сегодня
+                        if ($currentEnd && strtotime($currentEnd) > time()) {
+                            $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
+                        } else {
+                            $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+                        }
+
                         // Обновляем все необходимые поля в базе данных с реальными данными VPN
                         Database::send(
                             'UPDATE qwees_users SET 
@@ -240,40 +267,71 @@ class Kassa
                                 count_days = ?, 
                                 count_devices = ?, 
                                 date_end = ? 
-                             WHERE uniID = ?', 
+                             WHERE uniID = ?',
                             [
-                                'on',  // статус активен
-                                "https://nl.coravpn.online:2096/sub/{$uniID}",  // URL подписки XUI
-                                $payment->getAmount()?->getValue(),  // сумма платежа
-                                $config['days'],  // количество дней
-                                $config['devices'],  // количество устройств
-                                $endDate,  // дата окончания
-                                $uniID  // пользователь
+                                'on',
+                                self::subscriptionUrl($uniID),
+                                $payment->getAmount()?->getValue(),
+                                $config['days'],
+                                $config['devices'],
+                                $endDate,
+                                $uniID
                             ]
                         );
-                        
+
                         $result['subscription_issued'] = true;
                         $result['subscription_days'] = $config['days'];
                         $result['subscription_devices'] = $config['devices'];
                         $result['subscription_end_date'] = $endDate;
                         $result['vpn_data'] = $vpnResult['client_data'];
-                        
+
                         // Логирование
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                            sprintf("[%s] [ПОДПИСКА] %s: %s (%d дней, %d уст.) - Подписка: %s\n", 
-                                date('Y-m-d H:i:s'), $uniID, $tariff, $config['days'], $config['devices'], 
-                                'https://nl.coravpn.online/sub/' . $uniID),
+                            sprintf(
+                                "[%s] [ПОДПИСКА] %s: %s (%d дней, %d уст.) - Подписка: %s\n",
+                                date('Y-m-d H:i:s'),
+                                $uniID,
+                                $tariff,
+                                $config['days'],
+                                $config['devices'],
+                                self::subscriptionUrl($uniID)
+                            ),
                             FILE_APPEND
                         );
                     } else {
-                        // Ошибка при создании VPN клиента
-                        $result['subscription_error'] = 'Failed to create VPN client';
+                        // Ошибка при создании VPN клиента - пробуем еще раз с задержкой
+                        $result['subscription_error'] = 'Failed to create VPN client. Retrying...';
                         $result['subscription_issued'] = false;
-                        
-                        // Still update the database with payment info but mark subscription as pending
-                        try {
-                            $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+
+                        // Логируем детальную информацию об ошибке
+                        file_put_contents(
+                            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                            sprintf(
+                                "[%s] [ОШИБКА - ПОДПИСКА] Первая попытка создания VPN не удалась для %s. Повторная попытка через 5 секунд.\n",
+                                date('Y-m-d H:i:s'),
+                                $uniID
+                            ),
+                            FILE_APPEND
+                        );
+
+                        // Ждем 5 секунд и пробуем еще раз
+                        sleep(5);
+
+                        $xray = new Xray();
+                        $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
+
+                        if ($vpnResult && $vpnResult['success']) {
+                            // Вторая попытка успешна! Учитываем бонусные дни
+                            $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
+                            $currentEnd = $userData['date_end'] ?? null;
+
+                            if ($currentEnd && strtotime($currentEnd) > time()) {
+                                $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
+                            } else {
+                                $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+                            }
+
                             Database::send(
                                 'UPDATE qwees_users SET 
                                     status = ?, 
@@ -282,30 +340,112 @@ class Kassa
                                     count_days = ?, 
                                     count_devices = ?, 
                                     date_end = ? 
-                                 WHERE uniID = ?', 
+                                 WHERE uniID = ?',
                                 [
-                                    'pending_vpn',  // статус ожидания VPN
-                                    "pending",  // подписка в ожидании
-                                    $payment->getAmount()?->getValue(),  // сумма платежа
-                                    $config['days'],  // количество дней
-                                    $config['devices'],  // количество устройств
-                                    $endDate,  // дата окончания
-                                    $uniID  // пользователь
+                                    'on',
+                                    self::subscriptionUrl($uniID),
+                                    $payment->getAmount()?->getValue(),
+                                    $config['days'],
+                                    $config['devices'],
+                                    $endDate,
+                                    $uniID
                                 ]
                             );
-                        } catch (\Exception $dbError) {
+
+                            $result['subscription_issued'] = true;
+                            $result['subscription_days'] = $config['days'];
+                            $result['subscription_devices'] = $config['devices'];
+                            $result['subscription_end_date'] = $endDate;
+                            $result['vpn_data'] = $vpnResult['client_data'];
+
                             file_put_contents(
                                 $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                                sprintf("[%s] [ОШИБКА - БД] Не удалось обновить данные пользователя: %s\n", 
-                                    date('Y-m-d H:i:s'), $dbError->getMessage()),
+                                sprintf(
+                                    "[%s] [ПОДПИСКА] %s: VPN клиент успешно создан со второй попытки!\n",
+                                    date('Y-m-d H:i:s'),
+                                    $uniID
+                                ),
                                 FILE_APPEND
                             );
+                        } else {
+                            // Вторая попытка тоже неудачна
+                            $result['subscription_error'] = 'Failed to create VPN client after retry. Please check server logs.';
+                            $result['subscription_issued'] = false;
+
+                            file_put_contents(
+                                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                sprintf(
+                                    "[%s] [ОШИБКА - ПОДПИСКА] Вторая попытка создания VPN также не удалась для %s. Тариф: %s, Дней: %d, Устройств: %d\n",
+                                    date('Y-m-d H:i:s'),
+                                    $uniID,
+                                    $tariff,
+                                    $config['days'],
+                                    $config['devices']
+                                ),
+                                FILE_APPEND
+                            );
+
+                            // Still update the database with payment info but mark subscription as pending
+                            try {
+                                // Даже при pending статусе учитываем бонусные дни
+                                $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
+                                $currentEnd = $userData['date_end'] ?? null;
+
+                                if ($currentEnd && strtotime($currentEnd) > time()) {
+                                    $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
+                                } else {
+                                    $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+                                }
+
+                                Database::send(
+                                    'UPDATE qwees_users SET 
+                                        status = ?, 
+                                        subscription = ?, 
+                                        amount = ?, 
+                                        count_days = ?, 
+                                        count_devices = ?, 
+                                        date_end = ? 
+                                     WHERE uniID = ?',
+                                    [
+                                        'pending_vpn',
+                                        "pending_payment_{$paymentId}",
+                                        $payment->getAmount()?->getValue(),
+                                        $config['days'],
+                                        $config['devices'],
+                                        $endDate,
+                                        $uniID
+                                    ]
+                                );
+
+                                file_put_contents(
+                                    $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                    sprintf(
+                                        "[%s] [ПОДПИСКА] %s: Данные обновлены, статус 'pending_vpn'\n",
+                                        date('Y-m-d H:i:s'),
+                                        $uniID
+                                    ),
+                                    FILE_APPEND
+                                );
+                            } catch (\Exception $dbError) {
+                                file_put_contents(
+                                    $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                    sprintf(
+                                        "[%s] [ОШИБКА - БД] Не удалось обновить данные пользователя: %s\n",
+                                        date('Y-m-d H:i:s'),
+                                        $dbError->getMessage()
+                                    ),
+                                    FILE_APPEND
+                                );
+                            }
                         }
-                        
+
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
-                            sprintf("[%s] [ОШИБКА - ПОДПИСКА] Не удалось создать VPN клиент для %s. Платеж оплачен, но требуется ручная настройка.\n", 
-                                date('Y-m-d H:i:s'), $uniID),
+                            sprintf(
+                                "[%s] [ОШИБКА - ПОДПИСКА] Не удалось создать VPN клиент для %s. Платеж оплачен, но требуется ручная настройка.\n",
+                                date('Y-m-d H:i:s'),
+                                $uniID
+                            ),
                             FILE_APPEND
                         );
                     }
@@ -326,29 +466,31 @@ class Kassa
      * Создает чек для платежа
      */
     private function createReceipt(
-        float $amount, 
-        string $description, 
-        ?string $customerEmail, 
+        float $amount,
+        string $description,
+        ?string $customerEmail,
         ?string $customerPhone
     ): Receipt {
         $receipt = new Receipt();
-        
+
         // Создание товара в чеке
         $item = new ReceiptItem();
         $item->setDescription(mb_substr($description, 0, 128, 'UTF-8'));
         $item->setQuantity(1);
         $item->setVatCode(1); // Без НДС
-        
-        $receipt->setItems([[
-            'description' => mb_substr($description, 0, 128, 'UTF-8'),
-            'quantity' => '1.00',
-            'amount' => [
-                'value' => (string)$amount,
-                'currency' => 'RUB'
-            ],
-            'vat_code' => 1
-        ]]);
-        
+
+        $receipt->setItems([
+            [
+                'description' => mb_substr($description, 0, 128, 'UTF-8'),
+                'quantity' => '1.00',
+                'amount' => [
+                    'value' => (string) $amount,
+                    'currency' => 'RUB'
+                ],
+                'vat_code' => 1
+            ]
+        ]);
+
         // Установка покупателя
         if ($customerEmail) {
             $receipt->setCustomer(['email' => $customerEmail]);
@@ -357,10 +499,10 @@ class Kassa
         } else {
             $receipt->setCustomer(['email' => 'support@coravpn.ru']);
         }
-        
+
         // Установка системы налогообложения
         $receipt->setTaxSystemCode(1);
-        
+
         return $receipt;
     }
 
@@ -370,12 +512,12 @@ class Kassa
     private function extractQrCode(PaymentInterface $payment): ?string
     {
         $paymentMethod = $payment->getPaymentMethod();
-        
+
         if ($paymentMethod && $paymentMethod->getType() === 'sbp') {
             // Для СБП QR-код может быть в ответе платежа
             return $payment->getConfirmation()?->getConfirmationUrl() ?? null;
         }
-        
+
         return null;
     }
 
@@ -392,12 +534,12 @@ class Kassa
             return true;
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log', 
+                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
                 sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] savePaymentMethod: %s\n", 
-                    date('Y-m-d H:i:s'), 
+                    "[%s] [ОШИБКА - YOOKASSA] savePaymentMethod: %s\n",
+                    date('Y-m-d H:i:s'),
                     $e->getMessage()
-                ), 
+                ),
                 FILE_APPEND
             );
             return false;
@@ -420,7 +562,7 @@ class Kassa
             $paymentRequest->setDescription($description);
             $paymentRequest->setCapture(true);
             $paymentRequest->setPaymentMethodId($paymentMethodId);
-            
+
             // Создание чека
             $receipt = $this->createReceipt($amount, $description, null, null);
             $paymentRequest->setReceipt($receipt);
@@ -437,12 +579,12 @@ class Kassa
 
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log', 
+                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
                 sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] createAutoPayment: %s\n", 
-                    date('Y-m-d H:i:s'), 
+                    "[%s] [ОШИБКА - YOOKASSA] createAutoPayment: %s\n",
+                    date('Y-m-d H:i:s'),
                     $e->getMessage()
-                ), 
+                ),
                 FILE_APPEND
             );
 

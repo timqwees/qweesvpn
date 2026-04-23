@@ -1,225 +1,130 @@
 <?php declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\profile;
 
 use App\Config\Database;
-use Setting\Route\Function\Controllers\client\Client;
-use Setting\Route\Function\Controllers\refer\config\ReferConfig;
 
 class Profile
 {
-    /**
-     * Получает полный профиль пользователя
-     */
-    public static function getUserProfile(string $uniID): array
+    private $user;
+
+    public function __construct()
     {
-        $client = Client::get($uniID);
-        
-        if (empty($client['uniID'])) {
+        $this->user = new \Setting\Route\Function\Controllers\Client\getUser;
+    }
+
+    /**
+     * Проверка наличия скидки
+     */
+    public function hasDiscount(): bool
+    {
+        return !empty($this->user->getRefer());
+    }
+
+    /**
+     * Получить имя пригласившего по коду реферала
+     */
+    public function getReferrerName(): string
+    {
+        return self::_referrerName($this->user->getRefer());
+    }
+
+    /**
+     * Статический метод для получения имени реферера
+     */
+    public static function getReferrerNameStatic(string $referCode): string
+    {
+        return self::_referrerName($referCode);
+    }
+
+    /**
+     * Получить процент бонусных дней (для отображения)
+     */
+    public function getBonusDaysPercent(): int
+    {
+        return $this->user->getBonusPercent();
+    }
+
+    /**
+     * Получить процент бонуса
+     */
+    public function getBonusPercent(): int
+    {
+        return $this->user->getBonusPercent();
+    }
+
+    public function getPricingInfo(): array
+    {
+        return self::_pricingInfo();
+    }
+
+    public function getUserProfile(): array
+    {
+        if (empty($this->user->getUniID())) {
             return self::getEmptyProfile();
         }
 
         return [
             'personal_info' => [
-                'first_name' => $client['first_name'] ?? '',
-                'last_name' => $client['last_name'] ?? '',
-                'email' => $client['email'] ?? '',
-                'uniID' => $client['uniID'],
-                'registration_date' => self::getRegistrationDate($uniID)
-            ],
-            'subscription_info' => [
-                'status' => $client['status'] ?? 'off',
-                'subscription' => $client['subscription'] ?? '',
-                'date_end' => $client['date_end'] ?? '',
-                'count_days' => intval($client['count_days'] ?? 0),
-                'count_devices' => intval($client['count_devices'] ?? 0),
-                'amount' => $client['amount'] ?? 0
-            ],
-            'referal_info' => [
-                'refer_link' => $client['refer_link'] ?? '',
-                'my_refer_link' => $client['my_refer_link'] ?? '',
-                'refer_count' => intval($client['refer_count'] ?? 0),
-                'has_discount' => !empty($client['refer_link'])
-            ],
-            'pricing_info' => self::getPricingInfo()
-        ];
-    }
-
-    /**
-     * Получает пустой профиль для неавторизованного пользователя
-     */
-    private static function getEmptyProfile(): array
-    {
-        return [
-            'personal_info' => [
-                'first_name' => '',
-                'last_name' => '',
-                'email' => '',
-                'uniID' => '',
+                'first_name' => $this->user->getFistName(),
+                'last_name' => $this->user->getLastName(),
+                'email' => $this->user->getEmail(),
+                'uniID' => $this->user->getUniID(),
                 'registration_date' => ''
             ],
             'subscription_info' => [
-                'status' => 'off',
-                'subscription' => '',
-                'date_end' => '',
-                'count_days' => 0,
-                'count_devices' => 0,
-                'amount' => 0
+                'status' => $this->user->getStatus() === 'on' ? 'active' : 'inactive',
+                'subscription' => $this->user->getSubscription(),
+                'date_end' => $this->user->getDateEnd(),
+                'count_days' => $this->user->getCountDays(),
+                'count_devices' => $this->user->getCountDevices(),
+                'amount' => $this->user->getAmount()
             ],
             'referal_info' => [
-                'refer_link' => '',
-                'my_refer_link' => '',
-                'refer_count' => 0,
-                'has_discount' => false
+                'refer_link' => $this->user->getRefer(),
+                'my_refer_link' => $this->user->getMyRefer(),
+                'my_refer_url' => !empty($this->user->getMyRefer()) ? 'https://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $this->user->getMyRefer() : '',
+                'refer_count' => $this->user->getReferCount(),
+                'has_discount' => $this->user->getDiscountPercent() > 0,
+                'discount_percent' => $this->user->getDiscountPercent(),
+                'bonus_percent' => $this->user->getBonusPercent(),
+                'referrer_name' => self::_referrerName($this->user->getRefer())
             ],
-            'pricing_info' => self::getPricingInfo()
+            'pricing_info' => self::_pricingInfo()
         ];
     }
 
-    /**
-     * Получает информацию о тарифах
-     */
-    public static function getPricingInfo(): array
-    {
-        try {
-            // Прямой запрос к базе данных для получения цен
-            $prices = Database::send('SELECT * FROM qwees_price');
-            
-            if (!is_array($prices) || empty($prices)) {
-                return self::getDefaultPricing();
-            }
-            
-            $priceData = $prices[0] ?? [];
-            
-            return [
-                'basic' => [
-                    'name' => 'Basic',
-                    'price' => $priceData['basic'] ?? 100,
-                    'days' => 30,
-                    'devices' => 2,
-                    'features' => ['Высокая скорость', 'Шифрование', '2 устройства']
-                ],
-                'classic' => [
-                    'name' => 'Classic',
-                    'price' => $priceData['clasic'] ?? 200,
-                    'days' => 30,
-                    'devices' => 5,
-                    'features' => ['Высокая скорость', 'Шифрование', '5 устройств', 'Приоритетная поддержка']
-                ],
-                'pro' => [
-                    'name' => 'Pro',
-                    'price' => $priceData['pro'] ?? 300,
-                    'days' => 30,
-                    'devices' => 10,
-                    'features' => ['Максимальная скорость', 'Военное шифрование', '10 устройств', 'VIP поддержка', 'Выделенный IP']
-                ]
-            ];
-        } catch (\Exception $e) {
-            return self::getDefaultPricing();
-        }
-    }
-
-    /**
-     * Получает тарифы по умолчанию
-     */
-    private static function getDefaultPricing(): array
+    private static function getEmptyProfile(): array
     {
         return [
-            'basic' => [
-                'name' => 'Basic',
-                'price' => 100,
-                'days' => 30,
-                'devices' => 2,
-                'features' => ['Высокая скорость', 'Шифрование', '2 устройства']
-            ],
-            'classic' => [
-                'name' => 'Classic',
-                'price' => 200,
-                'days' => 30,
-                'devices' => 5,
-                'features' => ['Высокая скорость', 'Шифрование', '5 устройств', 'Приоритетная поддержка']
-            ],
-            'pro' => [
-                'name' => 'Pro',
-                'price' => 300,
-                'days' => 30,
-                'devices' => 10,
-                'features' => ['Максимальная скорость', 'Военное шифрование', '10 устройств', 'VIP поддержка', 'Выделенный IP']
-            ]
+            'personal_info' => ['first_name' => '', 'last_name' => '', 'email' => '', 'uniID' => '', 'registration_date' => ''],
+            'subscription_info' => ['status' => 'inactive', 'subscription' => '', 'date_end' => '', 'count_days' => 0, 'count_devices' => 0, 'amount' => 0],
+            'referal_info' => ['refer_link' => '', 'my_refer_link' => '', 'refer_count' => 0, 'has_discount' => false],
+            'pricing_info' => self::_pricingInfo()
         ];
     }
 
-    /**
-     * Получает дату регистрации пользователя
-     */
-    private static function getRegistrationDate(string $uniID): string
+    private static function _pricingInfo(): array
     {
-        // В реальном приложении здесь будет получение даты из БД
-        // Для демонстрации возвращаем текущую дату
-        return date('Y-m-d H:i:s');
-    }
-
-    /**
-     * Генерирует реферальную ссылку для пользователя
-     */
-    public static function generateReferLink(string $uniID): string
-    {
-        $baseUrl = $_SERVER['HTTP_HOST'] ?? 'coravpn.online';
-        $myReferLink = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 7);
-        
-        // Сохраняем реферальную ссылку в БД
-        Database::send(
-            'UPDATE qwees_users SET my_refer_link = ? WHERE uniID = ?',
-            [$myReferLink, $uniID]
-        );
-        
-        return "https://{$baseUrl}/?ref={$myReferLink}";
-    }
-
-    /**
-     * Получает статистику рефералов
-     */
-    public static function getReferStats(string $uniID): array
-    {
-        $client = Client::get($uniID);
-        
-        if (empty($client['my_refer_link'])) {
-            return [
-                'total_referrals' => 0,
-                'active_referrals' => 0,
-                'total_earned_days' => 0
-            ];
-        }
-
-        // Получаем всех рефералов пользователя
-        $referrals = Database::send(
-            'SELECT * FROM qwees_users WHERE refer_link = ?',
-            [$client['my_refer_link']]
-        );
-
-        if (!is_array($referrals)) {
-            return [
-                'total_referrals' => 0,
-                'active_referrals' => 0,
-                'total_earned_days' => 0
-            ];
-        }
-
-        $activeReferrals = 0;
-        $totalEarnedDays = 0;
-
-        foreach ($referrals as $referral) {
-            if ($referral['status'] === 'active') {
-                $activeReferrals++;
-                $days = intval($referral['count_days'] ?? 0);
-                $bonusPercent = ReferConfig::getReferralDaysBonus();
-                $totalEarnedDays += floor($days * $bonusPercent / 100);
-            }
-        }
+        $prices = Database::send('SELECT * FROM qwees_price');
+        $priceData = $prices[0] ?? [];
 
         return [
-            'total_referrals' => count($referrals),
-            'active_referrals' => $activeReferrals,
-            'total_earned_days' => $totalEarnedDays
+            'basic' => ['name' => 'Basic', 'price' => $priceData['basic'] ?? 100, 'days' => 30, 'devices' => 2],
+            'classic' => ['name' => 'Classic', 'price' => $priceData['clasic'] ?? 200, 'days' => 30, 'devices' => 5],
+            'pro' => ['name' => 'Pro', 'price' => $priceData['pro'] ?? 300, 'days' => 30, 'devices' => 10]
         ];
+    }
+
+    private static function _referrerName(string $referCode): string
+    {
+        if (empty($referCode)) {
+            return '';
+        }
+        $result = Database::send('SELECT first_name, last_name FROM qwees_users WHERE myrefer = ? LIMIT 1', [$referCode]);
+        if (!empty($result[0])) {
+            return trim(($result[0]['first_name'] ?? '') . ' ' . ($result[0]['last_name'] ?? ''));
+        }
+        return '';
     }
 }

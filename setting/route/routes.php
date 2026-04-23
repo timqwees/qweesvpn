@@ -31,7 +31,7 @@ use Setting\Route\Function\Controllers\vpn\VpnStatus;
 //=============================================//MAIN
 Routes::get('/', 'on_Main');
 //=============================================//INSTALLER
-Routes::get('/install', 'on_Instailler');
+Routes::get('/install', 'on_Install');
 //=============================================//LANGUAGE
 Routes::post('/language/switch', [LanguageSwitch::class, 'switch']);
 //=============================================//PAY
@@ -40,6 +40,11 @@ Routes::get('/pay/status', 'on_PayStatus');
 Routes::post('/api/payment/create', [PaymentController::class, 'createPayment']);
 //=============================================//DELETE
 Routes::post('/api/subscription/delete', [Xray::class, 'DeleteKey']);
+//=============================================//REFERRAL
+Routes::post('/api/referral/activate', function(){
+    (new Refer())->onValidateCode($_POST['code'] ?? '', $_POST['online'] ?? '');
+});
+Routes::get('/reflink={code}', [Refer::class, 'onValidateCode']);
 //=============================================//AUTH
 //get
 Routes::get('/auth/login', 'on_Login');
