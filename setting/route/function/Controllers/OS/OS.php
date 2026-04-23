@@ -16,14 +16,14 @@ class OS
     {
 
         // iOS/iPadOS devices
-        if (preg_match('/iPhone|iPad|iPod|iOS|iPadOS/i', self::$UA)) {
+        if (preg_match('/iPhone|iPad|iPod|iOS|iPadOS/i', $this->UA)) {
             return [
                 'os' => 'iOS',
                 'url' => 'https://apps.apple.com/ru/app/happ-proxy-utility-plus/id6746188973'
             ];
         }
         // MacOS
-        if (preg_match('/Macintosh|Mac OS|Macintosh; Intel Mac OS/i', self::$UA)) {
+        if (preg_match('/Macintosh|Mac OS|Macintosh; Intel Mac OS/i', $this->UA)) {
             return [
                 'os' => 'macOS',
                 'url' => 'https://apps.apple.com/sv/app/happ-proxy-utility/id6504287215'
@@ -31,7 +31,7 @@ class OS
         }
 
         // Windows
-        if (preg_match('/Windows NT/i', self::$UA)) {
+        if (preg_match('/Windows NT/i', $this->UA)) {
             return [
                 'os' => 'Windows',
                 'url' => 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/setup-Happ.x64.exe'
@@ -39,7 +39,7 @@ class OS
         }
 
         // Linux
-        if (preg_match('/Linux/i', self::$UA) && !preg_match('/Android/i', self::$UA)) {
+        if (preg_match('/Linux/i', $this->UA) && !preg_match('/Android/i', $this->UA)) {
             return [
                 'os' => 'Linux',
                 'url' => 'https://github.com/Happ-proxy/happ-desktop/releases/latest/download/Happ.linux.x64.pkg.tar.zst'
@@ -48,8 +48,8 @@ class OS
 
         // Huawei new models (2019+), MatePad, HMS, AppGallery
         if (
-            preg_match('/HUAWEI|Huawei|HONOR|MatePad/i', self::$UA)
-            && !preg_match('/Google/i', self::$UA)
+            preg_match('/HUAWEI|Huawei|HONOR|MatePad/i', $this->UA)
+            && !preg_match('/Google/i', $this->UA)
         ) {
             return [
                 'os' => 'Huawei',
@@ -59,11 +59,11 @@ class OS
 
         // Android with Google Play
         if (
-            preg_match('/Android/i', self::$UA) &&
+            preg_match('/Android/i', $this->UA) &&
             (
-                preg_match('/Samsung|SM-|Galaxy|Pixel|Mi|Redmi|POCO|OnePlus|OPPO|Vivo|Realme|Motorola|Sony|Nokia/i', self::$UA)
-                || preg_match('/Google/i', self::$UA)
-                || preg_match('/GMS/i', self::$UA)
+                preg_match('/Samsung|SM-|Galaxy|Pixel|Mi|Redmi|POCO|OnePlus|OPPO|Vivo|Realme|Motorola|Sony|Nokia/i', $this->UA)
+                || preg_match('/Google/i', $this->UA)
+                || preg_match('/GMS/i', $this->UA)
             )
         ) {
             return [
@@ -73,7 +73,7 @@ class OS
         }
 
         // Other Android
-        if (preg_match('/Android/i', self::$UA)) {
+        if (preg_match('/Android/i', $this->UA)) {
             return [
                 'os' => 'Android',
                 'url' => 'https://github.com/Happ-proxy/happ-android/releases/latest/download/Happ.apk'

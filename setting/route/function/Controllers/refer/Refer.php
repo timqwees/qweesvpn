@@ -62,12 +62,12 @@ class Refer
      */
     public function generationRefer(): string
     {
-        $pattern = ReferConfig::getCodePattern();
+        $pattern = ReferConfig::getCodePattern();//QWE#####
 
         do {
             $code = '';
             for ($i = 0; $i < strlen($pattern); $i++) {
-                $code .= $pattern[$i] === '#' ? chr(rand(65, 90)) : $pattern[$i];
+                $code .= $pattern[$i] === '#' ? chr(mt_rand(48, 90)) : $pattern[$i];//0-9/A-Z/<=>:;?@
             }
         } while (Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]));
 
