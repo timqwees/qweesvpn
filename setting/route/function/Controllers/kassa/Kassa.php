@@ -115,7 +115,7 @@ class Kassa
 
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                 sprintf(
                     "[%s] [ОШИБКА - YOOKASSA] createPayment: %s\n",
                     date('Y-m-d H:i:s'),
@@ -157,9 +157,11 @@ class Kassa
      */
     public function startPaymentStatus(string $paymentId): array
     {
+        $startTime = microtime(true);
+
         // Логируем начало проверки статуса
         file_put_contents(
-            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
             sprintf(
                 "[%s] [DEBUG] Начало проверки статуса платежа: %s\n",
                 date('Y-m-d H:i:s'),
@@ -169,7 +171,19 @@ class Kassa
         );
 
         try {
+            $apiStart = microtime(true);
             $payment = $this->client->getPaymentInfo($paymentId);
+            $apiTime = round(microtime(true) - $apiStart, 3);
+
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                sprintf(
+                    "[%s] [DEBUG] API YooKassa ответ: %s сек\n",
+                    date('Y-m-d H:i:s'),
+                    $apiTime
+                ),
+                FILE_APPEND
+            );
 
             $result = [
                 'success' => true,
@@ -181,7 +195,7 @@ class Kassa
             ];
 
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                 sprintf(
                     "[%s] [DEBUG] Статус платежа: %s, оплачен: %s\n",
                     date('Y-m-d H:i:s'),
@@ -217,13 +231,13 @@ class Kassa
                     $config = $tariffConfig[$tariff] ?? ['days' => 30, 'devices' => 1];
 
                     // Проверяем, не была ли уже выдана подписка для этого платежа
-                    $existingUserData = Database::send("SELECT status, date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
+                    $existingUserData = Database::send("SELECT status, date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
                     $existingUser = $existingUserData[0] ?? null;
 
                     if ($existingUser && $existingUser['status'] === 'on' && strtotime($existingUser['date_end']) > time()) {
                         // Подписка уже активна, не создаем новую
                         file_put_contents(
-                            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                             sprintf(
                                 "[%s] [ПОДПИСКА] %s: Подписка уже активна до %s, пропуск создания\n",
                                 date('Y-m-d H:i:s'),
@@ -243,13 +257,15 @@ class Kassa
                     }
 
                     // Создаем VPN подписку
+                    $vpnStart = microtime(true);
                     $xray = new Xray();
                     $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
+                    $vpnTime = round(microtime(true) - $vpnStart, 3);
 
                     if ($vpnResult && $vpnResult['success']) {
                         // Проверяем текущую дату окончания (учитываем бонусные дни от рефералки)
-                        $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
-                        $currentEnd = $userData['date_end'] ?? null;
+                        $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+                        $currentEnd = $userData[0]['date_end'] ?? null;
 
                         // Если подписка активна (включая бонусные дни) - прибавляем, иначе отсчёт от сегодня
                         if ($currentEnd && strtotime($currentEnd) > time()) {
@@ -260,22 +276,16 @@ class Kassa
 
                         // Обновляем все необходимые поля в базе данных с реальными данными VPN
                         Database::send(
-                            'UPDATE qwees_users SET 
-                                status = ?, 
-                                subscription = ?, 
-                                amount = ?, 
-                                count_days = ?, 
-                                count_devices = ?, 
-                                date_end = ? 
-                             WHERE uniID = ?',
+                            'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
+                             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                             [
+                                $uniID,
                                 'on',
                                 self::subscriptionUrl($uniID),
                                 $payment->getAmount()?->getValue(),
                                 $config['days'],
                                 $config['devices'],
-                                $endDate,
-                                $uniID
+                                $endDate
                             ]
                         );
 
@@ -285,17 +295,19 @@ class Kassa
                         $result['subscription_end_date'] = $endDate;
                         $result['vpn_data'] = $vpnResult['client_data'];
 
-                        // Логирование
+                        // Логирование с временем
+                        $totalTime = round(microtime(true) - $startTime, 3);
                         file_put_contents(
-                            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                             sprintf(
-                                "[%s] [ПОДПИСКА] %s: %s (%d дней, %d уст.) - Подписка: %s\n",
+                                "[%s] [ПОДПИСКА] %s: %s (%d дней, %d уст.) - VPN: %s сек, Всего: %s сек\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
                                 $tariff,
                                 $config['days'],
                                 $config['devices'],
-                                self::subscriptionUrl($uniID)
+                                $vpnTime,
+                                $totalTime
                             ),
                             FILE_APPEND
                         );
@@ -306,7 +318,7 @@ class Kassa
 
                         // Логируем детальную информацию об ошибке
                         file_put_contents(
-                            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                             sprintf(
                                 "[%s] [ОШИБКА - ПОДПИСКА] Первая попытка создания VPN не удалась для %s. Повторная попытка через 5 секунд.\n",
                                 date('Y-m-d H:i:s'),
@@ -318,13 +330,15 @@ class Kassa
                         // Ждем 5 секунд и пробуем еще раз
                         sleep(5);
 
+                        $vpnRetryStart = microtime(true);
                         $xray = new Xray();
                         $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
+                        $vpnRetryTime = round(microtime(true) - $vpnRetryStart, 3);
 
                         if ($vpnResult && $vpnResult['success']) {
                             // Вторая попытка успешна! Учитываем бонусные дни
-                            $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
-                            $currentEnd = $userData['date_end'] ?? null;
+                            $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+                            $currentEnd = $userData[0]['date_end'] ?? null;
 
                             if ($currentEnd && strtotime($currentEnd) > time()) {
                                 $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
@@ -333,22 +347,16 @@ class Kassa
                             }
 
                             Database::send(
-                                'UPDATE qwees_users SET 
-                                    status = ?, 
-                                    subscription = ?, 
-                                    amount = ?, 
-                                    count_days = ?, 
-                                    count_devices = ?, 
-                                    date_end = ? 
-                                 WHERE uniID = ?',
+                                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                                 [
+                                    $uniID,
                                     'on',
                                     self::subscriptionUrl($uniID),
                                     $payment->getAmount()?->getValue(),
                                     $config['days'],
                                     $config['devices'],
-                                    $endDate,
-                                    $uniID
+                                    $endDate
                                 ]
                             );
 
@@ -358,12 +366,16 @@ class Kassa
                             $result['subscription_end_date'] = $endDate;
                             $result['vpn_data'] = $vpnResult['client_data'];
 
+                            $totalTime = round(microtime(true) - $startTime, 3);
                             file_put_contents(
-                                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                                 sprintf(
-                                    "[%s] [ПОДПИСКА] %s: VPN клиент успешно создан со второй попытки!\n",
+                                    "[%s] [ПОДПИСКА] %s: VPN создан со 2-й попытки! (1-я: %s сек, 2-я: %s сек, Всего: %s сек)\n",
                                     date('Y-m-d H:i:s'),
-                                    $uniID
+                                    $uniID,
+                                    $vpnTime,
+                                    $vpnRetryTime,
+                                    $totalTime
                                 ),
                                 FILE_APPEND
                             );
@@ -373,7 +385,7 @@ class Kassa
                             $result['subscription_issued'] = false;
 
                             file_put_contents(
-                                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                                 sprintf(
                                     "[%s] [ОШИБКА - ПОДПИСКА] Вторая попытка создания VPN также не удалась для %s. Тариф: %s, Дней: %d, Устройств: %d\n",
                                     date('Y-m-d H:i:s'),
@@ -388,8 +400,8 @@ class Kassa
                             // Still update the database with payment info but mark subscription as pending
                             try {
                                 // Даже при pending статусе учитываем бонусные дни
-                                $userData = Database::send("SELECT date_end FROM qwees_users WHERE uniID = ?", [$uniID]);
-                                $currentEnd = $userData['date_end'] ?? null;
+                                $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+                                $currentEnd = $userData[0]['date_end'] ?? null;
 
                                 if ($currentEnd && strtotime($currentEnd) > time()) {
                                     $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
@@ -398,27 +410,21 @@ class Kassa
                                 }
 
                                 Database::send(
-                                    'UPDATE qwees_users SET 
-                                        status = ?, 
-                                        subscription = ?, 
-                                        amount = ?, 
-                                        count_days = ?, 
-                                        count_devices = ?, 
-                                        date_end = ? 
-                                     WHERE uniID = ?',
+                                    'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
+                                     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                                     [
+                                        $uniID,
                                         'pending_vpn',
                                         "pending_payment_{$paymentId}",
                                         $payment->getAmount()?->getValue(),
                                         $config['days'],
                                         $config['devices'],
-                                        $endDate,
-                                        $uniID
+                                        $endDate
                                     ]
                                 );
 
                                 file_put_contents(
-                                    $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                    $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                                     sprintf(
                                         "[%s] [ПОДПИСКА] %s: Данные обновлены, статус 'pending_vpn'\n",
                                         date('Y-m-d H:i:s'),
@@ -428,7 +434,7 @@ class Kassa
                                 );
                             } catch (\Exception $dbError) {
                                 file_put_contents(
-                                    $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                                    $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                                     sprintf(
                                         "[%s] [ОШИБКА - БД] Не удалось обновить данные пользователя: %s\n",
                                         date('Y-m-d H:i:s'),
@@ -440,7 +446,7 @@ class Kassa
                         }
 
                         file_put_contents(
-                            $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                             sprintf(
                                 "[%s] [ОШИБКА - ПОДПИСКА] Не удалось создать VPN клиент для %s. Платеж оплачен, но требуется ручная настройка.\n",
                                 date('Y-m-d H:i:s'),
@@ -527,14 +533,26 @@ class Kassa
     public function savePaymentMethod(string $uniID, string $paymentMethodId): bool
     {
         try {
-            Database::send(
-                'UPDATE qwees_users SET payment_method_id = ? WHERE uniID = ?',
-                [$paymentMethodId, $uniID]
-            );
+            // Получаем текущие данные подписки
+            $subData = Database::send('SELECT * FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
+
+            if (!empty($subData[0])) {
+                // Обновляем существующую запись
+                Database::send(
+                    'UPDATE qwees_subscriptions SET payment_method_id = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+                    [$paymentMethodId, $uniID]
+                );
+            } else {
+                // Создаем новую запись только с payment_method_id
+                Database::send(
+                    'INSERT INTO qwees_subscriptions (uniID, status, payment_method_id, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+                    [$uniID, 'off', $paymentMethodId]
+                );
+            }
             return true;
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                 sprintf(
                     "[%s] [ОШИБКА - YOOKASSA] savePaymentMethod: %s\n",
                     date('Y-m-d H:i:s'),
@@ -579,7 +597,7 @@ class Kassa
 
         } catch (\Exception $e) {
             file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log',
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                 sprintf(
                     "[%s] [ОШИБКА - YOOKASSA] createAutoPayment: %s\n",
                     date('Y-m-d H:i:s'),

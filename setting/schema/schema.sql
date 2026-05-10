@@ -5,17 +5,12 @@ CREATE TABLE IF NOT EXISTS qwees_users (
     last_name VARCHAR(50) NOT NULL DEFAULT '',
     uniID VARCHAR(50) NOT NULL DEFAULT '',
     email VARCHAR(50) NOT NULL DEFAULT '',
-    "status" VARCHAR(50) NOT NULL DEFAULT 'off',
-    subscription VARCHAR(255) NOT NULL DEFAULT '',
-    amount VARCHAR(50) DEFAULT NULL,
-    count_days VARCHAR(50) DEFAULT NULL,
-    count_devices VARCHAR(50) DEFAULT NULL,
-    date_end VARCHAR(50) NOT NULL DEFAULT '',
     myrefer VARCHAR(50) DEFAULT NULL,
     refer VARCHAR(50) DEFAULT NULL,
     refer_id INTEGER DEFAULT 0,
     refer_count INTEGER DEFAULT 0,
     discount_percent INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     bonus_percent INTEGER DEFAULT 0
 );
 
@@ -35,20 +30,27 @@ CREATE TABLE IF NOT EXISTS qwees_refer (
   count VARCHAR(255) NOT NULL DEFAULT ''
 );
 
--- Таблица подписок (для примеров с timezone и датами)
+-- Таблица подписок (отделена от пользователей)
 CREATE TABLE IF NOT EXISTS qwees_subscriptions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL DEFAULT 0,
-  price_id INTEGER NOT NULL DEFAULT 0,
-  status VARCHAR(20) NOT NULL DEFAULT 'active',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  expires_at DATETIME DEFAULT NULL,
-  FOREIGN KEY (user_id) REFERENCES qwees_users(id),
-  FOREIGN KEY (price_id) REFERENCES qwees_price(id)
+  uniID VARCHAR(50) NOT NULL DEFAULT '',
+  "status" VARCHAR(50) NOT NULL DEFAULT 'off',
+  subscription VARCHAR(255) NOT NULL DEFAULT '',
+  amount VARCHAR(50) DEFAULT NULL,
+  count_days VARCHAR(50) DEFAULT NULL,
+  count_devices VARCHAR(50) DEFAULT NULL,
+  date_end VARCHAR(50) NOT NULL DEFAULT '',
+  payment_method_id VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(uniID)
 );
+
+-- Индексы для ускорения запросов
+CREATE INDEX IF NOT EXISTS idx_subscriptions_uniID ON qwees_subscriptions(uniID);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON qwees_subscriptions(status);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_date_end ON qwees_subscriptions(date_end);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status_date ON qwees_subscriptions(status, date_end);
 
 --добавление цен по умолчанию
 INSERT INTO qwees_price ("name", "price") VALUES ('basic', 100), ('clasic', 200), ('pro', 300);
---тестовый пользователь
-INSERT INTO qwees_users (first_name, last_name, email, uniID, myrefer) VALUES ('tim', 'qwees', 'artemnersisyan777@gmail.com', 123, 'qwese');

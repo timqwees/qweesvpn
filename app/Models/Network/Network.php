@@ -100,21 +100,24 @@ class Network extends Session
         if (preg_match_all('/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([`"]?)([a-zA-Z0-9_]+)\1/i', $schema, $matches)) {
             $tables = $matches[2];
 
+            $newTablesCreated = [];
             foreach ($tables as $table) {
                 if (!self::onTableExists($table)) {
                     try {
                         $pattern = '/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+[`"]?' . preg_quote($table, '/') . '[`"]?\s*\((.*?)\);/is';
                         if (preg_match($pattern, $schema, $tableMatch)) {
-                            $createSql = "CREATE TABLE IF NOT EXISTS `$table` (" . trim($tableMatch[1]) . ");";
+                            // Используем двойные кавычки для SQLite, обратные кавычки для MySQL
+                            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
+                            $quoteChar = ($db_selection === 'sqlite') ? '"' : '`';
+                            $createSql = "CREATE TABLE IF NOT EXISTS $quoteChar$table$quoteChar (" . trim($tableMatch[1]) . ");";
 
-                            // Преобразуем SQLite синтаксис в MySQL синтаксис для MySQL
-                            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'mysql';
                             if ($db_selection === 'mysql') {
                                 $createSql = preg_replace('/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/i', 'INT NOT NULL AUTO_INCREMENT PRIMARY KEY', $createSql);
                             }
 
                             Database::send($createSql);
                             Message::set('info', "Создана таблица '$table' по схеме.");
+                            $newTablesCreated[] = $table;
                         } else {
                             Message::set('error', "Не удалось найти SQL для создания таблицы '$table' в " . Database::$schema_name);
                         }
@@ -151,7 +154,7 @@ class Network extends Session
     private static function onTableExists(string $tableName)
     {
         try {
-            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'mysql';
+            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
             if ($db_selection === 'sqlite') {
                 $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name=?";
                 $params = [$tableName];
@@ -196,7 +199,7 @@ class Network extends Session
     public static function onColumnExists(string $columnName, string $tableName)
     {
         try {
-            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'mysql';
+            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
 
             // Проверяем, существует ли колонка в таблице
             $columnExists = false;
@@ -227,7 +230,7 @@ class Network extends Session
                     ? "ALTER TABLE \"$tableName\" ADD COLUMN \"$columnName\" TEXT"
                     : "ALTER TABLE `$tableName` ADD COLUMN `$columnName` VARCHAR(255)";
                 Database::send($addColumnSql);
-                Message::set('error', "Создание новой колонки '$columnName' в таблице '$tableName'");
+                Message::set('info', "Создание новой колонки '$columnName' в таблице '$tableName'");
             }
 
             return true;
@@ -560,7 +563,7 @@ class Network extends Session
 
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg flex items-center justify-center">
-                        <img src="app/Models/Network/assets/logo.png" alt="logo">
+                        <img decoding="async" loading="lazy" src="app/Models/Network/assets/logo.png" alt="logo">
                     </div>
                     <span class="text-black text-2xl font-bold">QweesCore</span>
                 </div>

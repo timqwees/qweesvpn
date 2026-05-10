@@ -1,3 +1,7 @@
+<?php
+use Setting\Route\Function\Functions;
+$site = Functions::site();
+?>
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -29,8 +33,8 @@
     </noscript>
 
     <!-- Deferred scripts -->
-    <script src="https://cdn.tailwindcss.com" defer></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -43,9 +47,11 @@
 
         <!-- LOGO CONTENT -->
         <div class="flex flex-col justify-center items-center gap-2">
-            <img src="/public/assets/images/icons/logo/qweesvpn.svg" alt="QweesVPN" loading="lazy">
-            <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">QWEES <span
-                    class="text-green-400">VPN</span></h2>
+            <img decoding="async" loading="lazy" src="/public/assets/images/icons/logo/qweesvpn.svg"
+                alt="<?= htmlspecialchars($site['ООО']) ?>" loading="lazy">
+            <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">
+                Qwees<span class="text-green-400">VPN</span>
+            </h2>
             <p class="text-white text-sm font-sans letter-specing">Добро пожаловать!</p>
         </div>
 

@@ -99,6 +99,9 @@ class User extends Network
         case 'identification':
           $result = Database::send("SELECT * FROM " . $this->table_name . " WHERE id = ?", [$value]);
           break;
+        case 'uniID':
+          $result = Database::send("SELECT * FROM " . $this->table_name . " WHERE uniID = ?", [$value]);
+          break;
         case 'username':
         case 'name':
         case 'nickname':

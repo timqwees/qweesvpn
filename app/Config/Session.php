@@ -65,6 +65,8 @@ class Session
      */
     public static function init($name = '', $value = null)
     {
+        $hasValueArg = func_num_args() >= 2;
+
         // Загружаем данные из cookie
         if (self::$data === null) {
             self::$data = [];
@@ -98,6 +100,15 @@ class Session
         }
 
         // === Получение нескольких значений ===
+        if (is_array($name) && !$hasValueArg) {
+            $result = [];
+            foreach ($name as $key) {
+                $result[$key] = self::$data[$key] ?? null;
+            }
+            return $result;
+        }
+
+        // === Получение нескольких значений (обратная совместимость) ===
         if (is_array($name) && $value !== null) {
             $result = [];
             foreach ($name as $key) {
@@ -107,13 +118,8 @@ class Session
         }
 
         // === Получение одного значения ===
-        if ($value === null && isset(self::$data[$name])) {
-            return self::$data[$name];
-        }
-
-        // === Ключ не существует (получение) ===
-        if ($value === null && !isset(self::$data[$name])) {
-            return null;
+        if (!$hasValueArg) {
+            return self::$data[$name] ?? null;
         }
 
         // === Удаление одного ключа ===
@@ -136,7 +142,7 @@ class Session
     private static function rewrite($all_remove = false)
     {
         if ($all_remove) {
-            setcookie(
+            @setcookie(
                 self::$cookieName,
                 '',
                 time() - 3600,
@@ -148,7 +154,7 @@ class Session
             return true;
         }
 
-        setcookie(
+        @setcookie(
             self::$cookieName,
             json_encode(self::$data, JSON_UNESCAPED_UNICODE),
             time() + self::$lifetime,

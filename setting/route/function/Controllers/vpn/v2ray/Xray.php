@@ -1,9 +1,8 @@
 <?php declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\vpn\v2ray;
-use Setting\Route\Function\Controllers\Client\src\Client;
 use Setting\Route\Function\Controllers\Client\getUser;
-use App\Config\Session;
 use App\Config\Database;
+use Setting\Route\Function\Functions;
 class Xray
 {
     /**
@@ -83,7 +82,7 @@ class Xray
     /** Имя файла для логирования. */
     private static function logFile(): string
     {
-        return $_ENV['LOG_FILE_NAME'] ?? 'coravpn.log';
+        return $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
     }
 
     /** В ответе API streamSettings иногда строка JSON. */
@@ -104,10 +103,15 @@ class Xray
         $dateEnd = $ref->getDateEnd();
         $base = !empty($dateEnd) ? max(strtotime($dateEnd . ' 23:59:59'), time()) : time();
         $newEnd = $base + $bonusDays * 86400;
-        Database::send(
-            'UPDATE qwees_users SET date_end = ? WHERE uniID = ?',
-            [date('Y-m-d', $newEnd), $uniID]
-        );
+
+        // Обновляем date_end в qwees_subscriptions
+        $subData = Database::send('SELECT * FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
+        if (!empty($subData[0])) {
+            Database::send(
+                'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+                [date('Y-m-d', $newEnd), $uniID]
+            );
+        }
     }
 
     /**
@@ -159,7 +163,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -191,7 +195,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -336,7 +340,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 60,
             CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)',
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)',
             // Фикс для SSL_ERROR_SYSCALL
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_TCP_KEEPALIVE => 1,
@@ -392,7 +396,7 @@ class Xray
                     CURLOPT_SSL_VERIFYHOST => 0,
                     CURLOPT_TIMEOUT => 60,
                     CURLOPT_CONNECTTIMEOUT => 15,
-                    CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)',
+                    CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)',
                     CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                     CURLOPT_TCP_KEEPALIVE => 1,
                     CURLOPT_NOSIGNAL => 1,
@@ -428,7 +432,7 @@ class Xray
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
             ]);
             $checkResponse = curl_exec($ch);
             $checkCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -550,7 +554,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -574,7 +578,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -641,7 +645,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $updateCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -665,10 +669,10 @@ class Xray
      *
      * @return array            - Массив ["status" => "ok"|"partial"|"error", "message" => ...]
      */
-    public function DeleteKey()
+    public function DeleteKey($uniID = null)
     {
         $client = new getUser();
-        $uniID = $client->getUniID();
+        $uniID = $uniID === null ? $client->getUniID() : $uniID;
 
         // Логируем начало процесса удаления
         file_put_contents(
@@ -709,7 +713,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -770,7 +774,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -858,10 +862,10 @@ class Xray
                 FILE_APPEND
             );
             Database::send(
-                'UPDATE qwees_users SET subscription = ?, status = ?, count_days = ?, count_devices = ?, amount = ?, date_end = ? WHERE uniID = ?',
-                ['', strval('off'), intval(0), intval(0), intval(0), strval(''), $uniID]
+                'DELETE FROM qwees_subscriptions WHERE uniID = ?',
+                [$uniID]
             );
-            return ['status' => 'partial', 'message' => 'Клиент не найден в X-UI, данные в БД очищены'];
+            return ['status' => 'partial', 'message' => 'Клиент не найден в X-UI, данные подписки очищены'];
         }
 
         file_put_contents(
@@ -888,7 +892,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $res = curl_exec($ch);
         $delCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -920,14 +924,14 @@ class Xray
         );
 
         Database::send(
-            'UPDATE qwees_users SET subscription = ?, status = ?, count_days = ?, count_devices = ?, amount = ?, date_end = ? WHERE uniID = ?',
-            [strval(''), strval('off'), intval(0), intval(0), intval(0), strval(''), strval($uniID)]
+            'DELETE FROM qwees_subscriptions WHERE uniID = ?',
+            [strval($uniID)]
         );
 
         file_put_contents(
             self::logFile(),
             sprintf(
-                "[%s] [DELETE KEY] Данные в БД очищены\n",
+                "[%s] [DELETE KEY] Данные подписки в БД очищены\n",
                 date('Y-m-d H:i:s')
             ),
             FILE_APPEND
@@ -953,7 +957,7 @@ class Xray
                 CURLOPT_SSL_VERIFYHOST => 0,
                 CURLOPT_TIMEOUT => 30,
                 CURLOPT_CONNECTTIMEOUT => 10,
-                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
             ]);
             $verifyResponse = curl_exec($ch);
             $verifyCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1049,7 +1053,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1083,7 +1087,7 @@ class Xray
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; QWEESVPN/1.0)'
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1148,8 +1152,8 @@ class Xray
         $nowMs = time() * 1000;
 
         Database::send(
-            'UPDATE qwees_users SET subscription = ?, status = ?, count_days = ?, count_devices = ?, amount = ?, date_end = ? WHERE status != ? AND date_end < ?',
-            [strval(''), strval('off'), intval(0), intval(0), intval(0), strval(''), strval('off'), date('Y-m-d')]
+            'DELETE FROM qwees_subscriptions WHERE status != ? AND date_end < ?',
+            [strval('off'), date('Y-m-d')]
         );
 
         file_put_contents(self::logFile(), "[" . date('Y-m-d H:i:s') . "] [УСПЕШНО - ГЛОБАЛЬНАЯ ОЧИСТКА] Cleanup: Обновлена БД — помечены как просроченные\n", FILE_APPEND);
