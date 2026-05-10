@@ -1,12 +1,23 @@
 $(document).ready(function () {
-  $('[data-toggle-section]').on('click', function () {
-    var sectionId = $(this).attr('data-toggle-section');
+  $(document).on('click', function (e) {
+    var $toggle = $(e.target).closest('[data-toggle-section]');
+    if (!$toggle.length) return;
+
+    var $anchor = $(e.target).closest('a');
+    if ($anchor.length) {
+      var href = ($anchor.attr('href') || '').trim();
+      if (href === '' || href === '#') {
+        e.preventDefault();
+      }
+    }
+
+    var sectionId = $toggle.attr('data-toggle-section');
 
     if ($('[data-toggle-section]').hasClass('bg_active')) {
       $('[data-toggle-section]').each(function () {
         $(this).removeClass('bg_active');
       });
-      $(this).addClass('bg_active');
+      $toggle.addClass('bg_active');
     }
 
     $('[data-section]').each(function () {

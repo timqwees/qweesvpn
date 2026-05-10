@@ -1,0 +1,35 @@
+   .menu li>details>summary::marker,
+   .menu li>details>summary::-webkit-details-marker {
+       display: none;
+   }
+
+   .menu .arrow {
+       width: 0;
+       height: 0;
+       border-left: 4px solid transparent;
+       border-right: 4px solid transparent;
+       border-top: 4px solid #6b7280;
+       transition: transform 0.15s ease;
+   }
+
+   .menu details[open]>summary .arrow {
+       transform: rotate(180deg);
+   }
+
+   .menu :where(li ul) {
+       white-space: nowrap;
+       margin-inline-start: 1rem;
+       padding-inline-start: .5rem;
+       position: relative;
+   }
+
+   .menu :where(li ul)::before {
+       background-color: #000000;
+       opacity: .2;
+       width: 1px;
+       content: "";
+       inset-inline-start: 0;
+       position: absolute;
+       top: .75rem;
+       bottom: .75rem;
+   }

@@ -1,6 +1,8 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Functions;
 Auth::auth();
+$site = Functions::site();
 ?>
 <!DOCTYPE html>
 <html lang="ru" class="dark">
@@ -51,10 +53,11 @@ Auth::auth();
             <i class="fa fa-refresh text-white"></i>
             <!-- logo -->
             <div class="flex items-center gap-2">
-                <img class="w-auto h-7 object-contain" src="/public/assets/images/icons/logo/qweesvpn.svg"
-                    alt="qweesvpn">
-                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">QWEES <span
-                        class="text-green-400">VPN</span></h2>
+                <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
+                    src="/public/assets/images/icons/logo/qweesvpn.svg" alt="<?= htmlspecialchars($site['ООО']) ?>">
+                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
+                    Qwees<span class="text-green-400">VPN</span>
+                </h2>
             </div>
             <!-- version -->
             <span class="text-white text-sm">v1.0.0</span>

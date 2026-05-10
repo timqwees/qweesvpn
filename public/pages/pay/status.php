@@ -1,7 +1,9 @@
 <?php declare(strict_types=1);
 use Setting\Route\Function\Controllers\kassa\Kassa;
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Functions;
 use App\Config\Session;
+$site = Functions::site();
 
 Auth::auth();
 $paymentId = Session::init('kassa')['payment_id'] ?? null;
@@ -79,10 +81,11 @@ if ($paymentId) {
         <!-- navbar top -->
         <header class="fixed z-50 left-0 top-2 right-0 h-16 px-6 flex items-center justify-between">
             <div class="flex items-center gap-2">
-                <img class="w-auto h-7 object-contain" src="/public/assets/images/icons/logo/qweesvpn.svg"
-                    alt="qweesvpn">
-                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">QWEES <span
-                        class="text-green-400">VPN</span></h2>
+                <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
+                    src="/public/assets/images/icons/logo/qweesvpn.svg" alt="<?= htmlspecialchars($site['ООО']) ?>">
+                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
+                    Qwees<span class="text-green-400">VPN</span>
+                </h2>
             </div>
             <span class="text-white text-sm">v1.0.0</span>
         </header>

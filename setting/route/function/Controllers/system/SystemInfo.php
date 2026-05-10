@@ -2,12 +2,14 @@
 namespace Setting\Route\Function\Controllers\system;
 
 use App\Config\Database;
+use Setting\Route\Function\Functions;
 
 class SystemInfo
 {
     public function getAppName(): string
     {
-        return 'QWEES VPN';
+        $site = Functions::site();
+        return $site['ООО'];
     }
 
     public function getVersion(): string
@@ -83,7 +85,7 @@ class SystemInfo
     public function getSystemStats(): array
     {
         $totalUsers = Database::send('SELECT COUNT(*) as count FROM qwees_users');
-        $activeUsers = Database::send('SELECT COUNT(*) as count FROM qwees_users WHERE status = "on"');
+        $activeUsers = Database::send('SELECT COUNT(*) as count FROM qwees_subscriptions WHERE status = "on"');
 
         return [
             'users' => [

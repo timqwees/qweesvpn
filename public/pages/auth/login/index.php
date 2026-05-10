@@ -1,3 +1,7 @@
+<?php
+use Setting\Route\Function\Functions;
+$site = Functions::site();
+?>
 <!DOCTYPE html>
 <html lang="ru">
 
@@ -11,18 +15,26 @@
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
-  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" as="style" crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous"></noscript>
-  
-  <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript><link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet"></noscript>
-  
-  <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="/public/assets/styles/style.css"></noscript>
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" as="style"
+        crossorigin="anonymous" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+            crossorigin="anonymous">
+    </noscript>
+
+    <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
+    </noscript>
+
+    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <noscript>
+        <link rel="stylesheet" href="/public/assets/styles/style.css">
+    </noscript>
 
     <!-- Deferred scripts -->
-    <script src="https://cdn.tailwindcss.com" defer></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -35,9 +47,11 @@
 
         <!-- LOGO CONTENT -->
         <div class="flex flex-col justify-center items-center gap-2">
-            <img src="/public/assets/images/icons/logo/qweesvpn.svg" alt="QweesVPN" loading="lazy">
-            <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">QWEES <span
-                    class="text-green-400">VPN</span></h2>
+            <img decoding="async" loading="lazy" src="/public/assets/images/icons/logo/qweesvpn.svg"
+                alt="<?= htmlspecialchars($site['ООО']) ?>" loading="lazy">
+            <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">
+                Qwees<span class="text-green-400">VPN</span>
+            </h2>
             <p class="text-white text-sm font-sans letter-specing">Добро пожаловать!</p>
         </div>
 

@@ -109,51 +109,101 @@ class Auth extends Network
     // ======= REGIST =============
 
     /**
-     * Summary of onRegist
-     * @return bool
-     * @description регистрирую пользователя
+     * Регистрация пользователя
      */
-    public function onRegist(): void
+    public static function registerUser(array $userData): array
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST')
-            echo json_encode(false);
+        // Проверка обязательных полей
+        if (empty($userData['first_name']) || empty($userData['email'])) {
+            return ['success' => false, 'message' => 'Заполните имя и email'];
+        }
 
-        // входные данные
-        $first_name = isset($_POST['first_name']) ? (string) trim($_POST['first_name']) : '';
-        $last_name = isset($_POST['last_name']) ? (string) trim($_POST['last_name']) : '';
-        $email = isset($_POST['email']) ? (string) trim($_POST['email']) : '';
-        $uniID = uniqid('qws');//по умолчанию more_entropy (false) = генераци 13 символов
+        // Проверка существования email
+        $existing = Database::send("SELECT id FROM qwees_users WHERE email = ? LIMIT 1", [$userData['email']]);
+        if (!empty($existing)) {
+            return ['success' => false, 'message' => 'Email уже существует'];
+        }
 
-        // Генерируем реферальный код для нового пользователя
-        $refer = new Refer();
-        $myreferCode = $refer->generationRefer();
+        // Генерация данных
+        $uniID = $userData['uniID'] ?? uniqid('qws');
+        $myreferCode = $userData['myrefer'] ?? (new Refer())->generationRefer();
 
+        // Добавление пользователя
         try {
             Database::send("INSERT INTO qwees_users (first_name, last_name, email, uniID, myrefer) VALUES (?, ?, ?, ?, ?)", [
-                $first_name,
-                $last_name,
-                $email,
+                $userData['first_name'],
+                $userData['last_name'] ?? '',
+                $userData['email'],
                 $uniID,
                 $myreferCode
             ]);
 
-            // Проверяем, есть ли реферальный код в сессии (установлен при переходе по ссылке)
+            // Подписка (если указана)
+            if (!empty($userData['subscription']) && !empty($userData['duration_days'])) {
+                $plan = Database::send("SELECT price FROM qwees_price WHERE name = ? LIMIT 1", [$userData['subscription']]);
+                $planPrice = $plan[0]['price'] ?? 0;
+                $endDate = date('Y-m-d H:i:s', strtotime('+' . $userData['duration_days'] . ' days'));
+
+                Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, date_end) VALUES (?, ?, ?, ?, ?, ?)", [
+                    $uniID,
+                    'on',
+                    $userData['subscription'],
+                    $planPrice,
+                    $userData['duration_days'],
+                    $endDate
+                ]);
+            }
+
+            // Реферальный код
             $pendingReferCode = Session::init('pending_refer_code') ?? '';
             if (!empty($pendingReferCode)) {
-                // Активируем реферальный код
-                $refer->setRefer($uniID, $pendingReferCode, true);
-                // Очищаем сессию
+                (new Refer())->setRefer($uniID, $pendingReferCode, true);
                 Session::init('pending_refer_code', null);
             }
 
+            // Логирование
+            $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
+            file_put_contents($logFile, sprintf(
+                "[%s] REGISTER: %s (%s)\n",
+                date('Y-m-d H:i:s'),
+                $userData['first_name'] . ' ' . ($userData['last_name'] ?? ''),
+                $userData['email']
+            ), FILE_APPEND);
+
+            return ['success' => true, 'uniID' => $uniID, 'message' => 'Успешно'];
+
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Ошибка: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Регистрация пользователя
+     */
+    public function onRegist(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(false);
+            return;
+        }
+
+        $userData = [
+            'first_name' => trim($_POST['first_name'] ?? ''),
+            'last_name' => trim($_POST['last_name'] ?? ''),
+            'email' => trim($_POST['email'] ?? '')
+        ];
+
+        $result = self::registerUser($userData);
+
+        if ($result['success']) {
             self::onRedirect($_ENV['REDIRECT_LOG_UNSIGN_USER']);
-        } catch (\PDOException $e) {
+        } else {
             self::onRedirect($_ENV['REDIRECT_REG_UNSIGN_USER']);
         }
     }
 
     /**
-     * Summary of logout
+     * Выход из системы
      * @return void
      */
     public static function onLogout(): void
