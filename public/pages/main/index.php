@@ -1,11 +1,11 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
-use Setting\Route\Function\Controllers\Client\getUser;
-use Setting\Route\Function\Controllers\language\Language;
+use Setting\Route\Function\Controllers\Client\GetUser;
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Controllers\OS\OS;
-use Setting\Route\Function\Controllers\vpn\VpnStatus;
-use Setting\Route\Function\Controllers\profile\Profile;
-use Setting\Route\Function\Controllers\system\SystemInfo;
+use Setting\Route\Function\Controllers\Vpn\VpnStatus;
+use Setting\Route\Function\Controllers\Profile\Profile;
+use Setting\Route\Function\Controllers\System\SystemInfo;
 use Setting\Route\Function\Functions;
 
 Auth::auth();
@@ -121,7 +121,8 @@ $activeSection = $_GET['section'] ?? 'main';
             <!-- logo -->
             <div class="flex items-center gap-2">
                 <img decoding="async" loading="lazy" data-theme-invert class=" w-auto h-7 object-contain"
-                    src="/public/assets/images/icons/logo/qweesvpn.svg" alt="<?= htmlspecialchars($site['ООО']) ?>">
+                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
+                    alt="<?= htmlspecialchars($site['ООО']) ?>">
                 <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
                     Qwees<span class="text-green-400">VPN</span>
                 </h2>
@@ -154,8 +155,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <span></span>
                                 <span class="pl-10 text-xl text-white flex items-center gap-4">
                                     <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                                        src="/public/assets/images/icons/services/menu/home.svg" alt="home"
-                                        decoding="async">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/home.svg"
+                                        alt="home" decoding="async">
                                     <?= $t('main') ?>
                                 </span>
                             </li>
@@ -165,8 +166,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <span></span>
                                 <span class="pl-10 text-xl text-white flex items-center gap-4">
                                     <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                                        src="/public/assets/images/icons/services/menu/profile.svg" alt="home"
-                                        decoding="async">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/profile.svg"
+                                        alt="home" decoding="async">
                                     <?= $t('profile') ?>
                                 </span>
                             </li>
@@ -176,8 +177,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <span></span>
                                 <span class="pl-10 text-xl text-white flex items-center gap-4">
                                     <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                                        src="/public/assets/images/icons/services/menu/setting.svg" alt="home"
-                                        decoding="async">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/setting.svg"
+                                        alt="home" decoding="async">
                                     <?= $t('settings') ?>
                                 </span>
                             </li>
@@ -187,8 +188,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <span></span>
                                 <span class="pl-10 text-xl text-white flex items-center gap-4">
                                     <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                                        src="/public/assets/images/icons/services/menu/refer.svg" alt="home"
-                                        decoding="async">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/refer.svg"
+                                        alt="home" decoding="async">
                                     <?= $t('additional') ?>
                                 </span>
                             </li>
@@ -227,17 +228,18 @@ $activeSection = $_GET['section'] ?? 'main';
                             <div
                                 class="glow-card relative min-h-[600px] flex flex-1 flex-col items-center justify-center rounded-2xl overflow-hidden">
                                 <!-- backgound -->
-                                <img decoding="async" loading="lazy" src="/public/assets/images/background/world.svg"
+                                <img decoding="async" loading="lazy"
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/background/world.svg"
                                     alt="background" class="absolute w-full h-full opacity-20" loading="lazy">
 
                                 <!-- Monoblock decorative elements -->
                                 <div class="flex justify-center items-center flex-col w-1/3">
                                     <img decoding="async" loading="lazy"
-                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
                                         alt="monoblock_top" title="monoblock_top" loading="lazy"
                                         class="z-20 w-full <?= htmlspecialchars($formattedVpnStatus['monoblock_class']) ?>">
                                     <img decoding="async" loading="lazy"
-                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
                                         alt="monoblock_down" title="monoblock_down" loading="lazy"
                                         class="-translate-y-[30%] z-10 w-full">
                                 </div>
@@ -325,12 +327,12 @@ $activeSection = $_GET['section'] ?? 'main';
                                                 class="neon-btn elite-btn group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
                                                 <?php if ((new OS())->getOS()['os'] === 'Windows' || (new OS())->getOS()['os'] === 'macOS' || (new OS())->getOS()['os'] === 'Linux'): ?>
                                                     <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/install_desktop.svg"
+                                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_desktop.svg"
                                                         alt="" loading="lazy"
                                                         class="invert opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <?php else: ?>
                                                     <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/install_mobile.svg"
+                                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                                         alt="" loading="lazy"
                                                         class="invert opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <?php endif; ?>
@@ -341,8 +343,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                                     </span>
                                                 </div>
                                                 <img decoding="async" loading="lazy"
-                                                    src="/public/assets/images/icons/services/default/arrow.svg" alt=""
-                                                    loading="lazy"
+                                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
+                                                    alt="" loading="lazy"
                                                     class="invert opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                                             </li>
                                         </a>
@@ -351,7 +353,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                             <li
                                                 class="elite-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
                                                 <img decoding="async" loading="lazy"
-                                                    src="/public/assets/images/icons/services/default/buy_white.svg"
+                                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy_white.svg"
                                                     alt="buy" loading="lazy" decoding="async"
                                                     class="opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <div class="flex flex-col items-center justify-start">
@@ -360,7 +362,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                                         <span class="text-emerald-300">подписку</span></span>
                                                 </div>
                                                 <img decoding="async" loading="lazy"
-                                                    src="/public/assets/images/icons/services/default/arrow_white.svg"
+                                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
                                                     alt="" loading="lazy" decoding="async"
                                                     class="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                                             </li>
@@ -404,8 +406,8 @@ $activeSection = $_GET['section'] ?? 'main';
                             <div class="glow-card relative flex items-center gap-6 p-6 rounded-2xl">
                                 <div class="relative">
                                     <img decoding="async" loading="lazy"
-                                        src="/public/assets/images/icons/services/avatar/1.png" alt="avatar"
-                                        class="rounded-full w-20 h-20 ring-2 ring-white/10">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/1.png"
+                                        alt="avatar" class="rounded-full w-20 h-20 ring-2 ring-white/10">
                                     <div
                                         class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full <?= $user->getStatus() === 'on' ? 'bg-green-400' : 'bg-red-400' ?> ring-2 ring-black">
                                     </div>
@@ -470,8 +472,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <label class="text-sm text-gray-400 font-medium">VPN ключ</label>
                                         <code id="vpn-key-desktop"
                                             class="text-sm text-white/70 bg-black/20 px-3 py-2 rounded-lg break-all">
-                                                                                                                                                                                                                                                                                                                        <?= htmlspecialchars($user->getSubscription()) ?>
-                                                                                                                                                                                                                                                                                                                                                        </code>
+                                                                                                                                                                                                                                                                                                                                                <?= htmlspecialchars($user->getSubscription()) ?>
+                                                                                                                                                                                                                                                                                                                                                                                </code>
                                     </div>
                                     <div class="flex gap-2 relative z-30">
                                         <button onclick="copyVpnKey()" title="Копировать"
@@ -754,43 +756,43 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Referrer Info or Enter Code -->
                         <?php if (!empty($user->getRefer())): ?>
-                                            <div class="flex flex-col gap-4 mt-4">
-                                                <h3 class="text-lg font-semibold text-gray-300">Вы приглашены</h3>
-                                                <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
-                                                    <div class="flex justify-between items-center py-2 border-b border-white/5">
-                                                        <span class="text-sm text-gray-400">Пригласил</span>
-                                                        <span
-                                                            class="font-medium"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center py-2 border-b border-white/5">
-                                                        <span class="text-sm text-gray-400">Код</span>
-                                                        <span
-                                                            class="font-mono text-green-400"><?= htmlspecialchars($user->getRefer()) ?></span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center py-2">
-                                                        <span class="text-sm text-gray-400">Ваша скидка</span>
-                                                        <span
-                                                            class="font-bold text-green-400">-<?= intval($user->getDiscountPercent()) ?>%</span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <div class="flex flex-col gap-4 mt-4">
+                                <h3 class="text-lg font-semibold text-gray-300">Вы приглашены</h3>
+                                <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                                    <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                        <span class="text-sm text-gray-400">Пригласил</span>
+                                        <span
+                                            class="font-medium"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                        <span class="text-sm text-gray-400">Код</span>
+                                        <span
+                                            class="font-mono text-green-400"><?= htmlspecialchars($user->getRefer()) ?></span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-sm text-gray-400">Ваша скидка</span>
+                                        <span
+                                            class="font-bold text-green-400">-<?= intval($user->getDiscountPercent()) ?>%</span>
+                                    </div>
+                                </div>
+                            </div>
                         <?php else: ?>
-                                            <div class="flex flex-col gap-4 mt-4">
-                                                <h3 class="text-lg font-semibold text-gray-300">Ввести реферальный код</h3>
-                                                <div
-                                                    class="flex flex-col gap-4 p-5 rounded-xl bg-white/[0.03] shadow-[0_4px_16px_rgba(0,0,0,0.2)] ring-1 ring-white/[0.08]">
-                                                    <div class="flex flex-col gap-2">
-                                                        <label class="text-sm text-gray-400">Код реферала</label>
-                                                        <input type="text" id="referral-code-input"
-                                                            class="text-[white] w-full bg-black/20 border rounded-lg px-4 py-3 text-center text-xl tracking-widest uppercase placeholder:text-white/20 focus:outline-none focus:border-green-400/50 focus:ring-2 focus:ring-green-400/20 transition-all"
-                                                            placeholder="XXXXXXX" maxlength="10">
-                                                    </div>
-                                                    <button onclick="activateReferralCode()" id="referral-activate-btn"
-                                                        class="w-full py-3 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 text-black font-semibold hover:from-green-300 hover:to-emerald-400 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-                                                        Использовать код
-                                                    </button>
-                                                </div>
-                                            </div>
+                            <div class="flex flex-col gap-4 mt-4">
+                                <h3 class="text-lg font-semibold text-gray-300">Ввести реферальный код</h3>
+                                <div
+                                    class="flex flex-col gap-4 p-5 rounded-xl bg-white/[0.03] shadow-[0_4px_16px_rgba(0,0,0,0.2)] ring-1 ring-white/[0.08]">
+                                    <div class="flex flex-col gap-2">
+                                        <label class="text-sm text-gray-400">Код реферала</label>
+                                        <input type="text" id="referral-code-input"
+                                            class="text-[white] w-full bg-black/20 border rounded-lg px-4 py-3 text-center text-xl tracking-widest uppercase placeholder:text-white/20 focus:outline-none focus:border-green-400/50 focus:ring-2 focus:ring-green-400/20 transition-all"
+                                            placeholder="XXXXXXX" maxlength="10">
+                                    </div>
+                                    <button onclick="activateReferralCode()" id="referral-activate-btn"
+                                        class="w-full py-3 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 text-black font-semibold hover:from-green-300 hover:to-emerald-400 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                                        Использовать код
+                                    </button>
+                                </div>
+                            </div>
                         <?php endif; ?>
 
                     </section>
@@ -805,24 +807,26 @@ $activeSection = $_GET['section'] ?? 'main';
                     <li class="bg_active relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="main">
                         <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                            src="/public/assets/images/icons/services/menu/home.svg" alt="Домой" decoding="async">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/home.svg" alt="Домой"
+                            decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="profile">
                         <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                            src="/public/assets/images/icons/services/menu/profile.svg" alt="Профиль" decoding="async">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/profile.svg"
+                            alt="Профиль" decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="setting">
                         <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                            src="/public/assets/images/icons/services/menu/setting.svg" alt="Настройки"
-                            decoding="async">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/setting.svg"
+                            alt="Настройки" decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="referal">
                         <img decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                            src="/public/assets/images/icons/services/menu/refer.svg" alt="Дополнительное"
-                            decoding="async">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/refer.svg"
+                            alt="Дополнительное" decoding="async">
                     </li>
                 </ul>
             </aside>
@@ -837,19 +841,19 @@ $activeSection = $_GET['section'] ?? 'main';
                     data-section="main">
 
                     <!-- backgound -->
-                    <img decoding="async" loading="lazy" src="/public/assets/images/background/world.svg"
-                        alt="background"
+                    <img decoding="async" loading="lazy"
+                        src="<?= $site['baseUrl'] ?>/public/assets/images/background/world.svg" alt="background"
                         class="absolute h-full opacity-20 -left-[3rem] right-0 top-0 bottom-0 mx-auto scale-[2.5] z-0"
                         loading="lazy">
 
                     <!-- Monoblock decorative elements -->
                     <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
                         <img decoding="async" loading="lazy"
-                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
                             alt="monoblock_top" loading="lazy" title="monoblock_top"
                             class="z-20 w-full <?= htmlspecialchars($formattedVpnStatus['monoblock_class']) ?>">
                         <img decoding="async" loading="lazy"
-                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
                             alt="monoblock_part2" loading="lazy" title="monoblock_down"
                             class="-translate-y-[30%] z-10 w-full">
                     </div>
@@ -861,32 +865,32 @@ $activeSection = $_GET['section'] ?? 'main';
                             <li
                                 class="glow-card_mobile relative w-full flex justify-between items-center p-[15px] rounded-xl">
                                 <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                                    <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/netherlands.svg" alt=""
-                                                        loading="lazy" decoding="async">
-                                                    <div class="flex flex-col items-center justify-start text-lg text-white">
-                                                        <p class="uppercase">
-                                                            <?= htmlspecialchars($formattedVpnStatus['location'] ?: 'vpn') ?>
-                                                        </p>
-                                                        <p class="text-sm text-green-400">
-                                                            <?= htmlspecialchars($formattedVpnStatus['status_text']) ?>
-                                                        </p>
-                                                    </div>
-                                                    <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/signal.svg" alt="" loading="lazy"
-                                                        decoding="async">
+                                    <img decoding="async" loading="lazy"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/netherlands.svg"
+                                        alt="" loading="lazy" decoding="async">
+                                    <div class="flex flex-col items-center justify-start text-lg text-white">
+                                        <p class="uppercase">
+                                            <?= htmlspecialchars($formattedVpnStatus['location'] ?: 'vpn') ?>
+                                        </p>
+                                        <p class="text-sm text-green-400">
+                                            <?= htmlspecialchars($formattedVpnStatus['status_text']) ?>
+                                        </p>
+                                    </div>
+                                    <img decoding="async" loading="lazy"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/signal.svg"
+                                        alt="" loading="lazy" decoding="async">
                                 <?php else: ?>
-                                                    <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/netherlands.svg" alt=""
-                                                        loading="lozy" decoding="async">
-                                                    <div class="flex flex-col items-center justify-start text-lg text-white">
-                                                        <!-- no -->
-                                                        <p class="uppercase">vpn <span class="text-[#FF6378]">неактивен</span></p>
-                                                        <!-- yes -->
-                                                    </div>
-                                                    <img decoding="async" loading="lazy"
-                                                        src="/public/assets/images/icons/services/default/notnetwork.svg" alt=""
-                                                        loading="lozy" decoding="async">
+                                    <img decoding="async" loading="lazy"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/netherlands.svg"
+                                        alt="" loading="lozy" decoding="async">
+                                    <div class="flex flex-col items-center justify-start text-lg text-white">
+                                        <!-- no -->
+                                        <p class="uppercase">vpn <span class="text-[#FF6378]">неактивен</span></p>
+                                        <!-- yes -->
+                                    </div>
+                                    <img decoding="async" loading="lazy"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/notnetwork.svg"
+                                        alt="" loading="lozy" decoding="async">
                                 <?php endif; ?>
                             </li>
                             <!-- block 2 -->
@@ -894,31 +898,31 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="relative w-full flex justify-between items-center p-[15px] bg-[rgb(255,255,255,0.1)] rounded-xl">
                                 <a href="/install">
                                     <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                                        <img decoding="async" loading="lazy"
-                                                            src="/public/assets/images/icons/services/default/download.svg" alt=""
-                                                            loading="lazy" decoding="async" class="invert">
-                                                        <div class="flex flex-col items-center justify-start text-lg text-white">
-                                                            <a href="/install" class="uppercase text-center flex gap-2">установить <span
-                                                                    class="word_hidden">vpn</span>
-                                                            </a>
-                                                        </div>
-                                                        <img decoding="async" loading="lazy"
-                                                            src="/public/assets/images/icons/services/default/arrow.svg" alt=""
-                                                            loading="lazy" decoding="async" class="invert">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/download.svg"
+                                            alt="" loading="lazy" decoding="async" class="invert">
+                                        <div class="flex flex-col items-center justify-start text-lg text-white">
+                                            <a href="/install" class="uppercase text-center flex gap-2">установить <span
+                                                    class="word_hidden">vpn</span>
+                                            </a>
+                                        </div>
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
+                                            alt="" loading="lazy" decoding="async" class="invert">
                                     <?php else: ?>
-                                                        <img decoding="async" loading="lazy"
-                                                            src="/public/assets/images/icons/services/default/buy.svg" alt="" loading="lozy"
-                                                            decoding="async" class="invert">
-                                                        <div class="flex flex-col items-center justify-start text-lg text-white">
-                                                            <!-- no -->
-                                                            <a href="/pay" class="uppercase text-center flex gap-2">купить <span
-                                                                    class="word_hidden">подписку</span>
-                                                            </a>
-                                                            <!-- yes -->
-                                                        </div>
-                                                        <img decoding="async" loading="lazy"
-                                                            src="/public/assets/images/icons/services/default/arrow.svg" alt=""
-                                                            loading="lozy" decoding="async" class="invert">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
+                                            alt="" loading="lozy" decoding="async" class="invert">
+                                        <div class="flex flex-col items-center justify-start text-lg text-white">
+                                            <!-- no -->
+                                            <a href="/pay" class="uppercase text-center flex gap-2">купить <span
+                                                    class="word_hidden">подписку</span>
+                                            </a>
+                                            <!-- yes -->
+                                        </div>
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
+                                            alt="" loading="lozy" decoding="async" class="invert">
                                     <?php endif; ?>
                                 </a>
                             </li>
@@ -927,8 +931,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <!-- 1 -->
                                 <div class="flex flex-col items-center justify-between gap-2">
                                     <img decoding="async" loading="lazy"
-                                        src="/public/assets/images/icons/services/default/protocol.svg" alt="protocol"
-                                        loading="lazy">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/protocol.svg"
+                                        alt="protocol" loading="lazy">
                                     <p class="text-[#93A7C8] font-bold">
                                         <?= htmlspecialchars($formattedVpnStatus['protocol'] ?: '—') ?>
                                     </p>
@@ -987,8 +991,8 @@ $activeSection = $_GET['section'] ?? 'main';
                             <div class="glow-card_mobile relative flex items-center gap-4 p-5 rounded-2xl">
                                 <div class="relative">
                                     <img decoding="async" loading="lazy"
-                                        src="/public/assets/images/icons/services/avatar/1.png" alt="avatar"
-                                        class="rounded-full w-16 h-16 ring-2 ring-white/10">
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/1.png"
+                                        alt="avatar" class="rounded-full w-16 h-16 ring-2 ring-white/10">
                                     <div
                                         class="absolute -bottom-1 right-0 w-4 h-4 rounded-full <?= $user->getStatus() === 'on' ? 'bg-green-400' : 'bg-red-400' ?> ring-2 ring-black">
                                     </div>
@@ -1042,33 +1046,33 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- data -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                            <div class="mt-4 flex flex-col gap-4 mb-4">
-                                                <h4 class="text-white text-xl font-semibold">Данные</h4>
-                                                <ul class="flex flex-col gap-2.5">
-                                                    <li class="glow-card_mobile flex p-4 justify-between items-center rounded-xl">
-                                                        <!-- info -->
-                                                        <div class="flex flex-col justify-center w-[150px] gap-1">
-                                                            <h4 class="text-white text-sm font-semibold">VPN ключ</h4>
-                                                            <p id="vpn-key" class="overflow-hidden h-8 break-all text-[12px] text-white/50">
-                                                                <?php echo htmlspecialchars($user->getSubscription()); ?>
-                                                            </p>
-                                                        </div>
-                                                        <!-- button -->
-                                                        <div class="flex gap-2 justify-end items-center">
-                                                            <button onclick="copyVpnKey()"
-                                                                class="z-10 text-lg text-gray-400 hover:text-white transition-colors"
-                                                                title="Копировать ключ">
-                                                                <i class="fa fa-copy"></i>
-                                                            </button>
-                                                            <button onclick="deleteSubscription()"
-                                                                class="z-10 text-lg text-red-400 hover:text-red-300 transition-colors"
-                                                                title="Удалить подписку">
-                                                                <i class="fa fa-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                            <div class="mt-4 flex flex-col gap-4 mb-4">
+                                <h4 class="text-white text-xl font-semibold">Данные</h4>
+                                <ul class="flex flex-col gap-2.5">
+                                    <li class="glow-card_mobile flex p-4 justify-between items-center rounded-xl">
+                                        <!-- info -->
+                                        <div class="flex flex-col justify-center w-[150px] gap-1">
+                                            <h4 class="text-white text-sm font-semibold">VPN ключ</h4>
+                                            <p id="vpn-key" class="overflow-hidden h-8 break-all text-[12px] text-white/50">
+                                                <?php echo htmlspecialchars($user->getSubscription()); ?>
+                                            </p>
+                                        </div>
+                                        <!-- button -->
+                                        <div class="flex gap-2 justify-end items-center">
+                                            <button onclick="copyVpnKey()"
+                                                class="z-10 text-lg text-gray-400 hover:text-white transition-colors"
+                                                title="Копировать ключ">
+                                                <i class="fa fa-copy"></i>
+                                            </button>
+                                            <button onclick="deleteSubscription()"
+                                                class="z-10 text-lg text-red-400 hover:text-red-300 transition-colors"
+                                                title="Удалить подписку">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
                         <?php endif; ?>
 
                         <!-- Company Links & Logout -->
@@ -1320,27 +1324,27 @@ $activeSection = $_GET['section'] ?? 'main';
                             <h4 class="text-white text-lg font-semibold">Ваш реферер</h4>
                             <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
                                 <?php if (!empty($user->getRefer())): ?>
-                                                    <div class="flex justify-between gap-4">
-                                                        <span class="text-sm text-gray-400">Код</span>
-                                                        <span
-                                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars($user->getRefer()) ?></span>
-                                                    </div>
-                                                    <div class="flex justify-between gap-4">
-                                                        <span class="text-sm text-gray-400">Имя</span>
-                                                        <span
-                                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
-                                                    </div>
+                                    <div class="flex justify-between gap-4">
+                                        <span class="text-sm text-gray-400">Код</span>
+                                        <span
+                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars($user->getRefer()) ?></span>
+                                    </div>
+                                    <div class="flex justify-between gap-4">
+                                        <span class="text-sm text-gray-400">Имя</span>
+                                        <span
+                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
+                                    </div>
                                 <?php else: ?>
-                                                    <div class="text-sm text-gray-400">Реферер не указан</div>
+                                    <div class="text-sm text-gray-400">Реферер не указан</div>
                                 <?php endif; ?>
                                 <div class="flex justify-between gap-4">
                                     <span class="text-sm text-gray-400">Вы получили</span>
                                     <span class="text-sm text-white font-semibold">
                                         <?php if ($formattedUserProfile['discount_percent'] > 0): ?>
-                                                            <span
-                                                                class="text-green-400">-<?= intval($formattedUserProfile['discount_percent']) ?>%</span>
+                                            <span
+                                                class="text-green-400">-<?= intval($formattedUserProfile['discount_percent']) ?>%</span>
                                         <?php else: ?>
-                                                            <span class="text-gray-400">Нет скидки</span>
+                                            <span class="text-gray-400">Нет скидки</span>
                                         <?php endif; ?>
                                     </span>
                                 </div>
@@ -1531,9 +1535,9 @@ $activeSection = $_GET['section'] ?? 'main';
         </div>
         </section>
 
-        <script src="/public/assets/scripts/main/main.js" defer></script>
-        <script src="/public/assets/scripts/theme/main.js" defer></script>
-        <script src="/public/assets/scripts/lang/lang.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/lang/lang.js" defer></script>
 
         <script defer>
             // Копирование VPN ключа

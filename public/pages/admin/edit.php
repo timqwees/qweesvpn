@@ -47,7 +47,8 @@ if ($table === 'qwees_users') {
             <div class="flex flex-col p-4 gap-4">
                 <div class="flex flex-1 justify-between">
                     <div class="flex items-center gap-3">
-                        <img decoding="async" loading="lazy" src="/public/assets/images/icons/services/avatar/2.png"
+                        <img decoding="async" loading="lazy"
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/2.png"
                             class="rounded-full aspect-square w-10 h-10">
                         <div class="flex flex-col gap-0.5">
                             <div class="flex gap-2">
@@ -150,7 +151,7 @@ if ($table === 'qwees_users') {
 
     </div>
 
-    <script src="/public/assets/scripts/main/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
 </body>
 
 </html>

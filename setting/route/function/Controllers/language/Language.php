@@ -1,5 +1,8 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\language;
+<?php
+
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Language;
 
 use App\Config\Database;
 use App\Config\Session;

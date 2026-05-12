@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\Auth;
 
 use App\Config\Database;
@@ -7,7 +9,7 @@ use App\Config\Session;
 use App\Controllers\MailController;
 use App\Models\Network\Network;
 use App\Models\User\User;
-use Setting\Route\Function\Controllers\refer\Refer;
+use Setting\Route\Function\Controllers\Refer\Refer;
 
 class Auth extends Network
 {

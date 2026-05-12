@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Setting\Route\Function\Controllers\refer\bonus;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Refer\Bonus;
 
 use App\Config\Database;
-use Setting\Route\Function\Controllers\refer\config\ReferConfig;
+use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
 
 /**
  * Bonus - Обработка бонусов реферальной системы
@@ -25,7 +27,7 @@ class Bonus
 
         // Записываем скидку в профиль
         if ($config['discount_percent'] > 0) {
-            Database::send("UPDATE users SET discount_percent = ? WHERE id = ?", [$config['discount_percent'], $userId]);
+            Database::send("UPDATE qwees_users SET discount_percent = ? WHERE id = ?", [$config['discount_percent'], $userId]);
         }
     }
 
@@ -43,7 +45,7 @@ class Bonus
 
         // Увеличиваем счётчик и бонус (с ограничением максимума)
         Database::send("
-            UPDATE users 
+            UPDATE qwees_users 
             SET refer_count = refer_count + 1,
                 bonus_percent = MIN(bonus_percent + ?, ?)
             WHERE id = ?
@@ -55,18 +57,22 @@ class Bonus
      */
     private function addBonusDays(int $userId, int $days): void
     {
-        // Получаем текущую дату окончания
-        $result = Database::send("SELECT date_end FROM users WHERE id = ?", [$userId]);
-        $currentEnd = $result['date_end'] ?? null;
+        $users = Database::send("SELECT uniID FROM qwees_users WHERE id = ?", [$userId]);
+        if (!is_array($users) || $users === [] || empty($users[0]['uniID'])) {
+            return;
+        }
+        $uniID = (string) $users[0]['uniID'];
 
-        // Если подписка активна - продлеваем, если нет - отсчёт от сегодня
-        if ($currentEnd && strtotime($currentEnd) > time()) {
-            $newEnd = date('Y-m-d H:i:s', strtotime($currentEnd . " +{$days} days"));
+        $result = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ? LIMIT 1", [$uniID]);
+        $currentEnd = (is_array($result) && $result !== []) ? ($result[0]['date_end'] ?? null) : null;
+
+        if ($currentEnd && strtotime((string) $currentEnd) > time()) {
+            $newEnd = date('Y-m-d H:i:s', strtotime((string) $currentEnd . " +{$days} days"));
         } else {
             $newEnd = date('Y-m-d H:i:s', strtotime("+{$days} days"));
         }
 
-        Database::send("UPDATE users SET date_end = ? WHERE id = ?", [$newEnd, $userId]);
+        Database::send("UPDATE qwees_subscriptions SET date_end = ? WHERE uniID = ?", [$newEnd, $uniID]);
     }
 
     /**
@@ -74,8 +80,8 @@ class Bonus
      */
     public static function getTotalDiscount(int $userId): int
     {
-        $result = Database::send("SELECT discount_percent FROM users WHERE id = ?", [$userId]);
-        return (int) ($result['discount_percent'] ?? 0);
+        $result = Database::send("SELECT discount_percent FROM qwees_users WHERE id = ?", [$userId]);
+        return (int) ((is_array($result) && isset($result[0])) ? ($result[0]['discount_percent'] ?? 0) : 0);
     }
 
     /**
@@ -83,7 +89,7 @@ class Bonus
      */
     public static function getBonusPercent(int $userId): int
     {
-        $result = Database::send("SELECT bonus_percent FROM users WHERE id = ?", [$userId]);
-        return (int) ($result['bonus_percent'] ?? 0);
+        $result = Database::send("SELECT bonus_percent FROM qwees_users WHERE id = ?", [$userId]);
+        return (int) ((is_array($result) && isset($result[0])) ? ($result[0]['bonus_percent'] ?? 0) : 0);
     }
 }

@@ -1,8 +1,13 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\vpn\v2ray;
-use Setting\Route\Function\Controllers\Client\getUser;
+<?php
+
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Vpn\V2ray;
+
+use Setting\Route\Function\Controllers\Client\GetUser;
 use App\Config\Database;
 use Setting\Route\Function\Functions;
+
 class Xray
 {
     /**

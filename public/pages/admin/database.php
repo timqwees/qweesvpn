@@ -392,7 +392,7 @@ $sortIcon = function ($col) {
 
     </div>
 
-    <script src="/public/assets/scripts/main/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
 </body>
 
 </html>

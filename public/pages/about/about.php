@@ -37,7 +37,7 @@ $site = Functions::site();
     <!-- Deferred scripts -->
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
-    <script src="/public/assets/scripts/theme/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -57,7 +57,8 @@ $site = Functions::site();
                 <!-- logo -->
                 <div class="flex items-center gap-2">
                     <img decoding="async" loading="lazy" class="bg-black/90 rounded-full p-1 w-auto h-7 object-contain"
-                        src="/public/assets/images/icons/logo/qweesvpn.svg" alt="<?= htmlspecialchars($site['ООО']) ?>">
+                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
+                        alt="<?= htmlspecialchars($site['ООО']) ?>">
                     <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
                         Qwees<span class="text-green-400">VPN</span>
                     </h2>
@@ -200,7 +201,7 @@ $site = Functions::site();
                             <div class="flex items-start gap-6">
                                 <div
                                     class="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/30 to-red-600/30 flex items-center justify-center ring-2 ring-amber-400/40 shrink-0 p-3">
-                                    <img src="/public/assets/images/icons/logo/qweesvpn.svg"
+                                    <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                                         alt="<?= htmlspecialchars($site['ООО']) ?>"
                                         class="w-full h-full object-contain ">
                                 </div>
@@ -344,7 +345,7 @@ $site = Functions::site();
                                 <div class="flex items-center gap-3 mb-4">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-pink-600/30 flex items-center justify-center ring-1 ring-purple-400/40 overflow-hidden">
-                                        <img src="/public/assets/images/icons/logo/qweesvpn.svg"
+                                        <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                                             alt="<?= htmlspecialchars($site['контакты']['Директор']) ?>"
                                             class="w-8 h-8 object-contain">
                                     </div>
@@ -389,7 +390,7 @@ $site = Functions::site();
                                 <div class="flex items-center gap-3 mb-4">
                                     <div
                                         class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 flex items-center justify-center ring-1 ring-cyan-400/40 overflow-hidden p-2">
-                                        <img src="/public/assets/images/icons/logo/qweesvpn.svg"
+                                        <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                                             alt="<?= htmlspecialchars($site['ООО']) ?>"
                                             class="w-full h-full object-contain ">
                                     </div>
@@ -437,7 +438,7 @@ $site = Functions::site();
                         <div class="relative z-10 text-center">
                             <div
                                 class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-500/30 to-red-600/30 flex items-center justify-center ring-2 ring-amber-400/40 p-3">
-                                <img src="/public/assets/images/icons/logo/qweesvpn.svg"
+                                <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                                     alt="<?= htmlspecialchars($site['ООО']) ?>" class="w-full h-full object-contain ">
                             </div>
                             <p class="text-2xl text-white font-light italic mb-2 leading-relaxed">
@@ -693,8 +694,8 @@ $site = Functions::site();
             </div>
 
         </main>
-        <script src="/public/assets/scripts/main/main.js" defer></script>
-        <script src="/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
     </div>
 </body>
 

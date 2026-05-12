@@ -900,7 +900,7 @@ $adminID = Session::init('admin')['auth'][1];
                         <h2 class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight">
                             Панель создания пользователя</h2>
                         <form id="form_admin_add_user" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4"
-                            action="/admin/addUser" method="POST">
+                            action="/admin/addClient" method="POST">
                             <!-- <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>"> -->
 
                             <!-- Основная информация -->
@@ -985,7 +985,7 @@ $adminID = Session::init('admin')['auth'][1];
                         </form>
                     </div>
                 </section>
-                <script src="/public/assets/scripts/auth/admin/main.js"></script>
+                <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js"></script>
             <?php endif; ?>
 
             <script>
@@ -1053,7 +1053,7 @@ $adminID = Session::init('admin')['auth'][1];
                     });
                 });
             </script>
-            <script src="/public/assets/scripts/main/main.js" defer></script>
+            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
         </main>
     </div>
 </body>

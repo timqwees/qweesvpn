@@ -54,3 +54,22 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_status_date ON qwees_subscriptions(
 
 --добавление цен по умолчанию
 INSERT INTO qwees_price ("name", "price") VALUES ('basic', 100), ('clasic', 200), ('pro', 300);
+-- database: datebase.sqlite
+INSERT INTO
+    qwees_users (
+        first_name,
+        last_name,
+        email,
+        uniID,
+        myrefer,
+        created_at
+    )
+VALUES
+    (
+        'tim',
+        'qwees',
+        'timqwees@gmail.com',
+        123,
+        'qwese',
+        '2026-12-09 18:53:31'
+    );

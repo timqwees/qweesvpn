@@ -1,6 +1,8 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Setting\Route\Function\Controllers\refer\config;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Refer\Config;
 
 /**
  * ReferConfig - Конфигурация реферальной системы
@@ -18,7 +20,7 @@ class ReferConfig
             'discount_percent' => 10, // Скидка на первую покупку
         ];
     }
-    
+
     /**
      * Получить настройки бонусов для пригласившего (реферрера)
      */
@@ -30,7 +32,7 @@ class ReferConfig
             'max_discount_cap' => 50,      // Максимальная скидка (%)
         ];
     }
-    
+
     /**
      * Получить минимальную длину реферального кода
      */
@@ -38,7 +40,7 @@ class ReferConfig
     {
         return 10;
     }
-    
+
     /**
      * Получить шаблон генерации кода
      */

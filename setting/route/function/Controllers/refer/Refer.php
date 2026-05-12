@@ -1,12 +1,14 @@
-<?php declare(strict_types=1);
+<?php
 
-namespace Setting\Route\Function\Controllers\refer;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Refer;
 
 use App\Config\Database;
 use App\Config\Session;
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\refer\config\ReferConfig;
-use Setting\Route\Function\Controllers\refer\bonus\Bonus;
+use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
+use Setting\Route\Function\Controllers\Refer\Bonus\Bonus;
 use Setting\Route\Function\Controllers\Client\getUser;
 
 /**
@@ -38,17 +40,17 @@ class Refer
             return ['status' => false, 'error' => 'Заприщено использовать свою реферальную ссылку!'];
         }
 
-        $referrer = Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]);
-        if (!$referrer) {
+        $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
+        if (!is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
             return ['status' => false, 'error' => 'Реферальный код не найден!'];
         }
 
-        $referrerId = (int) $referrer['id'];
+        $referrerId = (int) $referrer[0]['id'];
         if ($referrerId === $userId) {
             return ['status' => false, 'error' => 'Нельзя использовать свой реферальный код!'];
         }
 
-        Database::send("UPDATE users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
+        Database::send("UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
 
         $bonus = new Bonus();
         $bonus->giveToNewReferral($userId, $referrerId);
@@ -69,7 +71,7 @@ class Refer
             for ($i = 0; $i < strlen($pattern); $i++) {
                 $code .= $pattern[$i] === '#' ? chr(mt_rand(48, 90)) : $pattern[$i];//0-9/A-Z/<=>:;?@
             }
-        } while (Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]));
+        } while (Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]));
 
         return $code;
     }
@@ -81,31 +83,31 @@ class Refer
     public function setRefer(string $uniID, string $code, bool $silent = true): array
     {
         // получаем свой id и refer
-        $user = Database::send("SELECT id, refer FROM users WHERE uniID = ?", [$uniID]);
+        $user = Database::send("SELECT id, refer FROM qwees_users WHERE uniID = ?", [$uniID]);
 
-        if (!$user) {
+        if (!is_array($user) || $user === [] || !isset($user[0]['id'])) {
             return ['status' => false, 'error' => 'Пользователь не найден'];
         }
 
-        if (!empty($user['refer'])) {
+        if (!empty($user[0]['refer'])) {
             return ['status' => false, 'error' => 'Реферальный код уже активирован'];
         }
 
         $code = trim(strtoupper($code));
         // получаем id реферала
-        $referrer = Database::send("SELECT id FROM users WHERE myrefer = ?", [$code]);
+        $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
 
         // если не нашли такого реферала
-        if (!$referrer) {
+        if (!is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
             return ['status' => false, 'error' => 'Реферальный код не найден'];
         }
 
         // итоговые данные
-        $userId = (int) $user['id'];//свой id
-        $referrerId = (int) $referrer['id']; //реферала id
+        $userId = (int) $user[0]['id'];//свой id
+        $referrerId = (int) $referrer[0]['id']; //реферала id
 
         // записываем реферала
-        Database::send("UPDATE users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
+        Database::send("UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
 
         // начисляем бонусы
         $bonus = new Bonus();

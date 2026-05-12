@@ -1,11 +1,10 @@
 <?php
 
-namespace Setting\Route\Function\Controllers\kassa;
+namespace Setting\Route\Function\Controllers\Kassa;
 
 use App\Config\Session;
 
-use Setting\Route\Function\Controllers\Auth\Auth;
-use Setting\Route\Function\Controllers\kassa\Kassa;
+use Setting\Route\Function\Controllers\Kassa\Kassa;
 use Setting\Route\Function\Functions;
 
 class PaymentController

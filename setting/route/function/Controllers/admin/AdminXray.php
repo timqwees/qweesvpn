@@ -1,9 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Setting\Route\Function\Controllers\Admin;
 
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 use App\Config\Database;
 
 class AdminXray

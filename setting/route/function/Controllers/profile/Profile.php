@@ -1,6 +1,8 @@
-<?php declare(strict_types=1);
+<?php 
 
-namespace Setting\Route\Function\Controllers\profile;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Profile;
 
 use App\Config\Database;
 
@@ -10,7 +12,7 @@ class Profile
 
     public function __construct()
     {
-        $this->user = new \Setting\Route\Function\Controllers\Client\getUser;
+        $this->user = new \Setting\Route\Function\Controllers\Client\GetUser;
     }
 
     /**

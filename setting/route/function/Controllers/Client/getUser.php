@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
+<?php 
+
+declare(strict_types=1);
+
 namespace Setting\Route\Function\Controllers\Client;
 
-class getUser extends \Setting\Route\Function\Controllers\Client\src\Client
+class getUser extends \Setting\Route\Function\Controllers\Client\Src\Client
 {
 
     private array $client;

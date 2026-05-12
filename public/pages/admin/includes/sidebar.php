@@ -7,7 +7,7 @@ $site = Setting\Route\Function\Functions::site();
     <div class="flex flex-col p-4 gap-4 min-w-[260px]">
         <div class="flex flex-1 justify-between gap-2">
             <div class="flex items-center gap-3 min-w-0">
-                <img decoding="async" loading="lazy" src="/public/assets/images/icons/services/avatar/2.png"
+                <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/2.png"
                     class="rounded-full aspect-square w-10 h-10 shrink-0">
                 <div class="flex flex-col gap-0.5 min-w-0">
                     <div class="flex gap-2 items-center">

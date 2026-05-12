@@ -1,33 +1,14 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 use App\Models\Router\Routes;
-use App\Config\Database;
-use App\Config\Session;
-use App\Models\Network\Network;
-use App\Controllers\AuthController;
-use App\Controllers\MailController;
-use App\Models\Article\Article;
-use App\Models\Network\Message;
-use App\Models\User\User;
 use Setting\Route\Function\Controllers\Admin\{AdminDatabase, AdminXray, PdfController, AdminAuth};
-use Setting\Route\Function\Functions;
-use App\Controllers\API\API;
 use Setting\Route\Function\Controllers\Auth\Auth;
-use Setting\Route\Function\Controllers\language\LanguageSwitch;
-use Setting\Route\Function\Controllers\kassa\PaymentController;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
-use Setting\Route\Function\Controllers\OS\OS;
-use Setting\Route\Function\Controllers\admin\Price\Price;
-use Setting\Route\Function\Controllers\client\Client;
-use Setting\Route\Function\Controllers\kassa\Kassa;
-use Setting\Route\Function\Controllers\language\Language;
-use Setting\Route\Function\Controllers\profile\Profile;
-use Setting\Route\Function\Controllers\refer\Refer;
-use Setting\Route\Function\Controllers\refer\bonus\Bonus;
-use Setting\Route\Function\Controllers\refer\config\ReferConfig;
-use Setting\Route\Function\Controllers\system\SystemInfo;
-use Setting\Route\Function\Controllers\vpn\Math;
-use Setting\Route\Function\Controllers\vpn\VpnStatus;
+use Setting\Route\Function\Controllers\Language\LanguageSwitch;
+use Setting\Route\Function\Controllers\Kassa\PaymentController;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
+use Setting\Route\Function\Controllers\Refer\Refer;
 
 //=============================================//MAIN
 Routes::get('/', 'on_Main');

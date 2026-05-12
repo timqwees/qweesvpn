@@ -37,7 +37,7 @@ $site = Functions::site();
     <!-- Deferred scripts -->
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
-    <script src="/public/assets/scripts/theme/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -54,7 +54,8 @@ $site = Functions::site();
             <!-- logo -->
             <div class="flex items-center gap-2">
                 <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
-                    src="/public/assets/images/icons/logo/qweesvpn.svg" alt="<?= htmlspecialchars($site['ООО']) ?>">
+                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
+                    alt="<?= htmlspecialchars($site['ООО']) ?>">
                 <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
                     Qwees<span class="text-green-400">VPN</span>
                 </h2>
@@ -79,8 +80,8 @@ $site = Functions::site();
             </div>
 
         </main>
-        <script src="/public/assets/scripts/main/main.js" defer></script>
-        <script src="/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
     </div>
 </body>
 

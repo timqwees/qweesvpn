@@ -1,7 +1,11 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\Client\src;
+<?php 
+
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Client\Src;
+
 use App\Config\Database;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 
 class Client
 {

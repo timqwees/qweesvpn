@@ -51,7 +51,7 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
             <!-- logo -->
             <div class="flex items-center gap-2">
                 <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
-                    src="/public/assets/images/icons/logo/qweesvpn.svg" alt="qweesvpn">
+                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg" alt="qweesvpn">
                 <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">QWEES <span
                         class="text-green-400">VPN</span></h2>
             </div>
@@ -70,7 +70,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -83,8 +84,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 1 -->
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_b border_light_r pb-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                    loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Аноним</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Маскируем вашу сеть от
@@ -93,7 +94,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/speed.svg" alt="icon1" loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрость</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Даем скорость более 1000 Mb/s</p>
@@ -101,7 +103,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 3 -->
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_r">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/ads.svg" alt="icon1" loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Блокируем все рекламы в интернете</p>
@@ -109,8 +112,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/shield.svg" alt="icon1"
-                                    loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрытность</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Защита ваших данных в сети</p>
@@ -210,7 +213,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -254,8 +258,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -295,8 +299,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -336,8 +340,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -368,7 +372,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -412,8 +417,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -453,8 +458,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -494,8 +499,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -526,7 +531,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -570,8 +576,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -611,8 +617,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -652,8 +658,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -684,7 +690,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -721,8 +728,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -743,7 +750,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/iomoney.svg" alt="iomoney">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
+                                            alt="iomoney">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -755,7 +763,7 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
                                             alt="sber">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
@@ -768,7 +776,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/sbp-logo.svg" alt="sbp">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp-logo.svg"
+                                            alt="sbp">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -801,7 +810,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -814,8 +824,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 1 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b border_light_r pb-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                    loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Аноним</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Маскируем вашу сеть от
@@ -824,7 +834,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/speed.svg" alt="icon1" loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрость</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Даем скорость более 1000 Mb/s</p>
@@ -832,7 +843,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 3 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_r">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/ads.svg" alt="icon1" loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Блокируем все рекламы в интернете</p>
@@ -840,8 +852,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
                             <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                    src="/public/assets/images/icons/services/buy/shield.svg" alt="icon1"
-                                    loading="lazy">
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
+                                    alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрытность</h4>
                             </div>
                             <p class="text-sm text-sans text-white/70 break-all">Защита ваших данных в сети</p>
@@ -941,7 +953,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -985,8 +998,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1026,8 +1039,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1067,8 +1080,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1099,7 +1112,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -1143,8 +1157,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1184,8 +1198,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1225,8 +1239,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1257,7 +1271,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -1301,8 +1316,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1342,8 +1357,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif2.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1383,8 +1398,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif3.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1415,7 +1430,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img decoding="async" loading="lazy"
-                                src="/public/assets/images/icons/services/buy/crown.svg" alt="Домой" decoding="async">
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async">
                         </div>
                     </div>
                     <!-- text -->
@@ -1452,8 +1468,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
                                         <div class="flex gap-2"><img decoding="async" loading="lazy"
-                                                src="/public/assets/images/icons/services/buy/tarif1.svg" alt="icon1"
-                                                loading="lazy">
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
@@ -1474,7 +1490,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/iomoney.svg" alt="iomoney">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
+                                            alt="iomoney">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1486,7 +1503,7 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
                                             alt="sber">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
@@ -1499,7 +1516,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="/public/assets/images/icons/payment/sbp-logo.svg" alt="sbp">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp-logo.svg"
+                                            alt="sbp">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1692,8 +1710,8 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                 $('#qr-modal').remove();
             }
         </script>
-        <script src="/public/assets/scripts/main/main.js" defer></script>
-        <script src="/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
     </div>
 </body>
 

@@ -47,7 +47,8 @@ $site = Functions::site();
 
         <!-- LOGO CONTENT -->
         <div class="flex flex-col justify-center items-center gap-2">
-            <img decoding="async" loading="lazy" src="/public/assets/images/icons/logo/qweesvpn.svg"
+            <img decoding="async" loading="lazy"
+                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                 alt="<?= htmlspecialchars($site['ООО']) ?>" loading="lazy">
             <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">
                 Qwees<span class="text-green-400">VPN</span>
@@ -124,7 +125,7 @@ $site = Functions::site();
         </div>
 
         <!-- customized scripts -->
-        <script defer src="/public/assets/scripts/auth/regist/main.js"></script>
+        <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/regist/main.js"></script>
         <!--  -->
 
     </div>

@@ -6,7 +6,6 @@ namespace Setting\Route\Function\Controllers\Admin;
 
 use App\Config\Database;
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
 
 class AdminDatabase
 {

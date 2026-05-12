@@ -1,7 +1,10 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\language;
+<?php 
 
-use Setting\Route\Function\Controllers\language\Language;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Language;
+
+use Setting\Route\Function\Controllers\Language\Language;
 use App\Config\Session;
 
 class LanguageSwitch
@@ -12,14 +15,14 @@ class LanguageSwitch
     public static function switch()
     {
         $newLang = $_POST['language'] ?? 'ru';
-        
+
         // Проверяем что язык поддерживается
         if (!array_key_exists($newLang, Language::LANGUAGES)) {
             $newLang = 'ru';
         }
-        
+
         Session::init('lang', $newLang);
-        
+
         // Возвращаем JSON ответ для frontend
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'language' => $newLang]);

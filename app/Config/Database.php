@@ -87,7 +87,7 @@ class Database extends Network
    * _Устанавливает имя схемы, используемой при работе с базой данных._
    *
    * **Возможности:**
-   * - Если окружение задаёт `SCHEMA_NAME`, ищет соответствующий файл схемы в каталоге `/setting/schema/`.
+   * - Если окружение задаёт `SCHEMA_NAME`, ищет соответствующий файл схемы в каталоге `/setting/Schema/`.
    * - Если переменная не задана — используется `schema.sql` по умолчанию.
    *
    * ---
@@ -106,7 +106,7 @@ class Database extends Network
   public static function initSchemaName()
   {
     if (empty(self::$schema_name)) {
-      self::$schema_name = dirname(__DIR__, 2) . '/setting/schema/' . (isset($_ENV['SCHEMA_NAME']) && !empty($_ENV['SCHEMA_NAME']) ? ($_ENV['SCHEMA_NAME'] . '.sql') : 'schema.sql');
+      self::$schema_name = dirname(__DIR__, 2) . '/setting/Schema/' . (isset($_ENV['SCHEMA_NAME']) && !empty($_ENV['SCHEMA_NAME']) ? ($_ENV['SCHEMA_NAME'] . '.sql') : 'schema.sql');
     }
   }
 

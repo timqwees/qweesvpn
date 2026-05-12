@@ -37,7 +37,7 @@ $site = Functions::site();
     <!-- Deferred scripts -->
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
-    <script src="/public/assets/scripts/theme/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -57,7 +57,7 @@ $site = Functions::site();
                 <!-- logo -->
                 <div class="flex items-center gap-2">
                     <img decoding="async" loading="lazy" class="bg-black/90 rounded-full p-1 w-auto h-7 object-contain"
-                        src="/public/assets/images/icons/logo/qweesvpn.svg"
+                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                         alt="<?= isset($site['ООО']) ? htmlspecialchars($site['ООО']) : '' ?>">
                     <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
                         Qwees<span class="text-green-400">VPN</span>
@@ -118,40 +118,40 @@ $site = Functions::site();
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['информация']['Полное название']) && $site['информация']['Полное название'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Полное название</span>
-                                        <span class="text-white font-medium text-sm">
-                                            <?= htmlspecialchars($site['информация']['Полное название']) ?>
-                                        </span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Полное название</span>
+                                            <span class="text-white font-medium text-sm">
+                                                <?= htmlspecialchars($site['информация']['Полное название']) ?>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ИНН']) && $site['информация']['ИНН'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">ИНН</span>
-                                        <span class="text-emerald-400 font-medium font-mono text-sm">
-                                            <?= htmlspecialchars($site['информация']['ИНН']) ?>
-                                        </span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">ИНН</span>
+                                            <span class="text-emerald-400 font-medium font-mono text-sm">
+                                                <?= htmlspecialchars($site['информация']['ИНН']) ?>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ОГРН']) && $site['информация']['ОГРН'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">ОГРН</span>
-                                        <span class="text-emerald-400 font-medium font-mono text-sm">
-                                            <?= htmlspecialchars($site['информация']['ОГРН']) ?>
-                                        </span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">ОГРН</span>
+                                            <span class="text-emerald-400 font-medium font-mono text-sm">
+                                                <?= htmlspecialchars($site['информация']['ОГРН']) ?>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['КПП']) && $site['информация']['КПП'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">КПП</span>
-                                        <span class="text-emerald-400 font-medium font-mono text-sm">
-                                            <?= htmlspecialchars($site['информация']['КПП']) ?>
-                                        </span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">КПП</span>
+                                            <span class="text-emerald-400 font-medium font-mono text-sm">
+                                                <?= htmlspecialchars($site['информация']['КПП']) ?>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -177,35 +177,36 @@ $site = Functions::site();
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['банк']['Банк']) && $site['банк']['Банк'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Банк</span>
-                                        <span class="text-white font-medium text-sm"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Банк</span>
+                                            <span
+                                                class="text-white font-medium text-sm"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['БИК']) && $site['банк']['БИК'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">БИК</span>
-                                        <span
-                                            class="text-cyan-400 font-medium font-mono text-sm"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">БИК</span>
+                                            <span
+                                                class="text-cyan-400 font-medium font-mono text-sm"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['Расчетный счет']) && $site['банк']['Расчетный счет'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Расчетный счет</span>
-                                        <span
-                                            class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Расчетный счет</span>
+                                            <span
+                                                class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['Корр. счет']) && $site['банк']['Корр. счет'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Корр. счет</span>
-                                        <span
-                                            class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Корр. счет']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Корр. счет</span>
+                                            <span
+                                                class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Корр. счет']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -244,36 +245,37 @@ $site = Functions::site();
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['контакты']['Директор']) && $site['контакты']['Директор'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Директор</span>
-                                        <span
-                                            class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Директор</span>
+                                            <span
+                                                class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Почта</span>
-                                        <span
-                                            class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Почта</span>
+                                            <span
+                                                class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Телефон</span>
-                                        <span class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Телефон</span>
+                                            <span
+                                                class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['мессенджер']['telegram']) && $site['контакты']['мессенджер']['telegram'] !== ''): ?>
-                                    <div
-                                        class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                        <span class="text-gray-400 text-sm">Поддержка</span>
-                                        <span class="text-purple-400 font-medium">tg: <a
-                                                href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
-                                        </span>
-                                    </div>
+                                        <div
+                                            class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
+                                            <span class="text-gray-400 text-sm">Поддержка</span>
+                                            <span class="text-purple-400 font-medium">tg: <a
+                                                    href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -304,20 +306,20 @@ $site = Functions::site();
                         <!-- Quick Actions -->
                         <div class="flex justify-between gap-4">
                             <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
-                            <a href="mailto:<?= htmlspecialchars($site['контакты']['Почта']) ?>"
-                                class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
-                                <i
-                                    class="fa-solid fa-envelope text-purple-400 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-gray-400 text-sm">Написать</span>
-                            </a>
+                                <a href="mailto:<?= htmlspecialchars($site['контакты']['Почта']) ?>"
+                                    class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
+                                    <i
+                                        class="fa-solid fa-envelope text-purple-400 group-hover:scale-110 transition-transform"></i>
+                                    <span class="text-gray-400 text-sm">Написать</span>
+                                </a>
                             <?php endif; ?>
                             <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
-                            <a href="tel:<?= htmlspecialchars(preg_replace('/[^\d+]/', '', $site['контакты']['Телефон'])) ?>"
-                                class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
-                                <i
-                                    class="fa-solid fa-phone text-green-400 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-gray-400 text-sm">Позвонить</span>
-                            </a>
+                                <a href="tel:<?= htmlspecialchars(preg_replace('/[^\d+]/', '', $site['контакты']['Телефон'])) ?>"
+                                    class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
+                                    <i
+                                        class="fa-solid fa-phone text-green-400 group-hover:scale-110 transition-transform"></i>
+                                    <span class="text-gray-400 text-sm">Позвонить</span>
+                                </a>
                             <?php endif; ?>
                             <button onclick="window.print()"
                                 class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group cursor-pointer">
@@ -367,32 +369,32 @@ $site = Functions::site();
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['информация']['Полное название']) && $site['информация']['Полное название'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">Название</span>
-                                        <span
-                                            class="text-white font-medium text-right"><?= htmlspecialchars($site['информация']['Полное название']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">Название</span>
+                                            <span
+                                                class="text-white font-medium text-right"><?= htmlspecialchars($site['информация']['Полное название']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ИНН']) && $site['информация']['ИНН'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">ИНН</span>
-                                        <span
-                                            class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['ИНН']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">ИНН</span>
+                                            <span
+                                                class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['ИНН']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ОГРН']) && $site['информация']['ОГРН'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">ОГРН</span>
-                                        <span
-                                            class="text-emerald-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['информация']['ОГРН']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">ОГРН</span>
+                                            <span
+                                                class="text-emerald-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['информация']['ОГРН']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['КПП']) && $site['информация']['КПП'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">КПП</span>
-                                        <span
-                                            class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['КПП']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">КПП</span>
+                                            <span
+                                                class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['КПП']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -414,25 +416,25 @@ $site = Functions::site();
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['банк']['Банк']) && $site['банк']['Банк'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">Банк</span>
-                                        <span
-                                            class="text-white font-medium text-right"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">Банк</span>
+                                            <span
+                                                class="text-white font-medium text-right"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['БИК']) && $site['банк']['БИК'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">БИК</span>
-                                        <span
-                                            class="text-cyan-400 font-medium font-mono"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">БИК</span>
+                                            <span
+                                                class="text-cyan-400 font-medium font-mono"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['Расчетный счет']) && $site['банк']['Расчетный счет'] !== ''): ?>
-                                    <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                        <span class="text-gray-400">Р/с</span>
-                                        <span
-                                            class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
-                                    </div>
+                                        <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
+                                            <span class="text-gray-400">Р/с</span>
+                                            <span
+                                                class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -453,32 +455,33 @@ $site = Functions::site();
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['контакты']['Директор']) && $site['контакты']['Директор'] !== ''): ?>
-                                    <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                        <span class="text-gray-400 text-sm">Директор</span>
-                                        <span
-                                            class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
-                                    </div>
+                                        <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
+                                            <span class="text-gray-400 text-sm">Директор</span>
+                                            <span
+                                                class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
-                                    <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                        <span class="text-gray-400 text-sm">Почта</span>
-                                        <span
-                                            class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
-                                    </div>
+                                        <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
+                                            <span class="text-gray-400 text-sm">Почта</span>
+                                            <span
+                                                class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
-                                    <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                        <span class="text-gray-400 text-sm">Телефон</span>
-                                        <span class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
-                                    </div>
+                                        <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
+                                            <span class="text-gray-400 text-sm">Телефон</span>
+                                            <span
+                                                class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
+                                        </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['мессенджер']['telegram']) && $site['контакты']['мессенджер']['telegram'] !== ''): ?>
-                                    <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                        <span class="text-gray-400 text-sm">Поддержка</span>
-                                        <span class="text-purple-400 font-medium">tg: <a
-                                                href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
-                                        </span>
-                                    </div>
+                                        <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
+                                            <span class="text-gray-400 text-sm">Поддержка</span>
+                                            <span class="text-purple-400 font-medium">tg: <a
+                                                    href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
+                                            </span>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -487,18 +490,18 @@ $site = Functions::site();
                         <!-- Actions -->
                         <div class="grid grid-cols-3 gap-2">
                             <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
-                            <a href="mailto:<?= htmlspecialchars($site['контакты']['Почта']) ?>"
-                                class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
-                                <i class="fa-solid fa-envelope text-purple-400 text-lg"></i>
-                                <span class="text-gray-400 text-xs">Email</span>
-                            </a>
+                                <a href="mailto:<?= htmlspecialchars($site['контакты']['Почта']) ?>"
+                                    class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
+                                    <i class="fa-solid fa-envelope text-purple-400 text-lg"></i>
+                                    <span class="text-gray-400 text-xs">Email</span>
+                                </a>
                             <?php endif; ?>
                             <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
-                            <a href="tel:<?= htmlspecialchars(preg_replace('/[^\d+]/', '', $site['контакты']['Телефон'])) ?>"
-                                class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
-                                <i class="fa-solid fa-phone text-green-400 text-lg"></i>
-                                <span class="text-gray-400 text-xs">Звонок</span>
-                            </a>
+                                <a href="tel:<?= htmlspecialchars(preg_replace('/[^\d+]/', '', $site['контакты']['Телефон'])) ?>"
+                                    class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
+                                    <i class="fa-solid fa-phone text-green-400 text-lg"></i>
+                                    <span class="text-gray-400 text-xs">Звонок</span>
+                                </a>
                             <?php endif; ?>
                             <button onclick="window.print()"
                                 class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
@@ -511,8 +514,8 @@ $site = Functions::site();
             </div>
 
         </main>
-        <script src="/public/assets/scripts/main/main.js" defer></script>
-        <script src="/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
     </div>
 </body>
 

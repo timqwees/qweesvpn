@@ -1,15 +1,16 @@
-<?php declare(strict_types=1);
+<?php 
 
-namespace Setting\Route\Function\Controllers\kassa;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Kassa;
 
 use YooKassa\Client;
 use YooKassa\Model\Payment\PaymentInterface;
 use YooKassa\Request\Payments\CreatePaymentRequest;
 use YooKassa\Model\Receipt\Receipt;
 use YooKassa\Model\Receipt\ReceiptItem;
-use YooKassa\Model\MonetaryAmount;
 use App\Config\Database;
-use Setting\Route\Function\Controllers\vpn\v2ray\Xray;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 
 class Kassa
 {

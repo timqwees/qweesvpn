@@ -1,5 +1,8 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\system;
+<?php
+
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\System;
 
 use App\Config\Database;
 use Setting\Route\Function\Functions;

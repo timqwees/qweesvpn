@@ -1,8 +1,10 @@
-<?php declare(strict_types=1);
-namespace Setting\Route\Function\Controllers\vpn;
+<?php
 
-use App\Config\Database;
-use Setting\Route\Function\Controllers\Client\getUser;
+declare(strict_types=1);
+
+namespace Setting\Route\Function\Controllers\Vpn;
+
+use Setting\Route\Function\Controllers\Client\GetUser;
 
 class VpnStatus
 {

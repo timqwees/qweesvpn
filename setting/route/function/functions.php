@@ -1,19 +1,11 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
+
 namespace Setting\Route\Function;
 
 use App\Models\Router\Routes;
-use App\Config\Database;
 use App\Config\Session;
-use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\Admin\AdminDatabase;
-use App\Controllers\AuthController;
-use App\Controllers\MailController;
-use App\Models\Article\Article;
-use App\Models\Network\Message;
-use App\Models\User\User;
-use Exception;
-use LDAP\ResultEntry;
-use App\Controllers\API\API;
 
 class Functions
 {
