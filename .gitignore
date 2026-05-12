@@ -16,6 +16,9 @@
 # Ignore system files
 Thumbs.db
 
+# Local backup archives (GitHub rejects blobs > 100 MiB)
+архив.zip
+
 # Ignore log files
 *.log
 
