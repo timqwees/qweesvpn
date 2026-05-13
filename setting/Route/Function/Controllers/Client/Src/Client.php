@@ -39,14 +39,11 @@ class Client
 
                 // Удаляем истекшую подписку из БД и X-UI
                 if (!empty($uniID)) {
-                    Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
-
-                    // Удаляем клиента из X-UI (асинхронно, без ожидания ответа)
                     try {
                         $xray = new Xray();
                         $xray->DeleteKey($uniID);
                     } catch (\Exception $e) {
-                        // Игнорируем ошибки X-UI — клиент мог быть уже удалён
+                        // Игнорируем ошибки панели — клиент мог быть уже удалён
                     }
 
                     // Логируем удаление
@@ -61,6 +58,11 @@ class Client
                         FILE_APPEND
                     );
                 }
+                $dateEnd = '';
+                $data['subscription'] = '';
+                $data['count_days'] = 0;
+                $data['count_devices'] = 0;
+                $data['amount'] = 0;
             }
         }
 

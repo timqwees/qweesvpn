@@ -22,6 +22,29 @@ Routes::get('/pay/status', 'on_PayStatus');
 Routes::post('/api/payment/create', [PaymentController::class, 'createPayment']);
 //=============================================//DELETE
 Routes::post('/api/subscription/delete', [Xray::class, 'DeleteKey']);
+Routes::post('/api/cron/xray-cleanup', static function (): void {
+    $secret = trim((string) ($_ENV['XUI_CRON_SECRET'] ?? ''), " \t\n\r\0\x0B\"'");
+    if ($secret === '') {
+        http_response_code(503);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['ok' => false, 'error' => 'XUI_CRON_SECRET is not set in .env'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $got = trim(
+        (string) ($_POST['secret'] ?? $_SERVER['HTTP_X_CRON_SECRET'] ?? ''),
+        " \t\n\r\0\x0B\"'"
+    );
+    if (!hash_equals($secret, $got)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode(['ok' => false, 'error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    \Setting\Route\Function\Controllers\Vpn\V2ray\Xray::CleanUP();
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE);
+    exit;
+});
 //=============================================//REFERRAL
 Routes::post('/api/referral/activate', function () {
     (new Refer())->onValidateCode($_POST['code'] ?? '', $_POST['online'] ?? '');

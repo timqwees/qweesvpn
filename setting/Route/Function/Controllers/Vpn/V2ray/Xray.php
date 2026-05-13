@@ -85,13 +85,23 @@ class Xray
 
     private static bool $threeXuiAuthResolved = false;
 
+    /** Базовые SSL/UA опции (int 0/1 — совместимость с curl_setopt_array в PHP 8+). */
     private static function curlSslUserAgentOpts(): array
     {
         return [
-            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYPEER => 0,
             CURLOPT_SSL_VERIFYHOST => 0,
             CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)',
         ];
+    }
+
+    /**
+     * @param array<int, mixed> $opts
+     * @return array<int, mixed>
+     */
+    private static function curlOptsMerge(array $opts): array
+    {
+        return array_merge(self::curlSslUserAgentOpts(), $opts);
     }
 
     /** Авторизация 3x-ui по паролю (если нет Bearer-токена). */
@@ -114,16 +124,15 @@ class Xray
             }
 
             $ch = curl_init(self::panelBase() . '/login');
-            curl_setopt_array($ch, [
+            curl_setopt_array($ch, self::curlOptsMerge([
                 CURLOPT_POST => true,
                 CURLOPT_POSTFIELDS => json_encode($loginBody, JSON_UNESCAPED_UNICODE),
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HEADER => true,
                 CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
-                ...self::curlSslUserAgentOpts(),
                 CURLOPT_TIMEOUT => 45,
                 CURLOPT_CONNECTTIMEOUT => 20,
-            ]);
+            ]));
             $response = curl_exec($ch);
             $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
@@ -183,13 +192,12 @@ class Xray
     {
         foreach (['/csrf-token', '/panel/api/csrf-token'] as $path) {
             $ch = curl_init(self::panelBase() . $path);
-            curl_setopt_array($ch, [
+            curl_setopt_array($ch, self::curlOptsMerge([
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER => ['Accept: application/json', 'Cookie: ' . $cookieHeaderValue],
-                ...self::curlSslUserAgentOpts(),
                 CURLOPT_TIMEOUT => 20,
                 CURLOPT_CONNECTTIMEOUT => 10,
-            ]);
+            ]));
             $response = curl_exec($ch);
             curl_close($ch);
             if (!is_string($response) || $response === '') {
@@ -267,14 +275,12 @@ class Xray
         }
 
         $ch = curl_init($url);
-        $opts = [
+        $opts = self::curlOptsMerge([
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => $headers,
-            ...self::curlSslUserAgentOpts(),
             CURLOPT_TIMEOUT => 60,
             CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        ];
+        ]);
         if (strtoupper($method) === 'POST') {
             $opts[CURLOPT_POST] = true;
             if ($jsonBody !== null) {
@@ -340,21 +346,26 @@ class Xray
     }
 
 
-    /** Продление date_end в БД при реферальном бонусе. */
-    private static function syncUserDateEnd(string $uniID, int $bonusDays, GetUser $ref): void
+    /**
+     * Продление date_end в БД по uniID (источник — строка подписки, не сессия GetUser).
+     * Логика согласована с панелью: max(сейчас, текущий date_end) + bonusDays календарных дней.
+     */
+    private static function syncUserDateEndByUniID(string $uniID, int $bonusDays): void
     {
-        $dateEnd = $ref->getDateEnd();
+        if ($bonusDays <= 0 || $uniID === '') {
+            return;
+        }
+        $subData = Database::send('SELECT date_end FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
+        if (empty($subData[0])) {
+            return;
+        }
+        $dateEnd = (string) ($subData[0]['date_end'] ?? '');
         $base = !empty($dateEnd) ? max(strtotime($dateEnd . ' 23:59:59'), time()) : time();
         $newEnd = $base + $bonusDays * 86400;
-
-        // Обновляем date_end в qwees_subscriptions
-        $subData = Database::send('SELECT * FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
-        if (!empty($subData[0])) {
-            Database::send(
-                'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
-                [date('Y-m-d', $newEnd), $uniID]
-            );
-        }
+        Database::send(
+            'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+            [date('Y-m-d', $newEnd), $uniID]
+        );
     }
 
     /**
@@ -524,7 +535,7 @@ class Xray
      *
      * @return array{status: string, message: string}
      */
-    private function xuiUpdate3xUi(string $uniID, int $bonusDays, GetUser $ref): array
+    private function xuiUpdate3xUi(string $uniID, int $bonusDays): array
     {
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj'])) {
@@ -566,7 +577,7 @@ class Xray
             $lim = isset($_ENV['XUI_DEVICE_LIMIT']) ? (int) $_ENV['XUI_DEVICE_LIMIT'] : 1;
             $add = $this->addClientPanelApi($bonusDays, $uniID, $lim);
             if (is_array($add) && ($add['success'] ?? false) === true) {
-                self::syncUserDateEnd($uniID, $bonusDays, $ref);
+                self::syncUserDateEndByUniID($uniID, $bonusDays);
                 return ['status' => 'ok', 'message' => 'Клиент создан, бонусные дни начислены'];
             }
             return ['status' => 'error', 'message' => 'Клиент не найден в панели и не удалось создать'];
@@ -582,7 +593,7 @@ class Xray
         $payload = ['id' => (int) $inbound['id'], 'settings' => $settingsJson];
         $updateUser = self::threeXuiHttp('POST', $path, $payload);
         if ($updateUser !== false && ($updateUser['success'] ?? false) === true) {
-            self::syncUserDateEnd($uniID, $bonusDays, $ref);
+            self::syncUserDateEndByUniID($uniID, $bonusDays);
             return ['status' => 'ok', 'message' => 'Бонусные дни добавлены'];
         }
         file_put_contents(
@@ -603,12 +614,12 @@ class Xray
         if ($bonusDays <= 0) {
             return ['status' => 'error', 'message' => 'Некорректное число дней'];
         }
-        $ref = new GetUser();
-        if (empty($ref->getUniID())) {
-            return ['status' => 'error', 'message' => 'Пользователь не найден'];
+        $uniID = trim($uniID);
+        if ($uniID === '') {
+            return ['status' => 'error', 'message' => 'Не указан uniID'];
         }
 
-        return $this->xuiUpdate3xUi($uniID, $bonusDays, $ref);
+        return $this->xuiUpdate3xUi($uniID, $bonusDays);
     }
 
     /**
@@ -679,6 +690,9 @@ class Xray
      */
     public function DeleteKey($uniID = null)
     {
+        if (is_object($uniID)) {
+            $uniID = null;
+        }
         $client = new GetUser();
         $uniID = $uniID === null ? $client->getUniID() : $uniID;
 
@@ -697,7 +711,16 @@ class Xray
             return ['status' => 'error', 'message' => 'Пользователь не найден'];
         }
 
-        return $this->deleteKey3xUi((string) $uniID);
+        $result = $this->deleteKey3xUi((string) $uniID);
+
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (str_contains($uri, 'subscription/delete')) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode($result, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        return $result;
     }
 
     /**

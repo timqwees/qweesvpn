@@ -6,6 +6,7 @@ namespace Setting\Route\Function\Controllers\Refer\Bonus;
 
 use App\Config\Database;
 use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 
 /**
  * Bonus - Обработка бонусов реферальной системы
@@ -53,26 +54,55 @@ class Bonus
     }
 
     /**
-     * Добавить бонусные дни к подписке пользователя
+     * Добавить бонусные дни к подписке пользователя (панель 3x-ui + БД).
      */
     private function addBonusDays(int $userId, int $days): void
     {
+        if ($days <= 0) {
+            return;
+        }
         $users = Database::send("SELECT uniID FROM qwees_users WHERE id = ?", [$userId]);
         if (!is_array($users) || $users === [] || empty($users[0]['uniID'])) {
             return;
         }
         $uniID = (string) $users[0]['uniID'];
 
-        $result = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ? LIMIT 1", [$uniID]);
-        $currentEnd = (is_array($result) && $result !== []) ? ($result[0]['date_end'] ?? null) : null;
-
-        if ($currentEnd && strtotime((string) $currentEnd) > time()) {
-            $newEnd = date('Y-m-d H:i:s', strtotime((string) $currentEnd . " +{$days} days"));
-        } else {
-            $newEnd = date('Y-m-d H:i:s', strtotime("+{$days} days"));
+        $sub = Database::send('SELECT uniID FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+        if (!is_array($sub) || $sub === [] || empty($sub[0]['uniID'])) {
+            return;
         }
 
-        Database::send("UPDATE qwees_subscriptions SET date_end = ? WHERE uniID = ?", [$newEnd, $uniID]);
+        $xray = new Xray();
+        $vpn = $xray->xui_update($uniID, $days);
+        if (($vpn['status'] ?? '') !== 'ok') {
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                sprintf(
+                    "[%s] [РЕФЕРАЛ-БОНУС] xui_update для %s не удалось: %s — продление только в БД\n",
+                    date('Y-m-d H:i:s'),
+                    $uniID,
+                    (string) ($vpn['message'] ?? json_encode($vpn, JSON_UNESCAPED_UNICODE))
+                ),
+                FILE_APPEND
+            );
+            $this->extendSubscriptionDateEndDbOnly($uniID, $days);
+        }
+    }
+
+    /** Резерв: продлить date_end в БД без панели (как в старой логике). */
+    private function extendSubscriptionDateEndDbOnly(string $uniID, int $days): void
+    {
+        $result = Database::send('SELECT date_end FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+        $currentEnd = (is_array($result) && $result !== []) ? ($result[0]['date_end'] ?? null) : null;
+        if ($currentEnd && strtotime((string) $currentEnd) > time()) {
+            $newEnd = date('Y-m-d', strtotime((string) $currentEnd . " +{$days} days"));
+        } else {
+            $newEnd = date('Y-m-d', strtotime("+{$days} days"));
+        }
+        Database::send(
+            'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+            [$newEnd, $uniID]
+        );
     }
 
     /**
