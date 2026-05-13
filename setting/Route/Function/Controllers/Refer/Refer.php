@@ -9,7 +9,7 @@ use App\Config\Session;
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
 use Setting\Route\Function\Controllers\Refer\Bonus\Bonus;
-use Setting\Route\Function\Controllers\Client\getUser;
+use Setting\Route\Function\Controllers\Client\GetUser;
 
 /**
  * Refer - Корневой файл реферальной системы (как главный класс плагина)
@@ -24,7 +24,7 @@ class Refer
     /**
      * Внутренняя логика активации (используется API и handleReferLink)
      */
-    private static function doActivate(string $code, int $userId, getUser $user): array
+    private static function doActivate(string $code, int $userId, GetUser $user): array
     {
         $code = trim(strtoupper($code));
 
@@ -138,7 +138,7 @@ class Refer
         Session::init('pending_refer_code', $code);
 
         // Если пользователь уже авторизован - активируем сразу
-        $user = new getUser();
+        $user = new GetUser();
         if ($user->getID() > 0) {
             $result = self::doActivate($code, $user->getID(), $user);
             $status = $result['status'] ? 'success' : 'error';

@@ -103,7 +103,7 @@ class Xray
 
 
     /** Продление date_end в БД при реферальном бонусе. */
-    private static function syncUserDateEnd(string $uniID, int $bonusDays, getUser $ref): void
+    private static function syncUserDateEnd(string $uniID, int $bonusDays, GetUser $ref): void
     {
         $dateEnd = $ref->getDateEnd();
         $base = !empty($dateEnd) ? max(strtotime($dateEnd . ' 23:59:59'), time()) : time();
@@ -539,7 +539,7 @@ class Xray
         if ($bonusDays <= 0) {
             return ['status' => 'error', 'message' => 'Некорректное число дней'];
         }
-        $ref = new getUser();
+        $ref = new GetUser();
         if (empty($ref->getUniID())) {
             return ['status' => 'error', 'message' => 'Пользователь не найден'];
         }
@@ -676,7 +676,7 @@ class Xray
      */
     public function DeleteKey($uniID = null)
     {
-        $client = new getUser();
+        $client = new GetUser();
         $uniID = $uniID === null ? $client->getUniID() : $uniID;
 
         // Логируем начало процесса удаления

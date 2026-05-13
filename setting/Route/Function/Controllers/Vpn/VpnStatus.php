@@ -8,7 +8,7 @@ use Setting\Route\Function\Controllers\Client\GetUser;
 
 class VpnStatus
 {
-    private getUser $user;
+    private GetUser $user;
 
     // Статическое кэширование для ускорения
     private static array $cache = [];
@@ -16,7 +16,7 @@ class VpnStatus
 
     public function __construct()
     {
-        $this->user = new getUser();
+        $this->user = new GetUser();
     }
 
     /**

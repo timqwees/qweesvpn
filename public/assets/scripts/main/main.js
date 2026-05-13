@@ -13,14 +13,17 @@ $(document).ready(function () {
 
     var sectionId = $toggle.attr('data-toggle-section');
 
-    if ($('[data-toggle-section]').hasClass('bg_active')) {
-      $('[data-toggle-section]').each(function () {
-        $(this).removeClass('bg_active');
-      });
+    // /pay и др.: дубли desktop/mobile с одинаковыми data-section — переключаем только внутри колонки
+    var $layout = $toggle.closest('[data-pay-layout]');
+    var $toggleGroup = $layout.length ? $layout.find('[data-toggle-section]') : $('[data-toggle-section]');
+    var $sectionGroup = $layout.length ? $layout.find('[data-section]') : $('[data-section]');
+
+    if ($toggleGroup.filter('.bg_active').length) {
+      $toggleGroup.removeClass('bg_active');
       $toggle.addClass('bg_active');
     }
 
-    $('[data-section]').each(function () {
+    $sectionGroup.each(function () {
       $(this).css({
         'transition': 'opacity 0.3s',
         'opacity': 0
@@ -30,7 +33,7 @@ $(document).ready(function () {
       }.bind(this), 300);
     });
 
-    var targetSection = $('[data-section="' + sectionId + '"]');
+    var targetSection = $sectionGroup.filter('[data-section="' + sectionId + '"]');
     if (targetSection.length) {
       setTimeout(function () {
         targetSection.removeClass('hidden');

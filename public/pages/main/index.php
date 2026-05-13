@@ -10,7 +10,7 @@ use Setting\Route\Function\Functions;
 
 Auth::auth();
 $site = Functions::site();
-$user = new getUser();
+$user = new GetUser();
 
 // язык
 $currentLanguage = Language::getCurrent();
@@ -44,6 +44,16 @@ $formattedVpnStatus = [
     ],
     'monoblock_class' => 'animation_monoblock_on'
 ];
+
+// Без активной подписки не показываем реальные параметры узла (пинг/IP/хост из .env)
+if ($vpnStatus !== 'active') {
+    $formattedVpnStatus['ping_label'] = '0';
+    $formattedVpnStatus['ping_class'] = 'text-gray-400';
+    $formattedVpnStatus['ping_icon'] = 'fa-minus';
+    $formattedVpnStatus['protocol'] = '—';
+    $formattedVpnStatus['ip_address'] = '—';
+    $formattedVpnStatus['location'] = '—';
+}
 
 $formattedUserProfile = [
     'full_name' => trim($user->getFistName() . ' ' . $user->getLastName()) ?: 'Пользователь',
@@ -140,7 +150,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <li class="flex h-16 gap-4 items-center justify-center">
                             <img decoding="async" loading="lazy" data-theme-invert class="w-auto h-12 object-contain"
-                                src="public/assets/images/icons/logo/qweesvpn.svg"
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
                                 alt="<?= htmlspecialchars($site['ООО']) ?>">
                             <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">
                                 Qwees<span class="text-green-400">VPN</span>

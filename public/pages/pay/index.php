@@ -1,5 +1,10 @@
 <?php declare(strict_types=1);
-Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
+
+use Setting\Route\Function\Functions;
+
+Setting\Route\Function\Controllers\Auth\Auth::auth();
+$site = Functions::site();
+?>
 <!DOCTYPE html>
 <html lang="ru" class="dark">
 
@@ -62,7 +67,7 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
             <!-- КОНЕЦ БЕЗ ИЗМЕНЕНИЙ -->
 
             <!-- ################# CONTENT DESCKTOP ####################-->
-            <div class="hidden sm:block w-full text-white">
+            <div class="hidden sm:block w-full text-white" data-pay-layout="desktop">
                 <!-- main -->
                 <section data-section="main"
                     class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
@@ -802,7 +807,7 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
             </div>
 
             <!-- ################# CONTENT MOBILE ####################-->
-            <div class="sm:hidden w-full text-white">
+            <div class="sm:hidden w-full text-white" data-pay-layout="mobile">
                 <!-- main -->
                 <section data-section="main"
                     class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
@@ -1547,16 +1552,24 @@ Setting\Route\Function\Controllers\Auth\Auth::auth(); ?>
                 // Menu navigation functionality
                 $('[data-select-section]').on('click', function () {
                     var sectionId = $(this).attr('data-select-section');
-                    $('[data-main]').attr('data-toggle-section', sectionId);//find element for data-main
+                    var $layout = $(this).closest('[data-pay-layout]');
+                    if ($layout.length) {
+                        $layout.find('[data-main]').attr('data-toggle-section', sectionId);
+                    } else {
+                        $('[data-main]').attr('data-toggle-section', sectionId);
+                    }
                 });
 
                 // Payment processing
                 $('.payment-submit-btn').on('click', function (e) {
                     e.preventDefault();
 
+                    var isDesktop = window.matchMedia('(min-width: 640px)').matches;
+                    var $activePay = isDesktop ? $('[data-pay-layout="desktop"]') : $('[data-pay-layout="mobile"]');
+
                     // Собираем данные формы
-                    const selectedTariff = $('input[name="subscription"]:checked').val();
-                    const selectedPayment = $('input[name="payment"]:checked').val();
+                    const selectedTariff = $activePay.find('input[name="subscription"]:checked').val();
+                    const selectedPayment = $activePay.find('input[name="payment"]:checked').val();
 
                     if (!selectedTariff || !selectedPayment) {
                         alert('Пожалуйста, выберите тариф и способ оплаты');

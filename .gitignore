@@ -3,9 +3,6 @@
 .idea/
 .vscode/
 
-# Ignore environment files
-.env
-
 # Ignore vendor files
 /vendor/
 
@@ -17,7 +14,9 @@
 Thumbs.db
 
 # Local backup archives (GitHub rejects blobs > 100 MiB)
-архив.zip
+*.zip
+
+vendor/
 
 # Ignore log files
 *.log

@@ -17,7 +17,10 @@
     "psr-4": {
       "App\\": "app/",
       "Setting\\": "setting/"
-    }
+    },
+    "classmap": [
+      "setting/Route/Function/Controllers/kassa/"
+    ]
   },
   "scripts": {}
 }
