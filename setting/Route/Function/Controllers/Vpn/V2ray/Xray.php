@@ -101,7 +101,8 @@ class Xray
      */
     private static function curlOptsMerge(array $opts): array
     {
-        return array_merge(self::curlSslUserAgentOpts(), $opts);
+        // array_merge reindexes numeric keys (CURLOPT_* are ints) → invalid keys for curl_setopt_array (PHP 8+).
+        return array_replace(self::curlSslUserAgentOpts(), $opts);
     }
 
     /** Авторизация 3x-ui по паролю (если нет Bearer-токена). */
