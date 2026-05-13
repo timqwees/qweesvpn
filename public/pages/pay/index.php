@@ -74,7 +74,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -88,7 +88,7 @@ $site = Functions::site();
                     <div class="grid grid-cols-2 grid-rows-2 gap-2">
                         <!-- block 1 -->
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_b border_light_r pb-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Аноним</h4>
@@ -98,7 +98,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрость</h4>
@@ -107,7 +107,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 3 -->
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_r">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
@@ -116,7 +116,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрытность</h4>
@@ -217,7 +217,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -262,7 +262,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -303,7 +303,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -344,7 +344,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -376,7 +376,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -421,7 +421,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -462,7 +462,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -503,7 +503,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -535,7 +535,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img decoding="async" loading="lazy" class="max-h-6"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -580,7 +580,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -621,7 +621,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -662,7 +662,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -694,7 +694,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -732,7 +732,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -768,7 +768,7 @@ $site = Functions::site();
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
                                             alt="sber">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
@@ -814,7 +814,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -828,7 +828,7 @@ $site = Functions::site();
                     <div class="grid grid-cols-2 grid-rows-2 gap-2">
                         <!-- block 1 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b border_light_r pb-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Аноним</h4>
@@ -838,7 +838,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрость</h4>
@@ -847,7 +847,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 3 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_r">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
@@ -856,7 +856,7 @@ $site = Functions::site();
                         </div>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
-                            <div class="flex gap-2"><img decoding="async" loading="lazy"
+                            <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
                                     alt="icon1" loading="lazy">
                                 <h4 class="text-lg font-bold font-sans">Скрытность</h4>
@@ -957,7 +957,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -1002,7 +1002,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1043,7 +1043,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1084,7 +1084,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1116,7 +1116,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -1161,7 +1161,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1202,7 +1202,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1243,7 +1243,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1275,7 +1275,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -1320,7 +1320,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1361,7 +1361,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1402,7 +1402,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1434,7 +1434,7 @@ $site = Functions::site();
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy"
+                            <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
@@ -1472,7 +1472,7 @@ $site = Functions::site();
                                 <!-- нижний -->
                                 <div class="relative flex flex-col gap-2 justify-between">
                                     <div class="flex">
-                                        <div class="flex gap-2"><img decoding="async" loading="lazy"
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
                                                 alt="icon1" loading="lazy">
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
@@ -1508,7 +1508,7 @@ $site = Functions::site();
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sber-pay-gradient-sign-logo.svg"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
                                             alt="sber">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
