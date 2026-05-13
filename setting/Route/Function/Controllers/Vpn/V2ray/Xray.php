@@ -153,37 +153,71 @@ class Xray
      */
     public function addClient($days, $uniID, $device_limit = null): array|false
     {
-        // Логин и получение куки
-        $ch = curl_init(self::panelBase() . self::pathLogin());
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode([
-                'username' => self::xuiLogin(),
-                'password' => self::xuiPassword()
-            ]),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
-        ]);
-        $response = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        $curlErrno = curl_errno($ch);
+        // Логин и получение куки с retry-механизмом
+        $maxRetries = 3;
+        $response = false;
+        $code = 0;
+        $curlError = '';
+        $curlErrno = 0;
+        $cookie = '';
 
-        $cookieName = self::cookieName();
-        // Handle both 'x-ui' and '3x-ui' cookie names
-        $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
-        if ($code !== 200 || !preg_match($cookiePattern, $response, $m)) {
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $ch = curl_init(self::panelBase() . self::pathLogin());
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([
+                    'username' => self::xuiLogin(),
+                    'password' => self::xuiPassword()
+                ]),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_CONNECTTIMEOUT => 20,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
+            ]);
+            $response = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            $curlErrno = curl_errno($ch);
+            curl_close($ch);
+
+            $cookieName = self::cookieName();
+            $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
+
+            if ($code === 200 && preg_match($cookiePattern, $response, $m)) {
+                $cookie = $m[1];
+                break;
+            }
+
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [ВЫДАЧА ПОДПИСКИ] Auth error on XUI panel: HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
+                    "[%s] [ВЫДАЧА ПОДПИСКИ] Auth attempt %d/%d failed: HTTP %d, cURL Error: %s (errno: %d)\n",
                     date('Y-m-d H:i:s'),
+                    $attempt,
+                    $maxRetries,
+                    $code,
+                    $curlError,
+                    $curlErrno
+                ),
+                FILE_APPEND
+            );
+
+            if ($attempt < $maxRetries) {
+                usleep(500000 * $attempt); // 0.5s, 1s, 1.5s
+            }
+        }
+
+        if ($code !== 200 || empty($cookie)) {
+            file_put_contents(
+                self::logFile(),
+                sprintf(
+                    "[%s] [ВЫДАЧА ПОДПИСКИ] Auth error on XUI panel after %d attempts: HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
+                    date('Y-m-d H:i:s'),
+                    $maxRetries,
                     $code,
                     $curlError,
                     $curlErrno,
@@ -193,29 +227,58 @@ class Xray
             );
             return false;
         }
-        $cookie = $m[1];
 
-        // Список inbounds
-        $ch = curl_init(self::panelBase() . self::pathList());
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => ['Cookie: ' . $cookie],
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
-        ]);
-        $response = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
+        // Список inbounds с retry-механизмом
+        $maxRetries = 3;
+        $response = false;
+        $code = 0;
+        $curlError = '';
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $ch = curl_init(self::panelBase() . self::pathList());
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => ['Cookie: ' . $cookie],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_CONNECTTIMEOUT => 20,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
+            ]);
+            $response = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            if ($response !== false && empty($curlError) && $code === 200) {
+                break;
+            }
+
+            file_put_contents(
+                self::logFile(),
+                sprintf(
+                    "[%s] [ВЫДАЧА ПОДПИСКИ] Inbounds list attempt %d/%d failed: HTTP %d, cURL Error: %s\n",
+                    date('Y-m-d H:i:s'),
+                    $attempt,
+                    $maxRetries,
+                    $code,
+                    $curlError
+                ),
+                FILE_APPEND
+            );
+
+            if ($attempt < $maxRetries) {
+                usleep(500000 * $attempt);
+            }
+        }
 
         if ($response === false || !empty($curlError)) {
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [ОШИБКА - ВЫДАЧА ПОДПИСКИ] Ошибка cURL при получении списка inbounds: %s\n",
+                    "[%s] [ОШИБКА - ВЫДАЧА ПОДПИСКИ] Ошибка cURL при получении списка inbounds после %d попыток: %s\n",
                     date('Y-m-d H:i:s'),
+                    $maxRetries,
                     $curlError
                 ),
                 FILE_APPEND
@@ -549,34 +612,58 @@ class Xray
         }
 
         $base = self::panelBase();
-        $ch = curl_init($base . self::pathLogin());
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode([
-                'username' => self::xuiLogin(),
-                'password' => self::xuiPassword()
-            ]),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
-        ]);
-        $response = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        $curlErrno = curl_errno($ch);
-        $cookieName = self::cookieName();
-        $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
-        if ($code !== 200 || !preg_match($cookiePattern, $response, $m)) {
+
+        // Авторизация с retry-механизмом
+        $maxRetries = 3;
+        $response = false;
+        $code = 0;
+        $curlError = '';
+        $curlErrno = 0;
+        $cookie = '';
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $ch = curl_init($base . self::pathLogin());
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([
+                    'username' => self::xuiLogin(),
+                    'password' => self::xuiPassword()
+                ]),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_CONNECTTIMEOUT => 20,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
+            ]);
+            $response = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            $curlErrno = curl_errno($ch);
+            curl_close($ch);
+
+            $cookieName = self::cookieName();
+            $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
+
+            if ($code === 200 && preg_match($cookiePattern, $response, $m)) {
+                $cookie = $m[1];
+                break;
+            }
+
+            if ($attempt < $maxRetries) {
+                usleep(500000 * $attempt);
+            }
+        }
+
+        if ($code !== 200 || empty($cookie)) {
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [xui_update] Auth failed HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
+                    "[%s] [xui_update] Auth failed after %d attempts: HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
                     date('Y-m-d H:i:s'),
+                    $maxRetries,
                     $code,
                     $curlError,
                     $curlErrno,
@@ -586,7 +673,6 @@ class Xray
             );
             return ['status' => 'error', 'message' => 'Не удалось войти в X-UI'];
         }
-        $cookie = $m[1];
 
         $ch = curl_init($base . self::pathList());
         curl_setopt_array($ch, [
@@ -707,7 +793,7 @@ class Xray
             return ['status' => 'error', 'message' => 'Пользователь не найден'];
         }
 
-        // 1. Авторизация
+        // 1. Авторизация с retry-механизмом
         file_put_contents(
             self::logFile(),
             sprintf(
@@ -717,26 +803,48 @@ class Xray
             FILE_APPEND
         );
 
-        $ch = curl_init(self::panelBase() . self::pathLogin());
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode([
-                'username' => self::xuiLogin(),
-                'password' => self::xuiPassword()
-            ]),
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => true,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
-        ]);
-        $response = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        $curlErrno = curl_errno($ch);
+        $maxRetries = 3;
+        $response = false;
+        $code = 0;
+        $curlError = '';
+        $curlErrno = 0;
+        $cookie = '';
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            $ch = curl_init(self::panelBase() . self::pathLogin());
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode([
+                    'username' => self::xuiLogin(),
+                    'password' => self::xuiPassword()
+                ]),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HEADER => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+                CURLOPT_TIMEOUT => 45,
+                CURLOPT_CONNECTTIMEOUT => 20,
+                CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)'
+            ]);
+            $response = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            $curlErrno = curl_errno($ch);
+            curl_close($ch);
+
+            $cookieName = self::cookieName();
+            $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
+
+            if ($code === 200 && preg_match($cookiePattern, $response, $m)) {
+                $cookie = $m[1];
+                break;
+            }
+
+            if ($attempt < $maxRetries) {
+                usleep(500000 * $attempt);
+            }
+        }
 
         file_put_contents(
             self::logFile(),
@@ -751,15 +859,13 @@ class Xray
             FILE_APPEND
         );
 
-        $cookieName = self::cookieName();
-        // Handle both 'x-ui' and '3x-ui' cookie names
-        $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
-        if ($code !== 200 || !preg_match($cookiePattern, $response, $m)) {
+        if ($code !== 200 || empty($cookie)) {
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [DELETE KEY] Auth error on XUI panel: HTTP %d, cURL Error: %s (errno: %d)\n",
+                    "[%s] [DELETE KEY] Auth error on XUI panel after %d attempts: HTTP %d, cURL Error: %s (errno: %d)\n",
                     date('Y-m-d H:i:s'),
+                    $maxRetries,
                     $code,
                     $curlError,
                     $curlErrno
@@ -768,7 +874,6 @@ class Xray
             );
             return ['status' => 'error', 'message' => 'Не удалось авторизоваться в X-UI'];
         }
-        $cookie = $m[1];
 
         file_put_contents(
             self::logFile(),
