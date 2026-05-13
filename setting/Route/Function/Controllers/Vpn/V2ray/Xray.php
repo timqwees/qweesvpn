@@ -172,7 +172,8 @@ class Xray
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
+        $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
 
         $cookieName = self::cookieName();
         // Handle both 'x-ui' and '3x-ui' cookie names
@@ -181,9 +182,12 @@ class Xray
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [ВЫДАЧА ПОДПИСКИ] Auth error on XUI panel: HTTP %d\n",
+                    "[%s] [ВЫДАЧА ПОДПИСКИ] Auth error on XUI panel: HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
                     date('Y-m-d H:i:s'),
-                    $code
+                    $code,
+                    $curlError,
+                    $curlErrno,
+                    self::panelBase() . self::pathLogin()
                 ),
                 FILE_APPEND
             );
@@ -563,12 +567,21 @@ class Xray
         ]);
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
         $cookieName = self::cookieName();
         $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
         if ($code !== 200 || !preg_match($cookiePattern, $response, $m)) {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [xui_update] Auth failed HTTP %d\n", date('Y-m-d H:i:s'), $code),
+                sprintf(
+                    "[%s] [xui_update] Auth failed HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
+                    date('Y-m-d H:i:s'),
+                    $code,
+                    $curlError,
+                    $curlErrno,
+                    $base . self::pathLogin()
+                ),
                 FILE_APPEND
             );
             return ['status' => 'error', 'message' => 'Не удалось войти в X-UI'];
@@ -723,14 +736,17 @@ class Xray
         $response = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
+        $curlErrno = curl_errno($ch);
 
         file_put_contents(
             self::logFile(),
             sprintf(
-                "[%s] [DELETE KEY] Результат авторизации: HTTP %d, cURL Error: %s\n",
+                "[%s] [DELETE KEY] Результат авторизации: HTTP %d, cURL Error: %s (errno: %d), URL: %s\n",
                 date('Y-m-d H:i:s'),
                 $code,
-                $curlError
+                $curlError,
+                $curlErrno,
+                self::panelBase() . self::pathLogin()
             ),
             FILE_APPEND
         );
@@ -742,9 +758,11 @@ class Xray
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [DELETE KEY] Auth error on XUI panel: HTTP %d\n",
+                    "[%s] [DELETE KEY] Auth error on XUI panel: HTTP %d, cURL Error: %s (errno: %d)\n",
                     date('Y-m-d H:i:s'),
-                    $code
+                    $code,
+                    $curlError,
+                    $curlErrno
                 ),
                 FILE_APPEND
             );
