@@ -1,7 +1,7 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
 use Setting\Route\Function\Functions;
-Auth::auth();
+// Auth::auth();
 $site = Functions::site();
 ?>
 <!DOCTYPE html>
