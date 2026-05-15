@@ -116,3 +116,19 @@ $site = Functions::site();
                                 class="w-full flex-1 bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans"
                                 disabled>Войти</button>
                         </div>
+                        <p class="font-sans text-white hidden p-2" id="verefy_status"></p>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- customized scripts -->
+        <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/regist/main.js"></script>
+        <!--  -->
+
+    </div>
+</body>
+
+</html>
