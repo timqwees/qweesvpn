@@ -42,7 +42,7 @@ class SystemInfo
 
     public function getDbDriver(): string
     {
-        return 'sqlite';
+        return Database::getDriverType();
     }
 
     public function getDbStatus(): string

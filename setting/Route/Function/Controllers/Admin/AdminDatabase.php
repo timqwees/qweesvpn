@@ -101,8 +101,15 @@ class AdminDatabase
      */
     public static function getTables(): array
     {
-        $tables = Database::send("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-        return is_array($tables) && !empty($tables) ? array_column($tables, 'name') : [];
+        if (Database::isMysql()) {
+            // MySQL: используем SHOW TABLES
+            $tables = Database::send("SHOW TABLES");
+            return is_array($tables) && !empty($tables) ? array_column($tables, array_key_first($tables[0])) : [];
+        } else {
+            // SQLite: используем sqlite_master
+            $tables = Database::send("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            return is_array($tables) && !empty($tables) ? array_column($tables, 'name') : [];
+        }
     }
 
     /**
@@ -119,10 +126,19 @@ class AdminDatabase
             return array_keys($data[0]);
         }
 
-        // Если таблица пустая, используем PRAGMA
-        $info = Database::send("PRAGMA table_info({$table})"); //получаем
-        if (is_array($info) && !empty($info)) { //данные пришли
-            return array_column($info, 'name'); //возвращяем имена колонок (для заполнения таблицы имен колонок)
+        // Если таблица пустая, используем соответствующий запрос для типа БД
+        if (Database::isMysql()) {
+            // MySQL: используем SHOW COLUMNS
+            $info = Database::send("SHOW COLUMNS FROM {$table}");
+            if (is_array($info) && !empty($info)) {
+                return array_column($info, 'Field');
+            }
+        } else {
+            // SQLite: используем PRAGMA
+            $info = Database::send("PRAGMA table_info({$table})");
+            if (is_array($info) && !empty($info)) {
+                return array_column($info, 'name');
+            }
         }
 
         return [];
@@ -543,13 +559,23 @@ class AdminDatabase
      */
     private static function getRevenueByPeriod(string $period): float
     {
-        $dateCondition = match ($period) {
-            'day' => "DATE(created_at) = DATE('now')",
-            'week' => "created_at >= DATE('now', '-7 days')",
-            'month' => "created_at >= DATE('now', '-30 days')",
-            'year' => "created_at >= DATE('now', '-365 days')",
-            default => "1=1"
-        };
+        if (Database::isMysql()) {
+            $dateCondition = match ($period) {
+                'day' => "DATE(created_at) = CURDATE()",
+                'week' => "created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)",
+                'month' => "created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)",
+                'year' => "created_at >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)",
+                default => "1=1"
+            };
+        } else {
+            $dateCondition = match ($period) {
+                'day' => "DATE(created_at) = DATE('now')",
+                'week' => "created_at >= DATE('now', '-7 days')",
+                'month' => "created_at >= DATE('now', '-30 days')",
+                'year' => "created_at >= DATE('now', '-365 days')",
+                default => "1=1"
+            };
+        }
 
         return (float) self::aggregate('qwees_subscriptions', 'SUM', 'amount', $dateCondition);
     }
@@ -560,14 +586,25 @@ class AdminDatabase
      */
     private static function getMonthlyRevenueChart(): array
     {
-        $sql = "SELECT 
-                    strftime('%Y-%m', created_at) as month,
-                    SUM(amount) as revenue,
-                    COUNT(*) as count
-                FROM qwees_subscriptions 
-                WHERE created_at >= DATE('now', '-12 months')
-                GROUP BY strftime('%Y-%m', created_at)
-                ORDER BY month";
+        if (Database::isMysql()) {
+            $sql = "SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        SUM(amount) as revenue,
+                        COUNT(*) as count
+                    FROM qwees_subscriptions 
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                    ORDER BY month";
+        } else {
+            $sql = "SELECT 
+                        strftime('%Y-%m', created_at) as month,
+                        SUM(amount) as revenue,
+                        COUNT(*) as count
+                    FROM qwees_subscriptions 
+                    WHERE created_at >= DATE('now', '-12 months')
+                    GROUP BY strftime('%Y-%m', created_at)
+                    ORDER BY month";
+        }
 
         $result = Database::send($sql);
         return is_array($result) ? $result : [];
@@ -579,13 +616,24 @@ class AdminDatabase
      */
     private static function getMonthlyUsersChart(): array
     {
-        $sql = "SELECT 
-                    strftime('%Y-%m', created_at) as month,
-                    COUNT(*) as users_count
-                FROM qwees_users 
-                WHERE created_at >= DATE('now', '-12 months')
-                GROUP BY strftime('%Y-%m', created_at)
-                ORDER BY month";
+        if (Database::isMysql()) {
+            $sql = "SELECT 
+                        DATE_FORMAT(created_at, '%Y-%m') as month,
+                        COUNT(*) as users_count
+                    FROM qwees_users 
+                    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+                    ORDER BY month";
+        } else {
+            $sql = "SELECT 
+                        strftime('%Y-%m', created_at) as month,
+                        COUNT(*) as users_count
+                    FROM qwees_users 
+                    WHERE created_at >= DATE('now', '-12 months')
+                    GROUP BY strftime('%Y-%m', created_at)
+                    ORDER BY month";
+        }
+        
         $result = Database::send($sql);
         return is_array($result) ? $result : [];
     }

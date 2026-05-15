@@ -85,48 +85,7 @@ class Network extends Session
      */
     public static function onTableAllExists()
     {
-        $schemaFile = Database::$schema_name;
-        if (!file_exists($schemaFile)) {
-            Message::set('error', "Файл схемы не найден: $schemaFile");
-            return;
-        }
-        $schema = file_get_contents($schemaFile);
-        if ($schema === false || trim($schema) === '') {
-            Message::set('error', "Схема пуста или не может быть прочитана: $schemaFile");
-            return;
-        }
-
-        $tables = [];
-        if (preg_match_all('/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([`"]?)([a-zA-Z0-9_]+)\1/i', $schema, $matches)) {
-            $tables = $matches[2];
-
-            $newTablesCreated = [];
-            foreach ($tables as $table) {
-                if (!self::onTableExists($table)) {
-                    try {
-                        $pattern = '/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+[`"]?' . preg_quote($table, '/') . '[`"]?\s*\((.*?)\);/is';
-                        if (preg_match($pattern, $schema, $tableMatch)) {
-                            // Используем двойные кавычки для SQLite, обратные кавычки для MySQL
-                            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
-                            $quoteChar = ($db_selection === 'sqlite') ? '"' : '`';
-                            $createSql = "CREATE TABLE IF NOT EXISTS $quoteChar$table$quoteChar (" . trim($tableMatch[1]) . ");";
-
-                            if ($db_selection === 'mysql') {
-                                $createSql = preg_replace('/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/i', 'INT NOT NULL AUTO_INCREMENT PRIMARY KEY', $createSql);
-                            }
-
-                            Database::send($createSql);
-                            Message::set('info', "Создана таблица '$table' по схеме.");
-                            $newTablesCreated[] = $table;
-                        } else {
-                            Message::set('error', "Не удалось найти SQL для создания таблицы '$table' в " . Database::$schema_name);
-                        }
-                    } catch (\PDOException $e) {
-                        Message::set('error', "Ошибка при создании таблицы '$table': " . $e->getMessage());
-                    }
-                }
-            }
-        }
+        Database::bootstrapSchemaIfNeeded();
     }
 
     /**
@@ -153,24 +112,7 @@ class Network extends Session
      */
     private static function onTableExists(string $tableName)
     {
-        try {
-            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
-            if ($db_selection === 'sqlite') {
-                $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name=?";
-                $params = [$tableName];
-                $result = Database::send($sql, $params);
-                return is_array($result) && count($result) > 0;
-            } else {
-                // MySQL
-                $sql = "SHOW TABLES LIKE ?";
-                $params = [$tableName];
-                $result = Database::send($sql, $params);
-                return is_array($result) && count($result) > 0;
-            }
-        } catch (\PDOException $e) {
-            Message::set('error', "Ошибка при проверке существования таблицы '$tableName': " . $e->getMessage());
-            return false;
-        }
+        return Database::tableExists($tableName);
     }
 
     /**
@@ -199,12 +141,10 @@ class Network extends Session
     public static function onColumnExists(string $columnName, string $tableName)
     {
         try {
-            $db_selection = $_ENV['DATABASE'] ?? getenv('DATABASE') ?? 'sqlite';
-
             // Проверяем, существует ли колонка в таблице
             $columnExists = false;
 
-            if ($db_selection === 'sqlite') {
+            if (Database::isSqlite()) {
                 $sql = "PRAGMA table_info($tableName)";
                 $columns = Database::send($sql);
                 if (is_array($columns)) {
@@ -216,17 +156,16 @@ class Network extends Session
                     }
                 }
             } else {
-                // MySQL
-                $sql = "SHOW COLUMNS FROM `$tableName` LIKE ?";
-                $columns = Database::send($sql, [$columnName]);
-                if (is_array($columns) && count($columns) > 0) {
-                    $columnExists = true;
-                }
+                $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: Database::$database_name;
+                $sql = 'SELECT COUNT(*) AS cnt FROM information_schema.columns
+                    WHERE table_schema = ? AND table_name = ? AND column_name = ?';
+                $result = Database::send($sql, [$dbName, $tableName, $columnName]);
+                $columnExists = is_array($result) && (int) ($result[0]['cnt'] ?? 0) > 0;
             }
 
             // Если не существует, пытаемся добавить колонку
             if (!$columnExists) {
-                $addColumnSql = ($db_selection === 'sqlite')
+                $addColumnSql = Database::isSqlite()
                     ? "ALTER TABLE \"$tableName\" ADD COLUMN \"$columnName\" TEXT"
                     : "ALTER TABLE `$tableName` ADD COLUMN `$columnName` VARCHAR(255)";
                 Database::send($addColumnSql);

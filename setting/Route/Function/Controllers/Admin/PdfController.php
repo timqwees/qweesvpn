@@ -143,22 +143,38 @@ class PdfController
         ];
 
         // Финансовая статистика
-        $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-30 days') AND status='on'")[0]['total'] ?? 0;
-        $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-7 days') AND status='on'")[0]['total'] ?? 0;
-        $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-1 day') AND status='on'")[0]['total'] ?? 0;
+        if (Database::isMysql()) {
+            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND status='on'")[0]['total'] ?? 0;
+            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND status='on'")[0]['total'] ?? 0;
+            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status='on'")[0]['total'] ?? 0;
+            $monthlyDataSql = "
+                SELECT 
+                    DATE_FORMAT(date_end, '%Y-%m') as month,
+                    COUNT(*) as users_count
+                FROM qwees_subscriptions 
+                WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+                GROUP BY DATE_FORMAT(date_end, '%Y-%m')
+                ORDER BY month DESC
+                LIMIT 12
+            ";
+        } else {
+            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-30 days') AND status='on'")[0]['total'] ?? 0;
+            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-7 days') AND status='on'")[0]['total'] ?? 0;
+            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-1 day') AND status='on'")[0]['total'] ?? 0;
+            $monthlyDataSql = "
+                SELECT 
+                    strftime('%Y-%m', date_end) as month,
+                    COUNT(*) as users_count
+                FROM qwees_subscriptions 
+                WHERE date_end >= date('now', '-12 months')
+                GROUP BY strftime('%Y-%m', date_end)
+                ORDER BY month DESC
+                LIMIT 12
+            ";
+        }
         $avgCheck = Database::send("SELECT COALESCE(AVG(amount), 0) as avg FROM qwees_subscriptions WHERE status='on'")[0]['avg'] ?? 0;
 
-        // Данные по месяцам
-        $monthlyData = Database::send("
-            SELECT 
-                strftime('%Y-%m', date_end) as month,
-                COUNT(*) as users_count
-            FROM qwees_subscriptions 
-            WHERE date_end >= date('now', '-12 months')
-            GROUP BY strftime('%Y-%m', date_end)
-            ORDER BY month DESC
-            LIMIT 12
-        ");
+        $monthlyData = Database::send($monthlyDataSql);
 
         // Данные по тарифам
         $planData = Database::send("
