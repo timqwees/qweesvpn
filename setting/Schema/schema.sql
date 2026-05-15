@@ -1,29 +1,29 @@
 -- Таблица пользователей
 CREATE TABLE IF NOT EXISTS qwees_users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL DEFAULT '',
     last_name VARCHAR(50) NOT NULL DEFAULT '',
     uniID VARCHAR(50) NOT NULL DEFAULT '',
     email VARCHAR(50) NOT NULL DEFAULT '',
     myrefer VARCHAR(50) DEFAULT NULL,
     refer VARCHAR(50) DEFAULT NULL,
-    refer_id INTEGER DEFAULT 0,
-    refer_count INTEGER DEFAULT 0,
-    discount_percent INTEGER DEFAULT 0,
+    refer_id INT DEFAULT 0,
+    refer_count INT DEFAULT 0,
+    discount_percent INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bonus_percent INTEGER DEFAULT 0
+    bonus_percent INT DEFAULT 0
 );
 
 -- Таблица цен
 CREATE TABLE IF NOT EXISTS qwees_price (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  "name" VARCHAR(20) DEFAULT NULL,
-  "price" INTEGER DEFAULT NULL
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(20) DEFAULT NULL,
+  `price` INT DEFAULT NULL
 );
 
 -- Таблица рефералов
 CREATE TABLE IF NOT EXISTS qwees_refer (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   uniID VARCHAR(50) NOT NULL DEFAULT '',
   refer VARCHAR(50) NOT NULL DEFAULT '',
   me VARCHAR(50) NOT NULL DEFAULT '',
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS qwees_refer (
 
 -- Таблица подписок (отделена от пользователей)
 CREATE TABLE IF NOT EXISTS qwees_subscriptions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
   uniID VARCHAR(50) NOT NULL DEFAULT '',
-  "status" VARCHAR(50) NOT NULL DEFAULT 'off',
+  `status` VARCHAR(50) NOT NULL DEFAULT 'off',
   subscription VARCHAR(255) NOT NULL DEFAULT '',
   amount VARCHAR(50) DEFAULT NULL,
   count_days VARCHAR(50) DEFAULT NULL,
@@ -42,15 +42,15 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
   date_end VARCHAR(50) NOT NULL DEFAULT '',
   payment_method_id VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE(uniID)
 );
 
 -- Индексы для ускорения запросов
-CREATE INDEX IF NOT EXISTS idx_subscriptions_uniID ON qwees_subscriptions(uniID);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON qwees_subscriptions(status);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_date_end ON qwees_subscriptions(date_end);
-CREATE INDEX IF NOT EXISTS idx_subscriptions_status_date ON qwees_subscriptions(status, date_end);
+CREATE INDEX idx_subscriptions_uniID ON qwees_subscriptions(uniID);
+CREATE INDEX idx_subscriptions_status ON qwees_subscriptions(status);
+CREATE INDEX idx_subscriptions_date_end ON qwees_subscriptions(date_end);
+CREATE INDEX idx_subscriptions_status_date ON qwees_subscriptions(status, date_end);
 
---добавление цен по умолчанию
-INSERT INTO qwees_price ("name", "price") VALUES ('basic', 150), ('clasic', 180), ('pro', 200);
+-- добавление цен по умолчанию
+INSERT INTO qwees_price (`name`, `price`) VALUES ('basic', 150), ('clasic', 180), ('pro', 200);
