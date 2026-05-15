@@ -19,7 +19,7 @@
       "Setting\\": "setting/"
     },
     "classmap": [
-      "setting/Route/Function/Controllers/kassa/"
+      "setting/Route/Function/Controllers/Kassa/"
     ]
   },
   "scripts": {}
