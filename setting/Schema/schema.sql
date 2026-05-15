@@ -1,6 +1,6 @@
 -- Таблица пользователей
 CREATE TABLE IF NOT EXISTS qwees_users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(50) NOT NULL DEFAULT '',
     last_name VARCHAR(50) NOT NULL DEFAULT '',
     uniID VARCHAR(50) NOT NULL DEFAULT '',
@@ -11,28 +11,32 @@ CREATE TABLE IF NOT EXISTS qwees_users (
     refer_count INT DEFAULT 0,
     discount_percent INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    bonus_percent INT DEFAULT 0
-);
+    bonus_percent INT DEFAULT 0,
+    INDEX idx_users_uniID (uniID),
+    INDEX idx_users_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Таблица цен
 CREATE TABLE IF NOT EXISTS qwees_price (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT PRIMARY KEY AUTO_INCREMENT,
   `name` VARCHAR(20) DEFAULT NULL,
-  `price` INT DEFAULT NULL
-);
+  `price` INT DEFAULT NULL,
+  INDEX idx_price_name (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Таблица рефералов
 CREATE TABLE IF NOT EXISTS qwees_refer (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT PRIMARY KEY AUTO_INCREMENT,
   uniID VARCHAR(50) NOT NULL DEFAULT '',
-  refer VARCHAR(50) NOT NULL DEFAULT '',
-  me VARCHAR(50) NOT NULL DEFAULT '',
-  count VARCHAR(255) NOT NULL DEFAULT ''
-);
+  `refer` VARCHAR(50) NOT NULL DEFAULT '',
+  `me` VARCHAR(50) NOT NULL DEFAULT '',
+  `count` VARCHAR(255) NOT NULL DEFAULT '',
+  INDEX idx_refer_uniID (uniID)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Таблица подписок (отделена от пользователей)
+-- Таблица подписок
 CREATE TABLE IF NOT EXISTS qwees_subscriptions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id INT PRIMARY KEY AUTO_INCREMENT,
   uniID VARCHAR(50) NOT NULL DEFAULT '',
   `status` VARCHAR(50) NOT NULL DEFAULT 'off',
   subscription VARCHAR(255) NOT NULL DEFAULT '',
@@ -43,14 +47,16 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
   payment_method_id VARCHAR(255) DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE(uniID)
-);
+  UNIQUE KEY unique_uniID (uniID),
+  INDEX idx_subscriptions_uniID (uniID),
+  INDEX idx_subscriptions_status (`status`),
+  INDEX idx_subscriptions_date_end (date_end),
+  INDEX idx_subscriptions_status_date (`status`, date_end)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Индексы для ускорения запросов
-CREATE INDEX idx_subscriptions_uniID ON qwees_subscriptions(uniID);
-CREATE INDEX idx_subscriptions_status ON qwees_subscriptions(status);
-CREATE INDEX idx_subscriptions_date_end ON qwees_subscriptions(date_end);
-CREATE INDEX idx_subscriptions_status_date ON qwees_subscriptions(status, date_end);
-
--- добавление цен по умолчанию
-INSERT INTO qwees_price (`name`, `price`) VALUES ('basic', 150), ('clasic', 180), ('pro', 200);
+-- Данные по умолчанию (безопасная вставка для MySQL)
+INSERT INTO qwees_price (`name`, `price`) VALUES 
+  ('basic', 150), 
+  ('clasic', 180), 
+  ('pro', 200)
+ON DUPLICATE KEY UPDATE `price` = VALUES(`price`);
