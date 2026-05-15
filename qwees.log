@@ -1,8 +1,0 @@
-[2026-05-15 14:07:53] [AUTH] Попытка отправки кода 5210 на timqwees@gmail.com
-[2026-05-15 14:08:04] REGISTER: test test (timqwees@gmail.com)
-[2026-05-15 14:10:32] [3X-UI] Invalid JSON from /panel/api/inbounds/list HTTP 404
-[2026-05-15 14:10:32] [3X-UI addClient] Список inbounds недоступен
-[2026-05-15 14:11:12] [АДМИН-ВЫДАЧА] qws6a0728c4e69e6: 1 дней, 1 уст., до 2026-05-16
-[2026-05-15 14:14:33] [AUTH-SUCCESS] Попытка отправки кода 6161 на timqwees@gmail.com
-[2026-05-15 14:14:52] [AUTH-SUCCESS] Попытка отправки кода 1189 на timqwees@gmail.com
-[2026-05-15 14:16:40] [DELETE KEY] Начало удаления ключа для пользователя uniID: qws6a0728c4e69e6
