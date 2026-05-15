@@ -67,14 +67,14 @@ $site = Functions::site();
                     <!-- INPUT = email -->
                     <label for="email" class="text-white/70 text-2xl font-sans">Почта</label>
                     <div class="relative flex">
-                        <i class="fa fas fa-phone text-white absolute left-5 top-[35%]"></i>
+                        <i class="fa fas fa-envelope text-white absolute left-5 top-[35%]"></i>
                         <input type="email" id="email" name="email" placeholder="your@example.com" required
                             class="w-full text-white rounded-2xl p-3 border border-solid border-white/20 bg-transparent pl-14 text-lg font-[qwees-poppins-regular] outline-none">
                     </div>
                     <p class="font-sans text-white hidden p-2" id="message_status"></p>
                     <!-- BUTTON -->
                     <button data-button="email" onclick="return false"
-                        class="bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans" disabled>Продолжить</button>
+                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans" disabled>Продолжить</button>
 
                     <!-- OTHER -->
                     <div class="flex justify-center items-center gap-6">

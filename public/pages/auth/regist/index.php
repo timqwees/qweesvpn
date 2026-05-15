@@ -67,28 +67,28 @@ $site = Functions::site();
                     <!-- INPUT = first_name -->
                     <label for="first_name" class="text-white/70 text-2xl font-sans">Имя</label>
                     <div class="relative flex">
-                        <i class="fa fas fa-phone text-white absolute left-5 top-[35%]"></i>
+                        <i class="fa fas fa-user text-white absolute left-5 top-[35%]"></i>
                         <input type="text" id="first_name" name="first_name" placeholder="Tim" required
                             class="w-full text-white rounded-2xl p-3 border border-solid border-white/20 bg-transparent pl-14 text-lg font-sans outline-none">
                     </div>
                     <!-- INPUT = last_name -->
                     <label for="last_name" class="text-white/70 text-2xl font-sans">Фамилия</label>
                     <div class="relative flex">
-                        <i class="fa fas fa-phone text-white absolute left-5 top-[35%]"></i>
+                        <i class="fa fas fa-user text-white absolute left-5 top-[35%]"></i>
                         <input type="text" id="last_name" name="last_name" placeholder="Qwees" required
                             class="w-full text-white rounded-2xl p-3 border border-solid border-white/20 bg-transparent pl-14 text-lg font-sans outline-none">
                     </div>
                     <!-- INPUT = email -->
                     <label for="email" class="text-white/70 text-2xl font-sans">Почта</label>
                     <div class="relative flex">
-                        <i class="fa fas fa-phone text-white absolute left-5 top-[35%]"></i>
+                        <i class="fa fas fa-envelope text-white absolute left-5 top-[35%]"></i>
                         <input type="email" id="email" name="email" placeholder="your@example.com" required
                             class="w-full text-white rounded-2xl p-3 border border-solid border-white/20 bg-transparent pl-14 text-lg font-[qwees-poppins-regular] outline-none">
                     </div>
                     <p class="font-sans text-white hidden p-2" id="message_status"></p>
                     <!-- BUTTON -->
                     <button data-button="email" onclick="return false"
-                        class="bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans" disabled>Продолжить</button>
+                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans" disabled>Продолжить</button>
 
                     <!-- OTHER -->
                     <div class="flex justify-center items-center gap-6">
@@ -98,7 +98,7 @@ $site = Functions::site();
                     </div>
                     <a href="/auth/login"
                         class="flex gap-4 justify-center items-center w-full text-white rounded-2xl p-3 border border-solid border-[#6BFF5B]/20 bg-transparent text-lg font-sans">
-                        <i class="fa fa-plus text-[#6BFF5B]"></i> Войти</a>
+                        <img src="/public/assets/images/icons/services/auth/auth.svg"> Войти</a>
                 </div>
 
                 <!-- part 2 -->
@@ -116,19 +116,3 @@ $site = Functions::site();
                                 class="w-full flex-1 bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans"
                                 disabled>Войти</button>
                         </div>
-                        <p class="font-sans text-white hidden p-2" id="verefy_status"></p>
-                    </div>
-                </div>
-
-            </form>
-
-        </div>
-
-        <!-- customized scripts -->
-        <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/regist/main.js"></script>
-        <!--  -->
-
-    </div>
-</body>
-
-</html>
