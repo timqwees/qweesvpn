@@ -793,7 +793,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="tbank" class="sr-only peer" />
+                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
                                             alt="tbank">
@@ -1546,7 +1546,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="tbank" class="sr-only peer" />
+                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
                                             alt="tbank">
