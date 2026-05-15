@@ -23,6 +23,43 @@ class Kassa
         return $base . '/' . $uniID;
     }
 
+    /**
+     * Сохранение/обновление подписки в БД (MySQL: ON DUPLICATE KEY, SQLite: INSERT OR REPLACE).
+     */
+    private static function saveSubscriptionToDatabase(
+        string $uniID,
+        string $status,
+        string $subscription,
+        mixed $amount,
+        int $countDays,
+        int $countDevices,
+        string $endDate
+    ): void {
+        $params = [$uniID, $status, $subscription, $amount, $countDays, $countDevices, $endDate];
+
+        if (Database::isMysql()) {
+            Database::send(
+                'INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                 ON DUPLICATE KEY UPDATE
+                   status = VALUES(status),
+                   subscription = VALUES(subscription),
+                   amount = VALUES(amount),
+                   count_days = VALUES(count_days),
+                   count_devices = VALUES(count_devices),
+                   date_end = VALUES(date_end),
+                   updated_at = CURRENT_TIMESTAMP',
+                $params
+            );
+        } else {
+            Database::send(
+                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                $params
+            );
+        }
+    }
+
     public function __construct()
     {
         $shopId = $_ENV['YOOKASSA_SHOP_ID'] ?? null;
@@ -278,18 +315,14 @@ class Kassa
                         }
 
                         // Обновляем все необходимые поля в базе данных с реальными данными VPN
-                        Database::send(
-                            'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
-                             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-                            [
-                                $uniID,
-                                'on',
-                                self::subscriptionUrl($uniID),
-                                $payment->getAmount()?->getValue(),
-                                $config['days'],
-                                $config['devices'],
-                                $endDate
-                            ]
+                        self::saveSubscriptionToDatabase(
+                            $uniID,
+                            'on',
+                            self::subscriptionUrl($uniID),
+                            $payment->getAmount()?->getValue(),
+                            $config['days'],
+                            $config['devices'],
+                            $endDate
                         );
 
                         $result['subscription_issued'] = true;
@@ -349,18 +382,14 @@ class Kassa
                                 $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
                             }
 
-                            Database::send(
-                                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
-                                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-                                [
-                                    $uniID,
-                                    'on',
-                                    self::subscriptionUrl($uniID),
-                                    $payment->getAmount()?->getValue(),
-                                    $config['days'],
-                                    $config['devices'],
-                                    $endDate
-                                ]
+                            self::saveSubscriptionToDatabase(
+                                $uniID,
+                                'on',
+                                self::subscriptionUrl($uniID),
+                                $payment->getAmount()?->getValue(),
+                                $config['days'],
+                                $config['devices'],
+                                $endDate
                             );
 
                             $result['subscription_issued'] = true;
@@ -412,18 +441,14 @@ class Kassa
                                     $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
                                 }
 
-                                Database::send(
-                                    'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
-                                     VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-                                    [
-                                        $uniID,
-                                        'pending_vpn',
-                                        "pending_payment_{$paymentId}",
-                                        $payment->getAmount()?->getValue(),
-                                        $config['days'],
-                                        $config['devices'],
-                                        $endDate
-                                    ]
+                                self::saveSubscriptionToDatabase(
+                                    $uniID,
+                                    'pending_vpn',
+                                    "pending_payment_{$paymentId}",
+                                    $payment->getAmount()?->getValue(),
+                                    $config['days'],
+                                    $config['devices'],
+                                    $endDate
                                 );
 
                                 file_put_contents(

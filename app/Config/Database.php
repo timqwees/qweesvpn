@@ -51,9 +51,6 @@ class Database extends Network
   public static $schema_name;
   public static $database_name;
   private static $folder_sqlite;
-  /** @var array<string, true>|null */
-  private static ?array $tableCache = null;
-  private static bool $schemaBootstrapped = false;
 
   /**
    * **[Инициализация папки SQLite]**
@@ -131,7 +128,7 @@ class Database extends Network
    * _Устанавливает имя схемы, используемой при работе с базой данных._
    *
    * **Возможности:**
-   * - Если окружение задаёт `SCHEMA_NAME`, ищет соответствующий файл схемы в каталоге `/setting/Schema/`.
+   * - Если окружение задаёт `SCHEMA_NAME`, ищет соответствующий файл схемы в каталоге `/setting/schema/`.
    * - Если переменная не задана — используется `schema.sql` по умолчанию.
    *
    * ---
@@ -289,8 +286,17 @@ class Database extends Network
               // Настройки сессии при инициализации соединения
               // Важно для корректной работы с кодировками, режимами и тайм-аутами
             PDO::MYSQL_ATTR_INIT_COMMAND =>
+              // Все общие команды разделяются точкой с запятой (MySQL разрешает одну строку)
               "SET NAMES utf8mb4;" .
-              "SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';",
+              "SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';" .
+              "SET SESSION innodb_lock_wait_timeout=10;" .
+              "SET SESSION wait_timeout=120;" .
+              "SET SESSION interactive_timeout=120;" .
+              "SET SESSION net_read_timeout=60;" .
+              "SET SESSION net_write_timeout=60;" .
+              "SET SESSION max_execution_time=2000;" .
+              "SET SESSION max_allowed_packet=16777216;" .
+              "SET SESSION net_buffer_length=32768;",
           ];
 
           // Формируем DSN для MySQL
@@ -367,7 +373,23 @@ class Database extends Network
         return false;
       }
 
-      $result = $stmt->execute($params);
+      if (self::isMysql()) {
+        // Явно привязываем параметры с типами для MySQL
+        foreach ($params as $index => $value) {
+          $paramType = PDO::PARAM_STR; // По умолчанию строка
+          if (is_int($value) || is_bool($value)) {
+            $paramType = is_bool($value) ? PDO::PARAM_BOOL : PDO::PARAM_INT;
+          } elseif (is_null($value)) {
+            $paramType = PDO::PARAM_NULL;
+          }
+          $stmt->bindValue($index + 1, $value, $paramType);
+        }
+        // Выполняем запрос без параметров, так как они уже привязаны
+        $result = $stmt->execute();
+      } else {
+        // Для SQLite используем стандартный метод
+        $result = $stmt->execute($params);
+      }
 
       // Проверяем тип запроса (SELECT/SHOW/EXPLAIN)
       $queryType = strtoupper(strtok(ltrim($sql), " \t\n\r"));
@@ -379,9 +401,16 @@ class Database extends Network
       // Для UPDATE/INSERT/DELETE запросов проверяем количество затронутых строк
       if (in_array($queryType, ['UPDATE', 'INSERT', 'DELETE'])) {
         $rowCount = $stmt->rowCount();
-        if ($queryType === 'INSERT') {
-          return $result === true;
+        if ($rowCount === 0 && $queryType === 'UPDATE') {
+          $errorMsg = "WARNING: UPDATE запрос выполнен, но не обновил ни одной строки (0 rows affected) | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE);
+          error_log($errorMsg);
+          return false;
         }
+        // Для INSERT возвращаем true, если execute был успешным (даже если rowCount === 0 для некоторых СУБД)
+        if ($queryType === 'INSERT') {
+          return $result === true ? true : false;
+        }
+        error_log("DEBUG: Запрос $queryType выполнен успешно, затронуто строк: $rowCount");
       }
 
       // Для остальных запросов возвращаем true/false об успехе execute
@@ -435,11 +464,21 @@ class Database extends Network
       $pdo = new PDO('sqlite:' . $db_path);
       $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
       if ($isDATABASE) {
-        $schema_file = self::$schema_name;
+        $schema_file = self::$schema_name;//schema
         if (file_exists($schema_file)) {
           $schema = file_get_contents($schema_file);
           if ($schema !== false && trim($schema) !== '') {
-            self::applySchemaStatements($pdo, $schema, null);
+            $statements = preg_split('/;\s*[\r\n]+/', $schema);
+            foreach ($statements as $statement) {
+              $statement = trim($statement);
+              if ($statement !== '') {
+                try {
+                  $pdo->exec($statement);
+                } catch (\PDOException $e) {
+                  error_log("Ошибка выполнения SQL для SQLite: " . $e->getMessage() . " | SQL: " . $statement);
+                }
+              }
+            }
           }
         } else {
           error_log("Файл схемы SQLite не найден: " . $schema_file);
@@ -503,226 +542,16 @@ class Database extends Network
     }
     $pdo = new PDO('sqlite:' . $db_path);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    self::applySchemaStatements($pdo, $schema, null);
-    self::invalidateTableCache();
-    self::clearSchemaCache();
-  }
-
-  /**
-   * Разбивает schema.sql на отдельные SQL-операторы.
-   *
-   * @return list<string>
-   */
-  public static function parseSchemaStatements(string $schema): array
-  {
-    $schema = preg_replace('/--[^\r\n]*/', '', $schema) ?? $schema;
-    $parts = preg_split('/;\s*[\r\n]+/', $schema) ?: [];
-    $statements = [];
-    foreach ($parts as $part) {
-      $part = trim($part);
-      if ($part !== '') {
-        $statements[] = $part;
-      }
-    }
-    return $statements;
-  }
-
-  /**
-   * Имя таблицы из CREATE TABLE ... или null.
-   */
-  public static function extractCreateTableName(string $sql): ?string
-  {
-    if (preg_match('/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+[`"]?([a-zA-Z0-9_]+)[`"]?/i', $sql, $m)) {
-      return $m[1];
-    }
-    return null;
-  }
-
-  /**
-   * Список существующих таблиц (кэш на время запроса).
-   *
-   * @return array<string, true>
-   */
-  public static function getExistingTableNames(): array
-  {
-    if (self::$tableCache !== null) {
-      return self::$tableCache;
-    }
-
-    self::getConnection();
-    $pdo = self::$instance;
-    if ($pdo === null) {
-      return [];
-    }
-
-    if (self::isSqlite()) {
-      $rows = $pdo->query(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-      )->fetchAll(PDO::FETCH_COLUMN);
-    } else {
-      $dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: self::$database_name;
-      $stmt = $pdo->prepare(
-        'SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_type = ?'
-      );
-      $stmt->execute([$dbName, 'BASE TABLE']);
-      $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
-    }
-
-    self::$tableCache = [];
-    foreach ($rows as $name) {
-      self::$tableCache[$name] = true;
-    }
-    return self::$tableCache;
-  }
-
-  public static function tableExists(string $tableName): bool
-  {
-    $tables = self::getExistingTableNames();
-    return isset($tables[$tableName]);
-  }
-
-  public static function invalidateTableCache(): void
-  {
-    self::$tableCache = null;
-  }
-
-  public static function clearSchemaCache(): void
-  {
-    $path = self::schemaCachePath();
-    if (is_file($path)) {
-      @unlink($path);
-    }
-  }
-
-  /**
-   * Применяет schema.sql: создаёт недостающие таблицы и seed INSERT.
-   * Повторные запросы пропускаются через файловый кэш (mtime схемы).
-   */
-  public static function bootstrapSchemaIfNeeded(): void
-  {
-    if (self::$schemaBootstrapped) {
-      return;
-    }
-
-    self::initSqliteFolder();
-    self::initSchemaName();
-    self::initDatabaseName();
-
-    if (self::isSchemaCacheValid()) {
-      self::$schemaBootstrapped = true;
-      return;
-    }
-
-    $schemaFile = self::$schema_name;
-    if (!file_exists($schemaFile)) {
-      error_log("Файл схемы не найден: $schemaFile");
-      return;
-    }
-
-    $schema = file_get_contents($schemaFile);
-    if ($schema === false || trim($schema) === '') {
-      error_log("Схема пуста или не может быть прочитана: $schemaFile");
-      return;
-    }
-
-    self::getConnection();
-    $pdo = self::$instance;
-    if ($pdo === null) {
-      return;
-    }
-
-    $existing = self::getExistingTableNames();
-    self::applySchemaStatements($pdo, $schema, $existing);
-    self::writeSchemaCache();
-    self::$schemaBootstrapped = true;
-  }
-
-  /**
-   * @param array<string, true>|null $existingTables
-   */
-  private static function applySchemaStatements(PDO $pdo, string $schema, ?array $existingTables): void
-  {
-    if ($existingTables === null) {
-      $existingTables = [];
-    }
-
-    foreach (self::parseSchemaStatements($schema) as $statement) {
-      $table = self::extractCreateTableName($statement);
-      if ($table !== null) {
-        if (isset($existingTables[$table])) {
-          continue;
-        }
-        if (self::isMysql()) {
-          $statement = preg_replace(
-            '/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/i',
-            'INT NOT NULL AUTO_INCREMENT PRIMARY KEY',
-            $statement
-          ) ?? $statement;
-        }
-        try {
-          $pdo->exec($statement);
-          $existingTables[$table] = true;
-        } catch (\PDOException $e) {
-          error_log("Ошибка создания таблицы $table: " . $e->getMessage());
-        }
-        continue;
-      }
-
-      if (strtoupper(strtok(ltrim($statement), " \t\n\r")) === 'INSERT') {
+    $statements = preg_split('/;\s*[\r\n]+/', $schema);
+    foreach ($statements as $statement) {
+      $statement = trim($statement);
+      if ($statement !== '') {
         try {
           $pdo->exec($statement);
         } catch (\PDOException $e) {
-          error_log('Ошибка INSERT из схемы: ' . $e->getMessage());
+          error_log("Ошибка выполнения SQL при обновлении схемы: " . $e->getMessage() . " | SQL: " . $statement);
         }
       }
-    }
-
-    self::$tableCache = $existingTables;
-  }
-
-  private static function schemaCachePath(): string
-  {
-    self::initSqliteFolder();
-    self::initSchemaName();
-    self::initDatabaseName();
-    $key = md5(self::getDriverType() . '|' . self::$database_name . '|' . self::$schema_name);
-    return rtrim(self::$folder_sqlite, '/\\') . '/.schema_' . $key . '.json';
-  }
-
-  private static function isSchemaCacheValid(): bool
-  {
-    $cacheFile = self::schemaCachePath();
-    if (!is_file($cacheFile) || !is_file(self::$schema_name)) {
-      return false;
-    }
-
-    $cached = json_decode((string) file_get_contents($cacheFile), true);
-    if (!is_array($cached)) {
-      return false;
-    }
-
-    return ($cached['mtime'] ?? 0) === filemtime(self::$schema_name)
-      && ($cached['size'] ?? 0) === filesize(self::$schema_name)
-      && ($cached['driver'] ?? '') === self::getDriverType()
-      && ($cached['database'] ?? '') === self::$database_name;
-  }
-
-  private static function writeSchemaCache(): void
-  {
-    if (!is_file(self::$schema_name)) {
-      return;
-    }
-
-    self::initSqliteFolder();
-    $payload = json_encode([
-      'mtime' => filemtime(self::$schema_name),
-      'size' => filesize(self::$schema_name),
-      'driver' => self::getDriverType(),
-      'database' => self::$database_name,
-    ], JSON_UNESCAPED_UNICODE);
-
-    if ($payload !== false) {
-      file_put_contents(self::schemaCachePath(), $payload, LOCK_EX);
     }
   }
 

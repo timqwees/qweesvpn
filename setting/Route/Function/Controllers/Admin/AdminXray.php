@@ -31,11 +31,29 @@ class AdminXray
             $endDate = date('Y-m-d', strtotime("+{$days} days"));
         }
 
-        $result = Database::send(
-            'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-            [$uniID, 'on', rtrim($_ENV['XUI_URL_SUBSCRIPTION'] ?? '', '/') . '/' . $uniID, $amount, $days, $devices, $endDate]
-        );
+        $params = [$uniID, 'on', rtrim($_ENV['XUI_URL_SUBSCRIPTION'] ?? '', '/') . '/' . $uniID, $amount, $days, $devices, $endDate];
+
+        if (Database::isMysql()) {
+            $result = Database::send(
+                'INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                 ON DUPLICATE KEY UPDATE
+                   status = VALUES(status),
+                   subscription = VALUES(subscription),
+                   amount = VALUES(amount),
+                   count_days = VALUES(count_days),
+                   count_devices = VALUES(count_devices),
+                   date_end = VALUES(date_end),
+                   updated_at = CURRENT_TIMESTAMP',
+                $params
+            );
+        } else {
+            $result = Database::send(
+                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                $params
+            );
+        }
 
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',

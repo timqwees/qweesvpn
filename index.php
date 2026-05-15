@@ -48,7 +48,8 @@ if (file_exists(__DIR__ . '/.env')) {
 # connect Route App
 use App\Models\Network\Network;
 use App\Config\Database;
-// Подключение к БД и применение schema.sql (с кэшем — без лишних запросов на каждый hit)
-Database::bootstrapSchemaIfNeeded();
+// Инициализируем подключение к БД и структуру таблиц перед запуском роутинга
+Database::getConnection();
+Network::onTableAllExists();
 include_once __DIR__ . '/setting/Route/Routes.php';
 Network::onRoute();

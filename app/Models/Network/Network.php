@@ -85,7 +85,47 @@ class Network extends Session
      */
     public static function onTableAllExists()
     {
-        Database::bootstrapSchemaIfNeeded();
+        $schemaFile = Database::$schema_name;
+        if (!file_exists($schemaFile)) {
+            Message::set('error', "Файл схемы не найден: $schemaFile");
+            return;
+        }
+        $schema = file_get_contents($schemaFile);
+        if ($schema === false || trim($schema) === '') {
+            Message::set('error', "Схема пуста или не может быть прочитана: $schemaFile");
+            return;
+        }
+
+        $tables = [];
+        if (preg_match_all('/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+([`"]?)([a-zA-Z0-9_]+)\1/i', $schema, $matches)) {
+            $tables = $matches[2];
+
+            foreach ($tables as $table) {
+                if (!self::onTableExists($table)) {
+                    try {
+                        $pattern = '/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+[`"]?' . preg_quote($table, '/') . '[`"]?\s*\((.*?)\);/is';
+                        if (preg_match($pattern, $schema, $tableMatch)) {
+                            $createSql = "CREATE TABLE IF NOT EXISTS `$table` (" . trim($tableMatch[1]) . ");";
+
+                            if (Database::isMysql()) {
+                                $createSql = preg_replace(
+                                    '/INTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT/i',
+                                    'INT NOT NULL AUTO_INCREMENT PRIMARY KEY',
+                                    $createSql
+                                );
+                            }
+
+                            Database::send($createSql);
+                            Message::set('info', "Создана таблица '$table' по схеме.");
+                        } else {
+                            Message::set('error', "Не удалось найти SQL для создания таблицы '$table' в " . Database::$schema_name);
+                        }
+                    } catch (\PDOException $e) {
+                        Message::set('error', "Ошибка при создании таблицы '$table': " . $e->getMessage());
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -112,7 +152,19 @@ class Network extends Session
      */
     private static function onTableExists(string $tableName)
     {
-        return Database::tableExists($tableName);
+        try {
+            if (Database::isSqlite()) {
+                $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name=?";
+                $result = Database::send($sql, [$tableName]);
+                return is_array($result) && count($result) > 0;
+            }
+
+            $result = Database::send('SHOW TABLES LIKE ?', [$tableName]);
+            return is_array($result) && count($result) > 0;
+        } catch (\PDOException $e) {
+            Message::set('error', "Ошибка при проверке существования таблицы '$tableName': " . $e->getMessage());
+            return false;
+        }
     }
 
     /**
