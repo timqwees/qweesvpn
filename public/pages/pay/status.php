@@ -230,7 +230,7 @@ if ($paymentId) {
                         <?php endif; ?>
 
                         <?php if ($paymentStatus['status'] === 'canceled' || !$paymentStatus['success']): ?>
-                            <a href="/public/pages/pay"
+                            <a href="/pay"
                                 class="flex font-bold bg-gradient-to-r from-red-500/20 to-red-500/5 border border-red-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-red-500/50 transition-colors">
                                 <i class="fa fa-credit-card"></i> Попробовать снова
                             </a>
@@ -239,10 +239,6 @@ if ($paymentId) {
                         <a href="/"
                             class="flex font-bold bg-gradient-to-r from-green-500/20 to-green-500/5 border border-green-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-green-500/50 transition-colors">
                             <i class="fa fa-home"></i> На главную
-                        </a>
-                        <a href="/public/pages/profile"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-user"></i> Мой профиль
                         </a>
                     </div>
                 </section>

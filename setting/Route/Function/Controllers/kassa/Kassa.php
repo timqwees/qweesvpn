@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 declare(strict_types=1);
 
@@ -85,6 +85,8 @@ class Kassa
                 $paymentRequest->setPaymentMethodData(['type' => 'sbp']);
             } elseif ($paymentMethod === 'sberbank') {
                 $paymentRequest->setPaymentMethodData(['type' => 'sberbank']);
+            } elseif ($paymentMethod === 'tbank') {
+                $paymentRequest->setPaymentMethodData(['type' => 'tinkoff_bank']);
             }
 
             // Сохранение карты для автоплатежей
@@ -571,7 +573,7 @@ class Kassa
     public function createAutoPayment(
         string $paymentMethodId,
         float $amount,
-        string $description = 'Автоплатеж CoraVPN'
+        string $description = 'Автоплатеж QweesVPN'
     ): array {
         try {
             // Создание запроса на автоплатеж

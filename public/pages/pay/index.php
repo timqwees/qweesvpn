@@ -1,8 +1,9 @@
-<?php declare(strict_types=1);
+<?php
 
 use Setting\Route\Function\Functions;
+use Setting\Route\Function\Controllers\Auth\Auth;
 
-Setting\Route\Function\Controllers\Auth\Auth::auth();
+Auth::auth();
 $site = Functions::site();
 ?>
 <!DOCTYPE html>
@@ -753,6 +754,19 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
+                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <img decoding="async" loading="lazy" class="h-6"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
+                                            alt="sbp">
+                                        <div
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                        </div>
+                                    </div>
+                                </label>
+                                <label
+                                    class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
+                                    Оплатить через:
+                                    <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
@@ -779,10 +793,10 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp-logo.svg"
-                                            alt="sbp">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
+                                            alt="tbank">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1493,6 +1507,19 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
+                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <img decoding="async" loading="lazy" class="h-6"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
+                                            alt="sbp">
+                                        <div
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                        </div>
+                                    </div>
+                                </label>
+                                <label
+                                    class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
+                                    Оплатить через:
+                                    <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
@@ -1519,10 +1546,10 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
-                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp-logo.svg"
-                                            alt="sbp">
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
+                                            alt="tbank">
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1643,12 +1670,12 @@ $site = Functions::site();
                         success: function (response) {
                             if (response.success) {
                                 // Если есть QR-код (для СБП), показываем его
-                                if (response.qr_code) {
-                                    showQrCode(response.qr_code, response.payment_id);
-                                } else if (response.payment_url) {
+                                // if (response.qr_code) {
+                                    // showQrCode(response.qr_code, response.payment_id);
+                                // } else if (response.payment_url) {
                                     // Перенаправляем на страницу оплаты
                                     window.location.href = response.payment_url;
-                                }
+                                // }
                             } else {
                                 alert('Ошибка при создании платежа: ' + response.error);
                                 btn.html(originalText).prop('disabled', false);
