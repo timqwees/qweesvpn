@@ -9,9 +9,9 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
 
     private array $client;
 
-    public function __construct()
+    public function __construct($uniID = null)
     {
-        $this->client = (array) self::get();
+        $this->client = $uniID !== null ? (array) self::get($uniID) : (array) self::get();
     }
 
     public function getID(): int

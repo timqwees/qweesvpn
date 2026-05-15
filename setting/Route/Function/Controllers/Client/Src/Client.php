@@ -9,11 +9,13 @@ use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 
 class Client
 {
-    public static function get(): array
+    public static function get($uniID = null): array
     {
+        if(!isset($uniID) || $uniID === null){
         $sessionUser = \App\Config\Session::init('user');
         $uniID = is_array($sessionUser) ? ($sessionUser['uniID'] ?? '') : '';
-
+        }
+        
         // LEFT JOIN с подписками - сохраняем тот же API
         $user = Database::send(
             'SELECT u.*, s.status as sub_status, s.subscription, s.amount, s.count_days, s.count_devices, s.date_end 

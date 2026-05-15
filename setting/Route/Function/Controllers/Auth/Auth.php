@@ -42,7 +42,7 @@ class Auth extends Network
         file_put_contents(
             $logFile,
             sprintf(
-                "[%s] [AUTH] Попытка отправки кода %s на %s\n",
+                "[%s] [AUTH-SUCCESS] Попытка отправки кода %s на %s\n",
                 date('Y-m-d H:i:s'),
                 $code,
                 $email

@@ -10,6 +10,21 @@ $admin = new AdminDatabase();
 
 // админ id
 $adminID = Session::init('admin')['auth'][1];
+
+// цвета для логов
+$colors = [
+  'error' => 'text-red-300',
+  'success' => 'text-green-400',
+  'REGISTER' => 'text-green-400',
+  '[АДМИН-ВЫДАЧА]' => 'text-green-400',
+  'Подтверждено' => 'text-green-400',
+  'Успешное' => 'text-green-400',
+  'warning' => 'text-yellow-300',
+  'ОШИБКА' => 'text-yellow-300',
+  'info' => 'text-blue-400',
+  'Статус' => 'text-blue-400',
+  'mail' => 'text-pink-200',
+];
 ?>
 
 <!DOCTYPE html>
@@ -198,18 +213,6 @@ $adminID = Session::init('admin')['auth'][1];
                                 $last_date = null;
                                 foreach ($lines as $line) {
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-
-                                    $colors = [
-                                        'error' => 'text-red-300',
-                                        'success' => 'text-green-400',
-                                        'Подтверждено' => 'text-green-400',
-                                        'Успешное' => 'text-green-400',
-                                        'warning' => 'text-yellow-300',
-                                        'ОШИБКА' => 'text-yellow-300',
-                                        'info' => 'text-blue-400',
-                                        'Статус' => 'text-blue-400',
-                                        'mail' => 'text-pink-200',
-                                    ];
 
                                     $color = 'text-white';
                                     foreach ($colors as $key => $value) {
@@ -642,18 +645,6 @@ $adminID = Session::init('admin')['auth'][1];
                                 $last_date = null;
                                 foreach ($lines as $line) {
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-
-                                    $colors = [
-                                        'error' => 'text-red-300',
-                                        'success' => 'text-green-400',
-                                        'Подтверждено' => 'text-green-400',
-                                        'Успешное' => 'text-green-400',
-                                        'warning' => 'text-yellow-300',
-                                        'ОШИБКА' => 'text-yellow-300',
-                                        'info' => 'text-blue-400',
-                                        'Статус' => 'text-blue-400',
-                                        'mail' => 'text-pink-200',
-                                    ];
 
                                     $color = 'text-white';
                                     foreach ($colors as $key => $value) {

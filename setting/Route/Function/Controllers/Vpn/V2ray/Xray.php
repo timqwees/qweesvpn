@@ -374,6 +374,7 @@ class Xray
      */
     private function addClientPanelApi($days, string $uniID, $device_limit = null): array|false
     {
+        $user = new GetUser($uniID);
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj']) || !is_array($data['obj'])) {
             file_put_contents(
@@ -434,10 +435,11 @@ class Xray
             // updateClient/:clientId — id в URL должен совпадать с записью в панели.
             $client = $settings['clients'][$existingIndex];
         } else {
+            // данные для добавления
             $clientId = $needsUuid ? self::generateUuidV4() : $uniID;
             $client = [
                 'id' => $clientId,
-                'email' => $uniID,
+                'email' => $user->getFistName(),
                 'expiryTime' => $expiry,
                 'subId' => $uniID,
                 'enable' => true,
@@ -679,9 +681,9 @@ class Xray
                     }
                 }
             }
-            return ['status' => 'ok', 'message' => 'Ключ успешно удалён из панели 3x-ui и базы данных'];
+            return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
         }
-        return ['status' => 'partial', 'message' => 'Удалён из БД, но ошибка при удалении из панели 3x-ui: ' . json_encode($delResult, JSON_UNESCAPED_UNICODE)];
+        return ['status' => 'partial', 'message' => 'Успешно удалено из хранилища, но ошибка при удалении из сервера: ' . json_encode($delResult, JSON_UNESCAPED_UNICODE)];
     }
 
     /**
