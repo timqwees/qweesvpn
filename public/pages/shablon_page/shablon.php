@@ -47,22 +47,9 @@ $site = Functions::site();
 
 <body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
     <div class="min-h-screen flex flex-col w-full container mx-auto">
-        <!-- navbar top -->
-        <header class="fixed z-50 left-0 top-2 right-0 h-16 px-6 flex items-center justify-between">
-            <!-- refresh -->
-            <i class="fa fa-refresh text-white"></i>
-            <!-- logo -->
-            <div class="flex items-center gap-2">
-                <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
-                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
-                    alt="<?= htmlspecialchars($site['ООО']) ?>">
-                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
-                    Qwees<span class="text-green-400">VPN</span>
-                </h2>
-            </div>
-            <!-- version -->
-            <span class="text-white text-sm">v1.0.0</span>
-        </header>
+
+    <?php include_once 'public/components/header.php' ?>
+    
         <main class="flex sm:my-2 w-full">
             <!-- КОНЕЦ БЕЗ ИЗМЕНЕНИЙ -->
 

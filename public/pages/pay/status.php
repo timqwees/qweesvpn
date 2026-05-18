@@ -78,23 +78,13 @@ if ($paymentId) {
 
 <body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
     <div class="min-h-screen flex flex-col w-full container mx-auto">
-        <!-- navbar top -->
-        <header class="fixed z-50 left-0 top-2 right-0 h-16 px-6 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
-                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
-                    alt="<?= htmlspecialchars($site['ООО']) ?>">
-                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">
-                    Qwees<span class="text-green-400">VPN</span>
-                </h2>
-            </div>
-            <span class="text-white text-sm">v1.0.0</span>
-        </header>
+        
+<?php include_once 'public/components/header.php' ?>
 
-        <main class="flex sm:my-2 w-full">
-            <div class="w-full text-white">
+        <main class="rounded-xl card flex sm:my-2 w-full">
+            <div class="w-full text-white setka">
                 <section
-                    class="lg:px-64 overflow-hidden relative flex flex-col gap-6 justify-center pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="lg:px-64 overflow-hidden relative flex flex-col gap-6 justify-center pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4">
                     <!-- success icon -->
                     <div class="w-full flex justify-center items-center">
                         <div

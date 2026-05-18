@@ -58,7 +58,7 @@ $site = Functions::site();
 
         <!-- FORM CONTENT -->
         <div
-            class="flex flex-col bg-[#151414] rounded-lg p-6 py-10 w-full max-w-[376px] border border-solid border-[0.5px] border-white/20 my-8 gap-4">
+            class="flex flex-col bg-[#151414] rounded-lg p-6 py-10 w-full max-w-[350px] border border-solid border-[0.5px] border-white/20 my-8 gap-4">
 
             <form action="/auth/regist" method="POST">
 

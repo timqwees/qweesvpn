@@ -50,20 +50,7 @@ $site = Functions::site();
 
 <body class="bg-black bg-no-repeat flex items-center w-full overflow-x-hidden">
     <div class="min-h-screen flex flex-col w-full container mx-auto">
-        <!-- navbar top -->
-        <header class="fixed z-50 left-0 top-2 right-0 h-16 px-6 flex items-center justify-between">
-            <!-- refresh -->
-            <i class="fa fa-refresh text-white"></i>
-            <!-- logo -->
-            <div class="flex items-center gap-2">
-                <img decoding="async" loading="lazy" class="w-auto h-7 object-contain"
-                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg" alt="qweesvpn">
-                <h2 class="text-white text-xl font-[qwees-poppins-medium] tracking-wider">QWEES <span
-                        class="text-green-400">VPN</span></h2>
-            </div>
-            <!-- version -->
-            <span class="text-white text-sm">v1.0.0</span>
-        </header>
+
         <main class="flex sm:my-2 w-full">
             <!-- КОНЕЦ БЕЗ ИЗМЕНЕНИЙ -->
 
@@ -71,19 +58,19 @@ $site = Functions::site();
             <div class="hidden sm:block w-full text-white" data-pay-layout="desktop">
                 <!-- main -->
                 <section data-section="main"
-                    class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[65px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
-                    <div class="mobile w-full flex justify-center items-center">
-                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img class="max-h-6" decoding="async" loading="lazy"
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
-                    </div>
-                    <!-- text -->
-                    <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите подписку</h3>
-                        <div class="text-center text-white/70">Получите полную свободу от реклам и запретов!</div>
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans">Выберите подписку</h3>
+                            <div class="text-center text-white/70">Получите полную свободу от реклам и запретов!</div>
+                        </div>
                     </div>
                     <!-- grid -->
                     <div class="grid grid-cols-2 grid-rows-2 gap-2">
@@ -216,17 +203,18 @@ $site = Functions::site();
                 <section data-section="next_1"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
-                    <div class="mobile w-full flex justify-center items-center">
-                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img class="max-h-6" decoding="async" loading="lazy"
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
-                    </div>
-                    <!-- text -->
-                    <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
+                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
+                                оплату!
+                            </div>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -375,17 +363,18 @@ $site = Functions::site();
                 <section data-section="next_6"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
-                    <div class="mobile w-full flex justify-center items-center">
-                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img class="max-h-6" decoding="async" loading="lazy"
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
-                    </div>
-                    <!-- text -->
-                    <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
+                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
+                                оплату!
+                            </div>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -534,17 +523,18 @@ $site = Functions::site();
                 <section data-section="next_12"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
-                    <div class="mobile w-full flex justify-center items-center">
-                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img decoding="async" loading="lazy" class="max-h-6"
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
-                    </div>
-                    <!-- text -->
-                    <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
+                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
+                                оплату!
+                            </div>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -693,18 +683,18 @@ $site = Functions::site();
                 <section data-section="finish"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
-                    <div class="mobile w-full flex justify-center items-center">
-                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
-                            <img class="max-h-6" decoding="async" loading="lazy"
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
                                 alt="Домой" decoding="async">
                         </div>
-                    </div>
-                    <!-- text -->
-                    <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Завершение</h3>
-                        <div class="text-center text-white/70">Осталось оплатить собранный вами тариф иначать
-                            пользоваться VPN!
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans">Завершение</h3>
+                            <div class="text-center text-white/70">Осталось оплатить собранный вами тариф иначать
+                                пользоваться VPN!
+                            </div>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -1671,10 +1661,10 @@ $site = Functions::site();
                             if (response.success) {
                                 // Если есть QR-код (для СБП), показываем его
                                 // if (response.qr_code) {
-                                    // showQrCode(response.qr_code, response.payment_id);
+                                // showQrCode(response.qr_code, response.payment_id);
                                 // } else if (response.payment_url) {
-                                    // Перенаправляем на страницу оплаты
-                                    window.location.href = response.payment_url;
+                                // Перенаправляем на страницу оплаты
+                                window.location.href = response.payment_url;
                                 // }
                             } else {
                                 alert('Ошибка при создании платежа: ' + response.error);
