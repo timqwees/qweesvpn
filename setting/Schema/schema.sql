@@ -61,6 +61,3 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
     KEY idx_subscriptions_date_end (date_end),
     KEY idx_subscriptions_status_date (status, date_end)
 );
-
--- Данные по умолчанию
-INSERT IGNORE INTO qwees_price (name, price) VALUES ('basic', 150), ('clasic', 180), ('pro', 200);
