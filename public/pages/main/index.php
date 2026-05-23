@@ -475,8 +475,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <label class="text-sm text-gray-400 font-medium">VPN ключ</label>
                                         <code id="vpn-key-desktop"
                                             class="text-sm text-white/70 bg-black/20 px-3 py-2 rounded-lg break-all">
-                                                                    <?= htmlspecialchars($user->getSubscription()) ?>
-                                                                  </code>
+                                                                        <?= htmlspecialchars($user->getSubscription()) ?>
+                                                                      </code>
                                     </div>
                                     <div class="flex gap-2 relative z-30">
                                         <button
@@ -923,20 +923,20 @@ $activeSection = $_GET['section'] ?? 'main';
                                             alt="" loading="lazy" decoding="async" class="h-6 invert">
                                     </a>
                                 <?php else: ?>
-                                    <a href="/pay" class="z-10 flex justify-between items-center"></a>
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
-                                        alt="" loading="lozy" decoding="async" class="h-6 invert">
-                                    <div class="flex flex-col items-center justify-start text-lg text-white">
-                                        <!-- no -->
-                                        <a href="/pay" class="z-10 uppercase text-center flex gap-2">купить <span
-                                                class="word_hidden">подписку</span>
-                                        </a>
-                                        <!-- yes -->
-                                    </div>
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
-                                        alt="" loading="lozy" decoding="async" class="h-6 invert">
+                                    <a href="/pay" class="z-10 flex justify-between items-center">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
+                                            alt="" loading="lozy" decoding="async" class="h-6 invert">
+                                        <div class="flex flex-col items-center justify-start text-lg text-white">
+                                            <!-- no -->
+                                            <span href="/pay" class="z-10 uppercase text-center flex gap-2">купить <span
+                                                    class="word_hidden">подписку</span>
+                                            </span>
+                                            <!-- yes -->
+                                        </div>
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
+                                            alt="" loading="lozy" decoding="async" class="h-6 invert">
                                     </a>
                                 <?php endif; ?>
                             </li>
@@ -1069,8 +1069,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                             <h4 class="text-white text-sm font-semibold">VPN ключ</h4>
                                             <code id="vpn-key"
                                                 class="overflow-hidden h-8 break-all text-[12px] text-white/50">
-                                                                            <?php echo htmlspecialchars($user->getSubscription()); ?>
-                                                                        </code>
+                                                                                <?php echo htmlspecialchars($user->getSubscription()); ?>
+                                                                            </code>
                                         </div>
                                         <!-- button -->
                                         <div class="flex gap-2 justify-end items-center">
