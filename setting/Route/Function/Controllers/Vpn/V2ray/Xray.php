@@ -460,7 +460,7 @@ class Xray
             $path = '/panel/api/inbounds/updateClient/' . rawurlencode($clientUuid);
             $payload = ['id' => $inboundId, 'settings' => $settingsJson];
         } else {
-            $path = '/panel/api/inbounds/addClient';
+            $path = '/panel/api/inbounds/add';
             $payload = ['id' => $inboundId, 'settings' => $settingsJson];
         }
 
