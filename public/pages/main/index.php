@@ -60,7 +60,7 @@ if ($vpnStatus !== 'active') {
 }
 
 $formattedUserProfile = [
-    'full_name' => trim($user->getFistName() . ' ' . $user->getLastName()) ?: 'Пользователь',
+    'full_name' => trim($user->getFirstName() . ' ' . $user->getLastName()) ?: 'Пользователь',
     'status_text' => $t($user->getStatus() === 'on' ? 'active' : 'inactive'),
     'status_class' => $user->getStatus() === 'on' ? 'text-green-400' : 'text-red-400',
     'days_left' => $user->getCountDays(),
@@ -475,8 +475,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <label class="text-sm text-gray-400 font-medium">VPN ключ</label>
                                         <code id="vpn-key-desktop"
                                             class="text-sm text-white/70 bg-black/20 px-3 py-2 rounded-lg break-all">
-                                                                        <?= htmlspecialchars($user->getSubscription()) ?>
-                                                                      </code>
+                                                                            <?= htmlspecialchars($user->getSubscription()) ?>
+                                                                          </code>
                                     </div>
                                     <div class="flex gap-2 relative z-30">
                                         <button
@@ -1069,8 +1069,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                             <h4 class="text-white text-sm font-semibold">VPN ключ</h4>
                                             <code id="vpn-key"
                                                 class="overflow-hidden h-8 break-all text-[12px] text-white/50">
-                                                                                <?php echo htmlspecialchars($user->getSubscription()); ?>
-                                                                            </code>
+                                                                                    <?php echo htmlspecialchars($user->getSubscription()); ?>
+                                                                                </code>
                                         </div>
                                         <!-- button -->
                                         <div class="flex gap-2 justify-end items-center">
@@ -1562,7 +1562,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
         <script defer>
             // Копирование VPN ключа
-            function copyVpnKey() {
+            function copyVpn  Key() {
                 const el = document.getElementById('vpn-key-desktop') || document.getElementById('vpn-key');
                 const text = el?.textContent?.trim();
                 text ? copyToClipboard(text, 'VPN ключ') : showNotification('VPN ключ не найден', 'error');

@@ -346,7 +346,6 @@ class Xray
         return is_array($ss) ? $ss : [];
     }
 
-
     /**
      * Продление date_end в БД по uniID (источник — строка подписки, не сессия GetUser).
      * Логика согласована с панелью: max(сейчас, текущий date_end) + bonusDays календарных дней.
@@ -370,11 +369,18 @@ class Xray
     }
 
     /**
-     * Выдача/обновление клиента через API 3x-ui (/panel/api/inbounds/*).
+     * Выдача/обновление клиента через API 3x-ui (/panel/api/clients/*).
+     *
+     * Изменения для 3x-ui 3.1.0:
+     * - Добавление:  POST /panel/api/clients/add        { client: {...}, inboundIds: [id] }
+     * - Обновление:  POST /panel/api/clients/update/:email  (полный объект клиента, replace)
+     * - Поиск существующего: по subId === uniID (надёжнее имени)
+     * - email в URL при update/delete — реальный email из записи панели (= getFirstName())
      */
     private function addClientPanelApi($days, string $uniID, $device_limit = null): array|false
     {
         $user = new GetUser($uniID);
+
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj']) || !is_array($data['obj'])) {
             file_put_contents(
@@ -415,53 +421,57 @@ class Xray
         }
 
         $needsUuid = in_array($protocol, ['vless', 'vmess'], true);
+
+        // Ищем клиента по subId (= uniID) — надёжнее имени, т.к. имя может совпадать у разных юзеров
         $existingIndex = null;
         foreach ($settings['clients'] as $idx => $c) {
             if (!is_array($c)) {
                 continue;
             }
-            if (($c['email'] ?? '') === $uniID || ($c['subId'] ?? '') === $uniID) {
+            if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
                 $existingIndex = $idx;
                 break;
             }
         }
 
         if ($existingIndex !== null) {
-            $settings['clients'][$existingIndex]['expiryTime'] = $expiry;
-            $settings['clients'][$existingIndex]['limitIp'] = $device_limit;
-            $settings['clients'][$existingIndex]['enable'] = true;
-            $settings['clients'][$existingIndex]['subId'] = $uniID;
-            $settings['clients'][$existingIndex]['email'] = $uniID;
-            // updateClient/:clientId — id в URL должен совпадать с записью в панели.
-            $client = $settings['clients'][$existingIndex];
+            // --- ОБНОВЛЕНИЕ существующего клиента ---
+            // 3.1.0: POST /panel/api/clients/update/:email
+            // :email = реальный email клиента из панели (= getFirstName(), установленный при создании)
+            // Тело — полный объект (replace, не patch), берём существующий и перезаписываем нужные поля
+            $existingClient = $settings['clients'][$existingIndex];
+            $currentEmail = (string) ($existingClient['email'] ?? $uniID);
+
+            $client = array_merge($existingClient, [
+                'expiryTime' => $expiry,
+                'enable' => true,
+                'limitIp' => $device_limit,
+                'subId' => $uniID,
+                'totalGB' => $existingClient['totalGB'] ?? 0,
+            ]);
+
+            $path = '/panel/api/clients/update/' . rawurlencode($currentEmail);
+            $payload = $client;
         } else {
-            // данные для добавления
+            // --- СОЗДАНИЕ нового клиента ---
+            // 3.1.0: POST /panel/api/clients/add  { client: {...}, inboundIds: [id] }
+            // email = getFirstName() — отображаемое имя в панели (может быть не уникальным!)
+            // subId = uniID        — уникальный ключ для поиска/продления/удаления
             $clientId = $needsUuid ? self::generateUuidV4() : $uniID;
             $client = [
                 'id' => $clientId,
-                'email' => $user->getFistName(),
+                'email' => $user->getFirstName(), // отображаемое имя в панели
                 'expiryTime' => $expiry,
-                'subId' => $uniID,
+                'subId' => $uniID,               // уникальный ключ — всегда uniID
                 'enable' => true,
                 'totalGB' => 0,
                 'limitIp' => $device_limit,
                 'flow' => '',
+                'tgId' => 0,
             ];
-        }
 
-        $inboundId = (int) $inbound['id'];
-        $clientUuid = (string) ($client['id'] ?? '');
-        if ($clientUuid === '') {
-            return false;
-        }
-
-        $settingsJson = json_encode(['clients' => [$client]], JSON_UNESCAPED_UNICODE);
-        if ($existingIndex !== null) {
-            $path = '/panel/api/inbounds/updateClient/' . rawurlencode($clientUuid);
-            $payload = ['id' => $inboundId, 'settings' => $settingsJson];
-        } else {
-            $path = '/panel/api/inbounds/add';
-            $payload = ['id' => $inboundId, 'settings' => $settingsJson];
+            $path = '/panel/api/clients/add';
+            $payload = ['client' => $client, 'inboundIds' => [(int) $inbound['id']]];
         }
 
         $updateUser = self::threeXuiHttp('POST', $path, $payload);
@@ -469,8 +479,9 @@ class Xray
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [3X-UI addClient] Ошибка API: %s\n",
+                    "[%s] [3X-UI addClient] Ошибка API (%s): %s\n",
                     date('Y-m-d H:i:s'),
+                    $path,
                     json_encode($updateUser, JSON_UNESCAPED_UNICODE)
                 ),
                 FILE_APPEND
@@ -500,7 +511,7 @@ class Xray
     }
 
     /**
-     * Создаёт или обновляет клиента VPN через REST API панели 3x-ui (`/panel/api/inbounds/*`).
+     * Создаёт или обновляет клиента VPN через REST API панели 3x-ui (`/panel/api/clients/*`).
      * Bearer `XUI_API_TOKEN` или сессия POST `/login` + CSRF. Inbound — индекс `XUI_INBOUND_NUMBER` в списке list.
      *
      * @param int|string $days         Количество дней действия подписки
@@ -512,8 +523,8 @@ class Xray
      *                                   'success' => true,
      *                                   'client_data' => [
      *                                     'id' => string,           // UUID клиента
-     *                                     'email' => string,        // Email клиента
-     *                                     'subId' => string,        // ID подписки
+     *                                     'email' => string,        // Имя клиента (getFirstName)
+     *                                     'subId' => string,        // ID подписки (= uniID)
      *                                     'expiryTime' => int,      // Время истечения в мс
      *                                     'limitIp' => int,         // Лимит IP адресов
      *                                     'enable' => bool,         // Статус активности
@@ -564,7 +575,8 @@ class Xray
             if (!is_array($c)) {
                 continue;
             }
-            if (($c['email'] ?? '') === $uniID || ($c['subId'] ?? '') === $uniID) {
+            // Ищем по subId (= uniID) — уникальный ключ; email (= имя) может совпадать у разных юзеров
+            if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
                 $currentExpiry = (int) ($c['expiryTime'] ?? 0);
                 $nowMs = time() * 1000;
                 $baseMs = max($nowMs, $currentExpiry);
@@ -586,14 +598,15 @@ class Xray
             return ['status' => 'error', 'message' => 'Клиент не найден в панели и не удалось создать'];
         }
 
-        $clientUuid = (string) ($clientRow['id'] ?? '');
-        if ($clientUuid === '') {
-            return ['status' => 'error', 'message' => 'Некорректный id клиента'];
+        // :email в URL = реальный email клиента из панели (= getFirstName(), установленный при создании)
+        $currentEmail = (string) ($clientRow['email'] ?? '');
+        if ($currentEmail === '') {
+            return ['status' => 'error', 'message' => 'Некорректный email клиента'];
         }
 
-        $settingsJson = json_encode(['clients' => [$clientRow]], JSON_UNESCAPED_UNICODE);
-        $path = '/panel/api/inbounds/updateClient/' . rawurlencode($clientUuid);
-        $payload = ['id' => (int) $inbound['id'], 'settings' => $settingsJson];
+        // 3.1.0: POST /panel/api/clients/update/:email — тело полный объект (replace, не patch)
+        $path = '/panel/api/clients/update/' . rawurlencode($currentEmail);
+        $payload = array_merge($clientRow, ['enable' => true]);
         $updateUser = self::threeXuiHttp('POST', $path, $payload);
         if ($updateUser !== false && ($updateUser['success'] ?? false) === true) {
             self::syncUserDateEndByUniID($uniID, $bonusDays);
@@ -601,7 +614,12 @@ class Xray
         }
         file_put_contents(
             self::logFile(),
-            sprintf("[%s] [3X-UI xui_update] Update failed: %s\n", date('Y-m-d H:i:s'), json_encode($updateUser, JSON_UNESCAPED_UNICODE)),
+            sprintf(
+                "[%s] [3X-UI xui_update] Update failed (%s): %s\n",
+                date('Y-m-d H:i:s'),
+                $path,
+                json_encode($updateUser, JSON_UNESCAPED_UNICODE)
+            ),
             FILE_APPEND
         );
         return ['status' => 'error', 'message' => 'Не удалось обновить клиента в панели 3x-ui'];
@@ -626,7 +644,11 @@ class Xray
     }
 
     /**
-     * Удаление ключа через API 3x-ui: POST /panel/api/inbounds/:id/delClientByEmail/:email.
+     * Удаление ключа через API 3x-ui.
+     *
+     * 3.1.0: POST /panel/api/clients/del/:email
+     * :email = реальный email клиента из панели (= getFirstName(), установленный при создании).
+     * Ищем клиента по subId (= uniID), берём его email и подставляем в URL.
      *
      * @return array<string, string>
      */
@@ -641,41 +663,47 @@ class Xray
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
         $inbound = $data['obj'][$inboundIdx];
-        $inboundId = (int) $inbound['id'];
         $settings = json_decode((string) ($inbound['settings'] ?? '{}'), true);
         if (!is_array($settings)) {
             $settings = [];
         }
+
+        // Ищем по subId (= uniID) — уникальный ключ
+        // email может быть именем (getFirstName), subId всегда uniID
         $found = false;
-        $deleteEmail = $uniID;
+        $deleteEmail = $uniID; // запасной вариант
         foreach ($settings['clients'] ?? [] as $c) {
             if (!is_array($c)) {
                 continue;
             }
-            if (($c['email'] ?? '') === $uniID || ($c['subId'] ?? '') === $uniID) {
+            if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
                 $found = true;
                 $e = (string) ($c['email'] ?? '');
+                // Берём реальный email из панели для URL — именно он ключ в /clients/del/:email
                 $deleteEmail = $e !== '' ? $e : $uniID;
                 break;
             }
         }
+
         if (!$found) {
             Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
             return ['status' => 'partial', 'message' => 'Клиент не найден в панели, данные подписки очищены'];
         }
 
-        $delPath = '/panel/api/inbounds/' . $inboundId . '/delClientByEmail/' . rawurlencode($deleteEmail);
+        // 3.1.0: POST /panel/api/clients/del/:email (убран inboundId из пути)
+        $delPath = '/panel/api/clients/del/' . rawurlencode($deleteEmail);
         $delResult = self::threeXuiHttp('POST', $delPath, null);
         Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
 
         if ($delResult !== false && ($delResult['success'] ?? false) === true) {
+            // Верификация: клиент действительно удалён из inbound
             $verify = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
             if ($verify !== false && !empty($verify['success']) && !empty($verify['obj'][$inboundIdx])) {
                 $vIn = $verify['obj'][$inboundIdx];
                 $vSettings = json_decode((string) ($vIn['settings'] ?? '{}'), true);
                 if (is_array($vSettings)) {
                     foreach ($vSettings['clients'] ?? [] as $cl) {
-                        if (is_array($cl) && (($cl['email'] ?? '') === $uniID || ($cl['subId'] ?? '') === $uniID)) {
+                        if (is_array($cl) && (($cl['subId'] ?? '') === $uniID || ($cl['email'] ?? '') === $deleteEmail)) {
                             return ['status' => 'error', 'message' => 'Панель сообщила об успехе, но клиент всё ещё в inbound'];
                         }
                     }
@@ -683,7 +711,11 @@ class Xray
             }
             return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
         }
-        return ['status' => 'partial', 'message' => 'Успешно удалено из хранилища, но ошибка при удалении из сервера: ' . json_encode($delResult, JSON_UNESCAPED_UNICODE)];
+        return [
+            'status' => 'partial',
+            'message' => 'Успешно удалено из хранилища, но ошибка при удалении из сервера: '
+                . json_encode($delResult, JSON_UNESCAPED_UNICODE),
+        ];
     }
 
     /**
@@ -699,7 +731,6 @@ class Xray
         $client = new GetUser();
         $uniID = $uniID === null ? $client->getUniID() : $uniID;
 
-        // Логируем начало процесса удаления
         file_put_contents(
             self::logFile(),
             sprintf(
@@ -727,41 +758,33 @@ class Xray
     }
 
     /**
-     * Очистка истёкших клиентов на панели 3x-ui (delDepletedClients для выбранного inbound).
+     * Очистка истёкших клиентов на панели 3x-ui.
+     *
+     * 3.1.0: POST /panel/api/clients/delDepleted — глобальный эндпоинт без inboundId.
+     * Старый /inbounds/delDepletedClients/:id удалён из API.
+     * Ответ содержит obj.deleted (количество удалённых клиентов).
      */
     private static function cleanUp3xUi(): void
     {
-        $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
-        if ($data === false || empty($data['success']) || empty($data['obj'])) {
-            file_put_contents(
-                self::logFile(),
-                sprintf("[%s] [3X-UI CLEANUP] Не удалось получить inbounds\n", date('Y-m-d H:i:s')),
-                FILE_APPEND
-            );
-            return;
-        }
-        $inboundIdx = (int) ($_ENV['XUI_INBOUND_NUMBER'] ?? 0);
-        if (empty($data['obj'][$inboundIdx])) {
-            file_put_contents(
-                self::logFile(),
-                sprintf("[%s] [3X-UI CLEANUP] Inbound с индексом %d не найден\n", date('Y-m-d H:i:s'), $inboundIdx),
-                FILE_APPEND
-            );
-            return;
-        }
-        $inboundId = (int) $data['obj'][$inboundIdx]['id'];
-        $result = self::threeXuiHttp('POST', '/panel/api/inbounds/delDepletedClients/' . $inboundId, null);
+        // 3.1.0: глобальный вызов — GET inbounds/list перед этим не нужен
+        $result = self::threeXuiHttp('POST', '/panel/api/clients/delDepleted', null);
+
         if ($result !== false && ($result['success'] ?? false) === true) {
+            $deleted = (int) ($result['obj']['deleted'] ?? 0);
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [УСПЕШНО - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui: delDepletedClients для inbound %d\n", date('Y-m-d H:i:s'), $inboundId),
+                sprintf(
+                    "[%s] [УСПЕШНО - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui: delDepleted удалил %d клиентов\n",
+                    date('Y-m-d H:i:s'),
+                    $deleted
+                ),
                 FILE_APPEND
             );
         } else {
             file_put_contents(
                 self::logFile(),
                 sprintf(
-                    "[%s] [ОШИБКА - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui delDepletedClients: %s\n",
+                    "[%s] [ОШИБКА - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui delDepleted: %s\n",
                     date('Y-m-d H:i:s'),
                     json_encode($result, JSON_UNESCAPED_UNICODE)
                 ),
@@ -782,7 +805,7 @@ class Xray
     }
 
     /**
-     * Очистка истёкших клиентов: `POST /panel/api/inbounds/delDepletedClients/:id` и синхронизация БД.
+     * Очистка истёкших клиентов: `POST /panel/api/clients/delDepleted` и синхронизация БД.
      *
      * @return void
      */

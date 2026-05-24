@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 declare(strict_types=1);
 
@@ -68,7 +68,7 @@ class Profile
 
         return [
             'personal_info' => [
-                'first_name' => $this->user->getFistName(),
+                'first_name' => $this->user->getFirstName(),
                 'last_name' => $this->user->getLastName(),
                 'email' => $this->user->getEmail(),
                 'uniID' => $this->user->getUniID(),

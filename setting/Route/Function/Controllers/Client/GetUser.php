@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 declare(strict_types=1);
 
@@ -19,7 +19,7 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
         return (int) ($this->client['id'] ?? 0);
     }
 
-    public function getFistName(): string
+    public function getFirstName(): string
     {
         return (string) ($this->client['first_name'] ?? '');
     }
@@ -109,8 +109,8 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
         return (int) ($this->client['refer_count'] ?? 0);
     }
 
-    public function onPaymantStatus():bool
+    public function onPaymantStatus(): bool
     {
-       return (isset(\App\Config\Session::init('kassa')['payment_id']) && !empty(\App\Config\Session::init('kassa')['payment_id'])) ? true : false;
+        return (isset(\App\Config\Session::init('kassa')['payment_id']) && !empty(\App\Config\Session::init('kassa')['payment_id'])) ? true : false;
     }
 }
