@@ -2,9 +2,25 @@
 
 use Setting\Route\Function\Functions;
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 
 Auth::auth();
 $site = Functions::site();
+
+// === Формирование цен из базы данных ===
+$hasReferral = PriceConfig::hasReferralDiscount();
+$prices = PriceConfig::getPrices($hasReferral);   // [1 => ['basic'=>150,...], 6 => [...], 12 => [...]]
+$tariffMeta = PriceConfig::getTariffMeta();
+
+// Удобные переменные для шаблона
+$p1 = $prices[1];   // цены за 1 месяц
+$p6 = $prices[6];   // цены за 6 месяцев (за месяц)
+$p12 = $prices[12]; // цены за 12 месяцев (за месяц)
+
+// Итого за период
+$t1  = ['basic' => $p1['basic'] * 1,  'clasic' => $p1['clasic'] * 1,  'pro' => $p1['pro'] * 1];
+$t6  = ['basic' => $p6['basic'] * 6,  'clasic' => $p6['clasic'] * 6,  'pro' => $p6['pro'] * 6];
+$t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' => $p12['pro'] * 12];
 ?>
 <!DOCTYPE html>
 <html lang="ru" class="dark">
@@ -122,13 +138,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">1 Месяц</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 150₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p1['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">200</span>
+                                        <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
                                         <p class="text-sm">₽/Месяц</p>
                                     </div>
                                     <!-- radio button -->
@@ -146,13 +162,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 120₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p6['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">720</span>
+                                        <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
                                         <p class="text-sm">₽/6 Мес</p>
                                     </div>
                                     <!-- radio button -->
@@ -170,13 +186,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 99₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p12['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">1200</span>
+                                        <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
                                         <p class="text-sm">₽/12 Мес</p>
                                     </div>
                                     <!-- radio button -->
@@ -235,7 +251,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">150</span>
+                                            <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -260,7 +276,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">150₽</span></p>
+                                        class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -276,7 +292,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">180</span>
+                                            <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -301,7 +317,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">180₽</span></p>
+                                        class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -317,7 +333,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">200</span>
+                                            <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -342,7 +358,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">200₽</span></p>
+                                        class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -395,7 +411,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">120</span>
+                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -420,7 +436,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">720₽</span></p>
+                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -436,7 +452,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">150</span>
+                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -461,7 +477,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">900₽</span></p>
+                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -477,7 +493,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">180</span>
+                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -502,7 +518,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1200₽</span></p>
+                                        class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -555,7 +571,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">99</span>
+                                            <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -580,7 +596,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1188₽</span></p>
+                                        class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -596,7 +612,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">120</span>
+                                            <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -621,7 +637,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1800₽</span></p>
+                                        class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -637,7 +653,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">160</span>
+                                            <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -662,7 +678,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">2400₽</span></p>
+                                        class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -679,7 +695,7 @@ $site = Functions::site();
 
                 </section>
 
-                <!--  ОПЛАТА -->
+                <!-- ОПЛАТА -->
                 <section data-section="finish"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
@@ -708,14 +724,14 @@ $site = Functions::site();
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold" id="finish-period">12 Месяцев</h5>
+                                        <p class="text-white/70 font-light" id="finish-tariff">Тариф MYSELF</p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">99</span>
+                                            <span class="text-3xl font-bold" id="finish-price-per-month"></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                     </div>
@@ -729,10 +745,10 @@ $site = Functions::site();
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light" id="finish-devices">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1200₽</span></p>
+                                        class="text-white/70" id="finish-total"></span>₽</p>
                             </label>
                         </div>
 
@@ -744,7 +760,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment-desktop" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
                                             alt="sbp">
@@ -757,7 +773,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
+                                        <input type="radio" name="payment-desktop" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
                                             alt="iomoney">
@@ -770,7 +786,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sber" class="sr-only peer" />
+                                        <input type="radio" name="payment-desktop" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
                                             alt="sber">
@@ -783,7 +799,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment-desktop" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
                                             alt="tbank">
@@ -878,13 +894,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">1 Месяц</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 150₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p1['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">200</span>
+                                        <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
                                         <p class="text-sm">₽/Месяц</p>
                                     </div>
                                     <!-- radio button -->
@@ -902,13 +918,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 120₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p6['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">720</span>
+                                        <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
                                         <p class="text-sm">₽/6 Мес</p>
                                     </div>
                                     <!-- radio button -->
@@ -926,13 +942,13 @@ $site = Functions::site();
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от 99₽</p>
+                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p12['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold">1200</span>
+                                        <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
                                         <p class="text-sm">₽/12 Мес</p>
                                     </div>
                                     <!-- radio button -->
@@ -990,7 +1006,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">150</span>
+                                            <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1015,7 +1031,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">150₽</span></p>
+                                        class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1031,7 +1047,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">180</span>
+                                            <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1056,7 +1072,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">180₽</span></p>
+                                        class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1072,7 +1088,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">200</span>
+                                            <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1097,7 +1113,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">200₽</span></p>
+                                        class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1149,7 +1165,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">120</span>
+                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1174,7 +1190,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">720₽</span></p>
+                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1190,7 +1206,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">150</span>
+                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1215,7 +1231,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">900₽</span></p>
+                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1231,7 +1247,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">180</span>
+                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1256,7 +1272,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1200₽</span></p>
+                                        class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1308,7 +1324,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">99</span>
+                                            <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1333,7 +1349,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1188₽</span></p>
+                                        class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1349,7 +1365,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">120</span>
+                                            <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1374,7 +1390,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">4 устройства (для семьи)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1800₽</span></p>
+                                        class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1390,7 +1406,7 @@ $site = Functions::site();
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">160</span>
+                                            <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                         <!-- radio button -->
@@ -1415,7 +1431,7 @@ $site = Functions::site();
                                     <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">2400₽</span></p>
+                                        class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1461,14 +1477,14 @@ $site = Functions::site();
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold" id="finish-period-m">12 Месяцев</h5>
+                                        <p class="text-white/70 font-light" id="finish-tariff-m">Тариф MYSELF</p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold">99</span>
+                                            <span class="text-3xl font-bold" id="finish-price-per-month-m"></span>
                                             <p class="text-sm">₽/Месяц</p>
                                         </div>
                                     </div>
@@ -1482,10 +1498,10 @@ $site = Functions::site();
                                             <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light" id="finish-devices-m">1 устройство (для себя)</p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70">1200₽</span></p>
+                                        class="text-white/70" id="finish-total-m"></span>₽</p>
                             </label>
                         </div>
 
@@ -1497,7 +1513,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment-mobile" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
                                             alt="sbp">
@@ -1510,7 +1526,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="iomoney" class="sr-only peer" />
+                                        <input type="radio" name="payment-mobile" value="iomoney" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
                                             alt="iomoney">
@@ -1523,7 +1539,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sber" class="sr-only peer" />
+                                        <input type="radio" name="payment-mobile" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
                                             alt="sber">
@@ -1536,7 +1552,7 @@ $site = Functions::site();
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                     Оплатить через:
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment" value="sbp" class="sr-only peer" />
+                                        <input type="radio" name="payment-mobile" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
                                             alt="tbank">
@@ -1565,175 +1581,202 @@ $site = Functions::site();
             </div>
         </main>
         <script>
-            $(document).ready(function () {
-                // Menu navigation functionality
-                $('[data-select-section]').on('click', function () {
+            const PRICES = <?= json_encode($prices, JSON_UNESCAPED_UNICODE) ?>;
+            const TARIFF_META = <?= json_encode($tariffMeta, JSON_UNESCAPED_UNICODE) ?>;
+            const HAS_REFERRAL = <?= $hasReferral ? 'true' : 'false' ?>;
+
+            const TARIFF_DATA = {
+                '1month_1': {
+                    period: 1,
+                    tariff: 'basic',
+                    periodLabel: '1 Месяц'
+                },
+                '1month_4': {
+                    period: 1,
+                    tariff: 'clasic',
+                    periodLabel: '1 Месяц'
+                },
+                '1month_10': {
+                    period: 1,
+                    tariff: 'pro',
+                    periodLabel: '1 Месяц'
+                },
+                '6months_1': {
+                    period: 6,
+                    tariff: 'basic',
+                    periodLabel: '6 Месяцев'
+                },
+                '6months_4': {
+                    period: 6,
+                    tariff: 'clasic',
+                    periodLabel: '6 Месяцев'
+                },
+                '6months_10': {
+                    period: 6,
+                    tariff: 'pro',
+                    periodLabel: '6 Месяцев'
+                },
+                '12months_1': {
+                    period: 12,
+                    tariff: 'basic',
+                    periodLabel: '12 Месяцев'
+                },
+                '12months_4': {
+                    period: 12,
+                    tariff: 'clasic',
+                    periodLabel: '12 Месяцев'
+                },
+                '12months_10': {
+                    period: 12,
+                    tariff: 'pro',
+                    periodLabel: '12 Месяцев'
+                },
+            };
+
+            // Запоминаем последний выбранный тариф для каждого layout
+            var lastSelected = {
+                desktop: null,
+                mobile: null
+            };
+
+            function updateFinishSection(layoutKey, tariffVal) {
+                var data = TARIFF_DATA[tariffVal];
+                if (!data) return;
+
+                var pricePerMonth = PRICES[data.period][data.tariff];
+                var total = pricePerMonth * data.period;
+                var meta = TARIFF_META[data.tariff];
+                var suffix = layoutKey === 'desktop' ? '' : '-m';
+
+                var $layout = $('[data-pay-layout="' + layoutKey + '"]');
+                $layout.find('#finish-period' + suffix).text(data.periodLabel);
+                $layout.find('#finish-tariff' + suffix).text('Тариф ' + meta.label);
+                $layout.find('#finish-price-per-month' + suffix).text(pricePerMonth);
+                $layout.find('#finish-devices' + suffix).text(meta.desc);
+                $layout.find('#finish-total' + suffix).text(total + '₽');
+            }
+
+            $(document).ready(function() {
+
+                // Выбор периода — запоминаем целевую секцию в [data-main]
+                $('[data-select-section]').on('click', function() {
                     var sectionId = $(this).attr('data-select-section');
                     var $layout = $(this).closest('[data-pay-layout]');
-                    if ($layout.length) {
-                        $layout.find('[data-main]').attr('data-toggle-section', sectionId);
-                    } else {
-                        $('[data-main]').attr('data-toggle-section', sectionId);
+                    $layout.find('[data-main]').attr('data-toggle-section', sectionId);
+                });
+
+                // При выборе тарифа — сразу запоминаем и обновляем finish
+                $(document).on('change', 'input[name="subscription"]', function() {
+                    var val = $(this).val();
+                    if (!TARIFF_DATA[val]) return;
+
+                    var $layout = $(this).closest('[data-pay-layout]');
+                    var layoutKey = $layout.attr('data-pay-layout');
+                    lastSelected[layoutKey] = val;
+                    updateFinishSection(layoutKey, val);
+                });
+
+                // Кнопка "завершить и купить" (переход на finish) — обновляем на случай если JS ещё не отработал
+                $(document).on('click', '[data-toggle-section="finish"]', function() {
+                    var $layout = $(this).closest('[data-pay-layout]');
+                    var layoutKey = $layout.attr('data-pay-layout');
+
+                    // Сначала пробуем взять checked прямо сейчас
+                    var checked = $layout.find('input[name="subscription"]:checked').val();
+
+                    // Если не нашли — берём из запомненного
+                    var tariffVal = checked || lastSelected[layoutKey];
+
+                    if (tariffVal) {
+                        lastSelected[layoutKey] = tariffVal;
+                        updateFinishSection(layoutKey, tariffVal);
                     }
                 });
 
-                // Payment processing
-                $('.payment-submit-btn').on('click', function (e) {
+                // Также обновляем finish секцию когда она становится видимой (после toggle)
+                $(document).on('click', '[data-toggle-section]', function() {
+                    var sectionId = $(this).attr('data-toggle-section');
+                    if (sectionId === 'finish') {
+                        setTimeout(function() {
+                            var isDesktop = window.matchMedia('(min-width: 640px)').matches;
+                            var layoutKey = isDesktop ? 'desktop' : 'mobile';
+                            var $layout = $('[data-pay-layout="' + layoutKey + '"]');
+                            
+                            var checked = $layout.find('input[name="subscription"]:checked').val();
+                            var tariffVal = checked || lastSelected[layoutKey];
+                            
+                            if (tariffVal) {
+                                updateFinishSection(layoutKey, tariffVal);
+                            }
+                        }, 100);
+                    }
+                });
+
+                // Кнопка оплатить
+                $('.payment-submit-btn').on('click', function(e) {
                     e.preventDefault();
 
                     var isDesktop = window.matchMedia('(min-width: 640px)').matches;
-                    var $activePay = isDesktop ? $('[data-pay-layout="desktop"]') : $('[data-pay-layout="mobile"]');
+                    var layoutKey = isDesktop ? 'desktop' : 'mobile';
+                    var $layout = $('[data-pay-layout="' + layoutKey + '"]');
 
-                    // Собираем данные формы
-                    const selectedTariff = $activePay.find('input[name="subscription"]:checked').val();
-                    const selectedPayment = $activePay.find('input[name="payment"]:checked').val();
+                    var selectedTariff = $layout.find('input[name="subscription"]:checked').val() ||
+                        lastSelected[layoutKey];
+                    var paymentName = layoutKey === 'desktop' ? 'payment-desktop' : 'payment-mobile';
+                    var selectedPayment = $layout.find('input[name="' + paymentName + '"]:checked').val();
 
-                    if (!selectedTariff || !selectedPayment) {
-                        alert('Пожалуйста, выберите тариф и способ оплаты');
+                    if (!selectedTariff) {
+                        alert('Пожалуйста, выберите тариф');
+                        return;
+                    }
+                    if (!selectedPayment) {
+                        alert('Пожалуйста, выберите способ оплаты');
                         return;
                     }
 
-                    // Определяем сумму на основе тарифа
-                    let amount = 0;
-                    let tariffType = '';
-                    switch (selectedTariff) {
-                        case '1month_1':
-                            amount = 150;
-                            tariffType = '1month_1';
-                            break;
-                        case '1month_4':
-                            amount = 180;
-                            tariffType = '1month_4';
-                            break;
-                        case '1month_10':
-                            amount = 200;
-                            tariffType = '1month_10';
-                            break;
-                        case '6months_1':
-                            amount = 720;
-                            tariffType = '6months_1';
-                            break;
-                        case '6months_4':
-                            amount = 900;
-                            tariffType = '6months_4';
-                            break;
-                        case '6months_10':
-                            amount = 1200;
-                            tariffType = '6months_10';
-                            break;
-                        case '12months_1':
-                            amount = 1188;
-                            tariffType = '12months_1';
-                            break;
-                        case '12months_4':
-                            amount = 1800;
-                            tariffType = '12months_4';
-                            break;
-                        case '12months_10':
-                            amount = 2400;
-                            tariffType = '12months_10';
-                            break;
-                        default:
-                            amount = 150;
-                            tariffType = '1month_1';
-                    }
+                    var tariffInfo = TARIFF_DATA[selectedTariff];
+                    var amount = tariffInfo ?
+                        PRICES[tariffInfo.period][tariffInfo.tariff] * tariffInfo.period :
+                        0;
 
-                    // Показываем индикатор загрузки
-                    const btn = $(this);
-                    const originalText = btn.html();
+                    var btn = $(this);
+                    var originalText = btn.html();
                     btn.html('<i class="fas fa-spinner fa-spin"></i> Обработка...').prop('disabled', true);
 
-                    // Отправляем запрос на создание платежа
                     $.ajax({
                         url: '/api/payment/create',
                         method: 'POST',
                         contentType: 'application/json',
-                        timeout: 60000, // Таймаут 60 секунд
+                        timeout: 60000,
                         data: JSON.stringify({
-                            tariff: tariffType,
+                            tariff: selectedTariff,
                             paymentMethod: selectedPayment,
-                            amount: amount,
-                            email: $('#user-email').val(),
-                            phone: $('#user-phone').val(),
-                            saveCard: $('#save-card').is(':checked')
+                            amount: amount
                         }),
-                        success: function (response) {
+                        success: function(response) {
                             if (response.success) {
-                                // Если есть QR-код (для СБП), показываем его
-                                // if (response.qr_code) {
-                                // showQrCode(response.qr_code, response.payment_id);
-                                // } else if (response.payment_url) {
-                                // Перенаправляем на страницу оплаты
                                 window.location.href = response.payment_url;
-                                // }
                             } else {
                                 alert('Ошибка при создании платежа: ' + response.error);
                                 btn.html(originalText).prop('disabled', false);
                             }
                         },
-                        error: function (xhr, status, error) {
-                            console.error('Payment error:', {
-                                status: status,
-                                error: error,
-                                responseText: xhr.responseText,
-                                statusCode: xhr.status
-                            });
-
-                            // Handle timeout
+                        error: function(xhr, status) {
                             if (status === 'timeout') {
-                                alert('Время ожидания истекло. Сервер долго не отвечает. Попробуйте снова.');
-                                btn.html(originalText).prop('disabled', false);
-                                return;
+                                alert('Время ожидания истекло. Попробуйте снова.');
+                            } else if (xhr.status === 401) {
+                                var r = xhr.responseJSON || {};
+                                if (r.redirect) window.location.href = r.redirect;
+                            } else {
+                                var msg = (xhr.responseJSON && xhr.responseJSON.error) ?
+                                    xhr.responseJSON.error :
+                                    'Произошла ошибка. Попробуйте ещё раз.';
+                                alert(msg);
                             }
-
-                            // Handle authentication error
-                            if (xhr.status === 401) {
-                                const response = xhr.responseJSON || {};
-                                if (response.redirect) {
-                                    alert('Требуется авторизация. Перенаправляем на страницу входа...');
-                                    setTimeout(() => {
-                                        window.location.href = response.redirect;
-                                    }, 1500);
-                                    return;
-                                }
-                            }
-
-                            // Показываем детальную ошибку для отладки
-                            let errorMessage = 'Произошла ошибка. Пожалуйста, попробуйте еще раз.';
-
-                            if (xhr.responseJSON) {
-                                errorMessage = xhr.responseJSON.error || errorMessage;
-                                console.log('Server error details:', xhr.responseJSON.debug);
-                            } else if (xhr.responseText) {
-                                console.log('Raw response:', xhr.responseText);
-                            }
-
-                            alert(errorMessage);
                             btn.html(originalText).prop('disabled', false);
                         }
                     });
                 });
-
-                // Функция показа QR-кода для СБП
-                function showQrCode(qrUrl, paymentId) {
-                    // Создаем модальное окно для QR-кода
-                    const modal = `
-                                        <div id="qr-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                                            <div class="bg-gray-900 rounded-2xl p-6 max-w-sm w-full">
-                                            <h3 class="text-white text-xl font-bold mb-4 text-center">Оплата через СБП</h3>
-                                            <div class="bg-white p-4 rounded-xl mb-4">
-                                                <img decoding="async" loading="lazy" src="${qrUrl}" alt="QR Code" class="w-full h-auto">
-                                            </div>
-                                            <p class="text-white/70 text-sm text-center mb-4">Отсканируйте QR-код в банковском приложении</p>
-                                            <div class="text-white/50 text-xs text-center mb-4">ID платежа: ${paymentId}</div>
-                                            <button onclick="closeQrModal()" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold hover:bg-green-600 transition">
-                                                Закрыть
-                                            </button>
-                                            </div>
-                                        </div>
-                                        `;
-                    $('body').append(modal);
-                }
             });
 
             function closeQrModal() {
