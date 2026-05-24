@@ -6,6 +6,9 @@ AdminAuth::auth();
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
 use App\Config\Session;
+use Setting\Route\Function\Functions;
+
+$site = Functions::site();
 $admin = new AdminDatabase();
 
 // админ id
@@ -13,17 +16,17 @@ $adminID = Session::init('admin')['auth'][1];
 
 // цвета для логов
 $colors = [
-  'error' => 'text-red-300',
-  'success' => 'text-green-400',
-  'REGISTER' => 'text-green-400',
-  '[АДМИН-ВЫДАЧА]' => 'text-green-400',
-  'Подтверждено' => 'text-green-400',
-  'Успешное' => 'text-green-400',
-  'warning' => 'text-yellow-300',
-  'ОШИБКА' => 'text-yellow-300',
-  'info' => 'text-blue-400',
-  'Статус' => 'text-blue-400',
-  'mail' => 'text-pink-200',
+    'error' => 'text-red-300',
+    'success' => 'text-green-400',
+    'REGISTER' => 'text-green-400',
+    '[АДМИН-ВЫДАЧА]' => 'text-green-400',
+    'Подтверждено' => 'text-green-400',
+    'Успешное' => 'text-green-400',
+    'warning' => 'text-yellow-300',
+    'ОШИБКА' => 'text-yellow-300',
+    'info' => 'text-blue-400',
+    'Статус' => 'text-blue-400',
+    'mail' => 'text-pink-200',
 ];
 ?>
 
@@ -229,12 +232,12 @@ $colors = [
 
                                     if ($current_date && $last_date && $current_date !== $last_date) {
                                         ob_start();
-                                        ?>
+                            ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
                                             <?= date('d M Y', strtotime($matches[1])) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
-                                        <?php
+                            <?php
                                         ob_end_flush();
                                     }
 
@@ -252,8 +255,8 @@ $colors = [
                     </div>
 
                     <script>
-                        $(document).ready(function () {
-                            $('[data-show-logs]').on('click', function (event) {
+                        $(document).ready(function() {
+                            $('[data-show-logs]').on('click', function(event) {
                                 $('[data-logs]').toggleClass('blur-sm');
                                 if ($(this).hasClass('fa-eye-low-vision')) {
                                     $(this).removeClass('fa-eye-low-vision');
@@ -349,7 +352,7 @@ $colors = [
                                     y: {
                                         beginAtZero: true,
                                         ticks: {
-                                            callback: function (value) {
+                                            callback: function(value) {
                                                 return value.toLocaleString('ru-RU') + ' ₽';
                                             }
                                         }
@@ -396,7 +399,7 @@ $colors = [
                                     y: {
                                         beginAtZero: true,
                                         ticks: {
-                                            callback: function (value) {
+                                            callback: function(value) {
                                                 return value.toLocaleString('ru-RU') + ' чел.';
                                             }
                                         }
@@ -500,7 +503,7 @@ $colors = [
                                                 },
                                                 tooltip: {
                                                     callbacks: {
-                                                        label: function (context) {
+                                                        label: function(context) {
                                                             const label = context.label || '';
                                                             const value = context.parsed || 0;
                                                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -598,7 +601,7 @@ $colors = [
                             Изменить
                         </button>
                         <script defer>
-                            document.addEventListener('DOMContentLoaded', function () {
+                            document.addEventListener('DOMContentLoaded', function() {
                                 $('[data-visual]').hide();
                                 <?php foreach (AdminDatabase::getData('qwees_price') as $key => $value): ?>
                                     $("[name='<?= htmlspecialchars($value['name']) ?>']").on('input', (event) => {
@@ -661,12 +664,12 @@ $colors = [
 
                                     if ($current_date && $last_date && $current_date !== $last_date) {
                                         ob_start();
-                                        ?>
+                            ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
                                             <?= date('d M Y', strtotime($matches[1])) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
-                                        <?php
+                            <?php
                                         ob_end_flush();
                                     }
 
@@ -892,7 +895,7 @@ $colors = [
                             Панель создания пользователя</h2>
                         <form id="form_admin_add_user" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4"
                             action="/admin/addClient" method="POST">
-                            <!-- <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>"> -->
+                            <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
 
                             <!-- Основная информация -->
                             <div class="space-y-4">
@@ -976,10 +979,9 @@ $colors = [
                         </form>
                     </div>
                 </section>
-                <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js"></script>
             <?php endif; ?>
 
-            <script>
+            <script defer>
                 <?php
                 $message_status = $_GET['message_status'] ?? null;
                 $message_msg = $_GET['message_msg'] ?? null;
@@ -1008,7 +1010,7 @@ $colors = [
                 }
             </script>
             <script>
-                $(document).ready(function () {
+                $(document).ready(function() {
                     $('[data-user-find]').hide();
                     $('[data-delete-button]').hide();
                     $('[name="uniID"]').on('input', (event) => {
@@ -1016,8 +1018,10 @@ $colors = [
                         $.ajax({
                             url: '/admin/getUser',
                             method: 'POST',
-                            data: { uniID: event.target.value },
-                            success: function (response) {
+                            data: {
+                                uniID: event.target.value
+                            },
+                            success: function(response) {
                                 if (response.status) {
                                     $('[data-user-find]').show(250);
                                     //id
@@ -1032,12 +1036,20 @@ $colors = [
                                     $('[data-fuser-status]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
                                     $('[data-fuser-subscription]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
                                     $('[data-fuser-subscription]').text(response.data.subscription == '' ? '-' : response.data.subscription);
-                                    $('[data-fuser-expires]').text(response.data.date_end ? new Date(response.data.date_end).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }) : '-');
+                                    $('[data-fuser-expires]').text(response.data.date_end ? new Date(response.data.date_end).toLocaleDateString('ru-RU', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    }) : '-');
                                     $('[data-fuser-expires]').addClass(response.data.status === 'on' ? 'bg-green-100' : '');
-                                    setTimeout(() => { $('[data-delete-button]').show(250); }, 250);
+                                    setTimeout(() => {
+                                        $('[data-delete-button]').show(250);
+                                    }, 250);
                                 } else {
                                     $('[data-user-find]').hide(250);
-                                    setTimeout(() => { $('[data-delete-button]').hide(250); }, 250);
+                                    setTimeout(() => {
+                                        $('[data-delete-button]').hide(250);
+                                    }, 250);
                                 }
                             }
                         });
@@ -1045,6 +1057,7 @@ $colors = [
                 });
             </script>
             <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
+            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js" defer></script>
         </main>
     </div>
 </body>

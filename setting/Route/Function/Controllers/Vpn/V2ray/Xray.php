@@ -377,7 +377,7 @@ class Xray
      * - Поиск существующего: по subId === uniID (надёжнее имени)
      * - email в URL при update/delete — реальный email из записи панели (= getFirstName())
      */
-    private function addClientPanelApi($days, string $uniID, $device_limit = null): array|false
+    private function addClientPanelApi(int $days, string $uniID, $device_limit = null): array|false
     {
         $user = new GetUser($uniID);
 
@@ -407,7 +407,8 @@ class Xray
         }
 
         $protocol = strtolower((string) ($inbound['protocol'] ?? ''));
-        $settings = json_decode((string) ($inbound['settings'] ?? '{}'), true);
+        $rawSettings = $inbound['settings'] ?? '{}';
+        $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
         if (!is_array($settings)) {
             $settings = [];
         }
@@ -561,7 +562,8 @@ class Xray
             return ['status' => 'error', 'message' => 'Inbound не найден'];
         }
 
-        $settings = json_decode((string) ($inbound['settings'] ?? '{}'), true);
+        $rawSettings = $inbound['settings'] ?? '{}';
+        $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
         if (!is_array($settings)) {
             $settings = [];
         }
@@ -663,7 +665,8 @@ class Xray
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
         $inbound = $data['obj'][$inboundIdx];
-        $settings = json_decode((string) ($inbound['settings'] ?? '{}'), true);
+        $rawSettings = $inbound['settings'] ?? '{}';
+        $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
         if (!is_array($settings)) {
             $settings = [];
         }
@@ -686,21 +689,20 @@ class Xray
         }
 
         if (!$found) {
-            Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
             return ['status' => 'partial', 'message' => 'Клиент не найден в панели, данные подписки очищены'];
         }
 
         // 3.1.0: POST /panel/api/clients/del/:email (убран inboundId из пути)
         $delPath = '/panel/api/clients/del/' . rawurlencode($deleteEmail);
         $delResult = self::threeXuiHttp('POST', $delPath, null);
-        Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
 
         if ($delResult !== false && ($delResult['success'] ?? false) === true) {
             // Верификация: клиент действительно удалён из inbound
             $verify = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
             if ($verify !== false && !empty($verify['success']) && !empty($verify['obj'][$inboundIdx])) {
                 $vIn = $verify['obj'][$inboundIdx];
-                $vSettings = json_decode((string) ($vIn['settings'] ?? '{}'), true);
+                $rawSettings = $vIn['settings'] ?? '{}';
+                $vSettings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
                 if (is_array($vSettings)) {
                     foreach ($vSettings['clients'] ?? [] as $cl) {
                         if (is_array($cl) && (($cl['subId'] ?? '') === $uniID || ($cl['email'] ?? '') === $deleteEmail)) {
@@ -709,6 +711,7 @@ class Xray
                     }
                 }
             }
+            Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
             return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
         }
         return [

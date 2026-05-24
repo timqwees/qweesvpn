@@ -47,7 +47,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 class Network extends Session
 {
-    public static $db;
+    public static mixed $db;
 
     ### PATTERNS ROUTER PAGE ###
     public static array $patterns = [
@@ -159,7 +159,7 @@ class Network extends Session
                 return is_array($result) && count($result) > 0;
             }
 
-            $result = Database::send('SHOW TABLES LIKE ?', [$tableName]);
+            $result = Database::send('SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?', [$tableName]);
             return is_array($result) && count($result) > 0;
         } catch (\PDOException $e) {
             Message::set('error', "Ошибка при проверке существования таблицы '$tableName': " . $e->getMessage());

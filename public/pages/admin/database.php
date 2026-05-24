@@ -3,6 +3,10 @@
 \Setting\Route\Function\Controllers\Admin\AdminAuth::auth();
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
+use Setting\Route\Function\Functions;
+
+// получение информации
+$site = Functions::site();
 
 // Получаем параметры
 $table = $_GET['table'] ?? '';
@@ -31,7 +35,7 @@ if (!empty($searchQuery)) {
 }
 
 // Функция для построения URL с параметрами
-function buildUrl($table, $params = [])
+function buildUrl(string $table, $params = [])
 {
     $query = array_merge(['table' => $table], $params);
     return '/admin/database?' . http_build_query($query);

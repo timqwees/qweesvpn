@@ -46,7 +46,7 @@ use App\Models\Network\Message;
 
 class User extends Network
 {
-  public $table_name;
+  public string $table_name;
 
   public function __construct()
   {
@@ -90,8 +90,9 @@ class User extends Network
    *
    * _Позволяет гибко получать пользователя по разным уникальным полям._
    */
-  public function getUser(string $type, $value): array|bool
+  public function getUser(string $type, string $value): array|bool
   {
+    $result = null;
     try {
       switch ($type) {
         case 'id':

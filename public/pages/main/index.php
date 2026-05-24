@@ -1562,7 +1562,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
         <script defer>
             // Копирование VPN ключа
-            function copyVpn  Key() {
+            function copyVpnKey() {
                 const el = document.getElementById('vpn-key-desktop') || document.getElementById('vpn-key');
                 const text = el?.textContent?.trim();
                 text ? copyToClipboard(text, 'VPN ключ') : showNotification('VPN ключ не найден', 'error');
