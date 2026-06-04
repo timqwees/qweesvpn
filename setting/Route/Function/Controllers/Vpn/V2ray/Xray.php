@@ -461,7 +461,7 @@ class Xray
             $clientId = $needsUuid ? self::generateUuidV4() : $uniID;
             $client = [
                 'id' => $clientId,
-                'email' => $user->getFirstName(), // отображаемое имя в панели
+                'email' => $user->getЕmail(), // отображаемое почты в панели
                 'expiryTime' => $expiry,
                 'subId' => $uniID,               // уникальный ключ — всегда uniID
                 'enable' => true,
@@ -524,7 +524,7 @@ class Xray
      *                                   'success' => true,
      *                                   'client_data' => [
      *                                     'id' => string,           // UUID клиента
-     *                                     'email' => string,        // Имя клиента (getFirstName)
+     *                                     'email' => string,        // Имя клиента (getEmail)
      *                                     'subId' => string,        // ID подписки (= uniID)
      *                                     'expiryTime' => int,      // Время истечения в мс
      *                                     'limitIp' => int,         // Лимит IP адресов
