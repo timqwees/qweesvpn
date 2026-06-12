@@ -1,20 +1,13 @@
 <?php
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\Auth\Auth;
-use Setting\Route\Function\Controllers\Client\GetUser;
-use Setting\Route\Function\Controllers\Language\Language;
-use Setting\Route\Function\Controllers\OS\OS;
-use Setting\Route\Function\Controllers\Vpn\VpnStatus;
-use Setting\Route\Function\Controllers\Profile\Profile;
-use Setting\Route\Function\Controllers\System\SystemInfo;
+use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo};
 use Setting\Route\Function\Functions;
 
-Auth::auth();
+Auth::auth();//проверка авторизации
+$user = new GetUser();
+if(!$user->onCheckSubscription()) Network::onRedirect('/');//проверка активности подписки
+if ($user->onPaymantStatus()) Network::onRedirect('/pay/status');//Проверка платежей
 $site = Functions::site();
-$user = new GetUser();//тут происходит обновление данных у пользователя (подписка ::get())
-//Проверка платежей
-if ($user->onPaymantStatus())
-    Network::onRedirect('/pay/status');
 
 // язык
 $currentLanguage = Language::getCurrent();

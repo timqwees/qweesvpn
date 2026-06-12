@@ -5,9 +5,6 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Client\Src;
 
 use App\Config\Database;
-use DateTime;
-use DateTimeZone;
-use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 class Client
 {
     public static function get($uniID = null): array
@@ -34,44 +31,6 @@ class Client
         $status = strval($data['sub_status'] ?? 'off');
         $dateEnd = strval($data['date_end'] ?? '');
         $uniID = strval($data['uniID'] ?? '');
-
-        // Проверяем, не истекла ли подписка
-        if ($status === 'on' && !empty($dateEnd)) {
-            //проверка времени
-            $timezone = new DateTimeZone('Europe/Moscow');//UTC+3
-            $current_DateTime = new DateTime('now', $timezone);//текущее время
-            $end_DateTime = new DateTime($dateEnd . " 23:59:59", $timezone);//время окончания
-            if ($end_DateTime < $current_DateTime) {
-                $status = 'off'; // Подписка истекла
-
-                // Удаляем истекшую подписку из БД и X-UI
-                if (!empty($uniID)) {
-                    try {
-                        $xray = new Xray();
-                        $xray->DeleteKey($uniID);
-                    } catch (\Exception $e) {
-                        // Игнорируем ошибки панели — клиент мог быть уже удалён
-                    }
-
-                    // Логируем удаление
-                    file_put_contents(
-                        $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                        sprintf(
-                            "[%s] [ИСТЕКШАЯ] Подписка %s истекла (%s) — удалена из БД и X-UI\n",
-                            date('Y-m-d H:i:s'),
-                            $uniID,
-                            $dateEnd
-                        ),
-                        FILE_APPEND
-                    );
-                }
-                $dateEnd = '';
-                $data['subscription'] = '';
-                $data['count_days'] = 0;
-                $data['count_devices'] = 0;
-                $data['amount'] = 0;
-            }
-        }
 
         return [
             'id' => intval($data['id']),

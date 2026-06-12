@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Setting\Route\Function\Controllers\Client;
 
+use DateTime;
+use DateTimeZone;
+use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
+
 class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
 {
 
@@ -12,6 +16,45 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
     public function __construct($uniID = null)
     {
         $this->client = $uniID !== null ? (array) self::get($uniID) : (array) self::get();
+    }
+    /**
+     * Summary of onCheckSubscription
+     * @return bool True - все в порядке | False - статус подписки обновлен
+     */
+    public function onCheckSubscription(): bool
+    {
+        $status = (string) $this->client['status'] ?? 'off';
+        $dateEnd = (string) $this->client['date_end'] ?? '';
+        $uniID = (string) ($this->client['uniID'] ?? '');
+        if ($status === 'on' && !empty($dateEnd)) {
+            //проверка времени
+            $timezone = new DateTimeZone('Europe/Moscow');//UTC+3
+            $current_DateTime = new DateTime('now', $timezone);//текущее время
+            $end_DateTime = new DateTime($dateEnd . " 23:59:59", $timezone);//время окончания
+            if ($end_DateTime < $current_DateTime) {//время в подписке не менее текущего
+                if (!empty($uniID)) {
+                    $xray = new Xray();
+                    $result = $xray->DeleteKey($uniID);
+                    if ($result['status'] === 'ok') {
+                        // Логируем удаление
+                        file_put_contents(
+                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                            sprintf(
+                                "[%s] [ИСТЕКШАЯ] Подписка %s истекла (%s) — удалена из БД и X-UI\n",
+                                date('Y-m-d H:i:s'),
+                                $uniID,
+                                $dateEnd
+                            ),
+                            FILE_APPEND
+                        );
+                        return false;
+                    }
+                }
+                return false;//в случаи пустого uniID
+            }
+            return true;//в случаи не истечени подписки
+        }
+        return true;
     }
 
     public function getID(): int
