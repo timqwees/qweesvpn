@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Client\Src;
 
 use App\Config\Database;
+use DateTime;
+use DateTimeZone;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
-
 class Client
 {
     public static function get($uniID = null): array
@@ -36,7 +37,11 @@ class Client
 
         // Проверяем, не истекла ли подписка
         if ($status === 'on' && !empty($dateEnd)) {
-            if (strtotime($dateEnd) < time()) {
+            //проверка времени
+            $timezone = new DateTimeZone('Europe/Moscow');//UTC+3
+            $current_DateTime = new DateTime('now', $timezone);//текущее время
+            $end_DateTime = new DateTime($dateEnd . " 23:59:59", $timezone);//время окончания
+            if ($end_DateTime < $current_DateTime) {
                 $status = 'off'; // Подписка истекла
 
                 // Удаляем истекшую подписку из БД и X-UI

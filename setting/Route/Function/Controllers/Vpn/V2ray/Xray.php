@@ -137,7 +137,6 @@ class Xray
             $response = curl_exec($ch);
             $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $curlError = curl_error($ch);
-            curl_close($ch);
 
             if ($code === 200 && is_string($response) && preg_match($cookiePattern, $response, $m)) {
                 $headerEnd = strpos($response, "\r\n\r\n");
@@ -200,7 +199,6 @@ class Xray
                 CURLOPT_CONNECTTIMEOUT => 10,
             ]));
             $response = curl_exec($ch);
-            curl_close($ch);
             if (!is_string($response) || $response === '') {
                 continue;
             }
@@ -297,7 +295,6 @@ class Xray
         $response = curl_exec($ch);
         $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
-        curl_close($ch);
 
         if ($response === false || $curlErr !== '') {
             file_put_contents(

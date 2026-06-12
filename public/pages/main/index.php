@@ -11,7 +11,7 @@ use Setting\Route\Function\Functions;
 
 Auth::auth();
 $site = Functions::site();
-$user = new GetUser();
+$user = new GetUser();//тут происходит обновление данных у пользователя (подписка ::get())
 //Проверка платежей
 if ($user->onPaymantStatus())
     Network::onRedirect('/pay/status');

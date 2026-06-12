@@ -40,7 +40,7 @@ Routes::post('/api/cron/xray-cleanup', static function (): void {
         echo json_encode(['ok' => false, 'error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    \Setting\Route\Function\Controllers\Vpn\V2ray\Xray::CleanUP();
+    Xray::CleanUP();
     header('Content-Type: application/json; charset=UTF-8');
     echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE);
     exit;
