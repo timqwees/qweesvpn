@@ -39,11 +39,11 @@ $formattedVpnStatus = [
     'protocol' => $vpnStatusObj->getProtocol(),
     'ip_address' => $vpnStatusObj->getIpAddress(),
     'location' => $vpnStatusObj->getLocation(),
-    'background_world' => $vpnStatus === 'active' ? 'world_green.svg' : 'world_red.svg',
+    'background_world' => $vpnStatus === 'active' ? 'world_green.png' : 'world_red.png',
     'monoblock_image' => [
-        'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.svg' : 'layout_bg_red.svg',
+        'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.png' : 'layout_bg_red.png',
         'layout_spin' => $vpnStatus === 'active' ? 'layout_spin_green.png' : 'layout_spin_red.png',
-        'layout_center' => 'layout_center.svg'
+        'layout_center' => 'layout_center.png'
     ],
 ];
 
@@ -885,7 +885,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                             alt="monoblock_down" title="monoblock_down"
                             class="z-10 w-[50%] absolute z-20 animate-spin [animation-duration:10s]">
                       <!-- center -->
-                        <img
+                        <img decoding="async" loading="lazy"
                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
                             alt="monoblock_down" title="monoblock_down"
                             class="z-10 w-[22%] absolute z-30">
