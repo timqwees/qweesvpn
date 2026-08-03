@@ -351,8 +351,22 @@ class Database extends Network
    * _Описание:_
    * Выполняет любой SQL с подстановкой переменных (безопасно через prepare). Для SELECT возвращает результат, иначе — успех/неудача.
    */
+  private static $lastError = '';
+
+  /**
+   * Причина последней ошибки запроса (пустая строка, если всё было успешно)
+   */
+  public static function lastError(): string
+  {
+    return self::$lastError;
+  }
+
+  /**
+   * Выполняет любой SQL с подстановкой переменных (безопасно через prepare). Для SELECT возвращает результат, иначе — успех/неудача.
+   */
   public static function send(string $sql, array $params = [])
   {
+    self::$lastError = '';
     // Проверка, что ни один из параметров не является массивом
     foreach ($params as $key => $value) {
       if (is_array($value)) {
@@ -363,12 +377,15 @@ class Database extends Network
 
     try {
       $pdo = self::getConnection();
-      if ($pdo === null)
+      if ($pdo === null) {
+        self::$lastError = 'Нет соединения с БД (getConnection вернул null)';
         return false;
+      }
       $stmt = $pdo->prepare($sql);
       if ($stmt === false) {
         $errorInfo = $pdo->errorInfo();
         $errorMsg = "Ошибка подготовки запроса: " . implode(", ", $errorInfo) . " | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE);
+        self::$lastError = $errorMsg;
         error_log($errorMsg);
         return false;
       }
@@ -403,12 +420,17 @@ class Database extends Network
         $rowCount = $stmt->rowCount();
         if ($rowCount === 0 && $queryType === 'UPDATE') {
           $errorMsg = "WARNING: UPDATE запрос выполнен, но не обновил ни одной строки (0 rows affected) | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE);
+          self::$lastError = $errorMsg;
           error_log($errorMsg);
           return false;
         }
         // Для INSERT возвращаем true, если execute был успешным (даже если rowCount === 0 для некоторых СУБД)
         if ($queryType === 'INSERT') {
-          return $result === true ? true : false;
+          if ($result !== true) {
+            self::$lastError = 'Ошибка выполнения INSERT: ' . implode(', ', $pdo->errorInfo()) . " | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE);
+            return false;
+          }
+          return true;
         }
         error_log("DEBUG: Запрос $queryType выполнен успешно, затронуто строк: $rowCount");
       }
@@ -417,10 +439,12 @@ class Database extends Network
       return $result;
     } catch (\PDOException $e) {
       $errorMsg = "Ошибка выполнения запроса: " . $e->getMessage() . " | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE) . " | Code: " . $e->getCode();
+      self::$lastError = $errorMsg;
       error_log($errorMsg);
       return false;
     } catch (InvalidArgumentException $e) {
       $errorMsg = "Ошибка параметров запроса: " . $e->getMessage() . " | SQL: $sql | Параметры: " . json_encode($params, JSON_UNESCAPED_UNICODE);
+      self::$lastError = $errorMsg;
       error_log($errorMsg);
       return false;
     }

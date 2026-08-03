@@ -62,14 +62,16 @@ class Kassa
 
         if ($result === false) {
             // Подписка/VPN-ключ уже выданы, но запись в БД не удалась
+            $dbReason = Database::lastError() !== '' ? Database::lastError() : 'неизвестна';
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                 sprintf(
-                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось\n",
+                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось. Причина: %s\n",
                     date('Y-m-d H:i:s'),
                     $uniID,
                     $countDays,
-                    $countDevices
+                    $countDevices,
+                    $dbReason
                 ),
                 FILE_APPEND
             );
