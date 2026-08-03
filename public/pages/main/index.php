@@ -39,7 +39,7 @@ $formattedVpnStatus = [
     'protocol' => $vpnStatusObj->getProtocol(),
     'ip_address' => $vpnStatusObj->getIpAddress(),
     'location' => $vpnStatusObj->getLocation(),
-    'background_world' => $vpnStatus === 'active' ? 'world_green.png' : 'world_red.png',
+    'background_world' => $vpnStatus === 'active' ? 'world_green.svg' : 'world_red.svg',
     'monoblock_image' => [
         'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.png' : 'layout_bg_red.png',
         'layout_spin' => $vpnStatus === 'active' ? 'layout_spin_green.png' : 'layout_spin_red.png',
@@ -245,9 +245,9 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                             <div
                                 class="glow-card relative min-h-[600px] flex flex-1 flex-col items-center justify-center rounded-2xl overflow-hidden">
                                 <!-- backgound -->
-                                <img decoding="async" loading="lazy"
+                                <img
                                     src="/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>"
-                                    alt="background" class="absolute w-full h-full opacity-20" loading="lazy">
+                                    alt="background" class="absolute w-full h-full opacity-20">
 
                                 <!-- Monoblock decorative elements -->
                                 <div class="relative flex justify-center items-center flex-col w-1/3">
@@ -867,10 +867,9 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                     data-section="main">
 
                     <!-- backgound -->
-                    <img decoding="async" loading="lazy"
+                    <img
                         src="<?= $site['baseUrl'] ?>/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>" alt="background"
-                        class="absolute h-full opacity-20 -left-[3rem] right-0 top-0 bottom-0 mx-auto scale-[2.5] z-0"
-                        loading="lazy">
+                        class="absolute h-full opacity-20 -left-[3rem] right-0 top-0 bottom-0 mx-auto scale-[2.5] z-0">
 
                     <!-- Monoblock decorative elements -->
                     <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
