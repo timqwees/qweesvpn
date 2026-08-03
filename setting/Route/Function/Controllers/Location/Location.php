@@ -29,7 +29,7 @@ class Location
         'location' => 'Нидерланды',
         'url' => $this->BASIC_PATH . 'netherlands.svg'
       ];
-    } elseif (strpos($this->HOST, '/de.') !== false) {
+    } elseif (strpos($this->HOST, '/de.') !== false || strpos($this->HOST, '/vpn.') !== false) {
       return [
         'location' => 'Германия',
         'url' => $this->BASIC_PATH . 'germany.svg'
