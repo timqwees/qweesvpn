@@ -55,8 +55,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                             <img decoding="async" loading="lazy" class="w-24"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg" alt="logo">
                         </div>
-                        <!-- <h3 class="font-[qwees-urbanist-regular] text-2xl"><?= htmlspecialchars($site['ООО']) ?> -->
-                        </h3>
+                        <!-- <h3 class="font-[qwees-urbanist-regular] text-2xl"><?= htmlspecialchars($site['ООО']) ?> </h3> -->
                         <p class="text-sm text-center w-[70%] break-world"><?= $t('start_install_desc') ?>
                             <span class="text-green-200 text-lg">
                                 <?= htmlspecialchars((new Setting\Route\Function\Controllers\OS\OS())->getOS()['os']) ?></span>
@@ -408,7 +407,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                         </div>
 
                         <h3 class=" font-[qwees-poppins-semibold] text-2xl">
-                            <?= htmlspecialchars($site['ООО']) ?> VPN
+                            <?= htmlspecialchars($site['ООО']) ?>
 
                         </h3>
                         <p class="text-sm text-center w-[70%] break-world"><?= $t('start_install_desc') ?>
