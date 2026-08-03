@@ -252,20 +252,20 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 <!-- Monoblock decorative elements -->
                                 <div class="relative flex justify-center items-center flex-col w-1/3">
                                   <!-- bg -->
-                                    <img decoding="async" loading="lazy"
+                                    <img
                                         src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
                                         alt="monoblock_bg" title="monoblock_bg"
-                                        class="z-20 w-full absolute z-10">
+                                        class="z-10 w-full absolute">
                                   <!-- spin -->
-                                    <img decoding="async" loading="lazy"
+                                    <img
                                         src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
                                         alt="monoblock_spin" title="monoblock_spin"
-                                        class="z-10 w-[70%] absolute z-20 animate-spin [animation-duration:10s]">
+                                        class="z-20 w-[70%] absolute animate-spin [animation-duration:10s]">
                                   <!-- center -->
-                                    <img decoding="async" loading="lazy"
+                                    <img
                                         src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
                                         alt="monoblock_center" title="monoblock_center"
-                                        class="z-10 w-[35%] absolute z-30">
+                                        class="z-30 w-[35%] absolute">
                                 </div>
 
                                 <p
@@ -875,20 +875,20 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                     <!-- Monoblock decorative elements -->
                     <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
                       <!-- bg -->
-                        <img decoding="async" loading="lazy"
+                        <img
                             src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
-                            alt="monoblock_bg" title="monoblock_bg" loading="lazy"
-                            class="z-20 w-[70%] absolute z-10">
+                            alt="monoblock_bg" title="monoblock_bg"
+                            class="z-10 w-[70%] absolute">
                       <!-- spin -->
-                        <img decoding="async" loading="lazy"
+                        <img
                             src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
                             alt="monoblock_spin" title="monoblock_spin"
-                            class="z-10 w-[50%] absolute z-20 animate-spin [animation-duration:10s]">
+                            class="z-20 w-[50%] absolute animate-spin [animation-duration:10s]">
                       <!-- center -->
-                        <img decoding="async" loading="lazy"
+                        <img
                             src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
                             alt="monoblock_center" title="monoblock_center"
-                            class="z-10 w-[22%] absolute z-30">
+                            class="z-30 w-[22%] absolute">
                     </div>
 
                     <!-- information -->
