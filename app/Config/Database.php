@@ -303,20 +303,6 @@ class Database extends Network
           $dsn = "mysql:host={$DB_HOST};port={$DB_PORT};dbname={$DB_NAME};charset=utf8mb4";
           // Подключение к MySQL
           self::$instance = new PDO($dsn, $DB_USERNAME, $DB_PASSWORD, $options);
-
-          // Авто-миграция: expiry хранит миллисекунды (~1.7e12), тип INT в MySQL вмещает максимум 2.1e9.
-          // Если колонка всё ещё INT — переводим в BIGINT (идемпотентно, выполнится только один раз).
-          try {
-            $colRow = self::$instance->query(
-              "SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'qwees_subscriptions' AND COLUMN_NAME = 'expiry'"
-            )->fetch(PDO::FETCH_ASSOC);
-            if (is_array($colRow) && strtolower((string) $colRow['DATA_TYPE']) === 'int') {
-              self::$instance->exec('ALTER TABLE qwees_subscriptions MODIFY COLUMN expiry BIGINT NOT NULL DEFAULT 0');
-              error_log('Миграция: qwees_subscriptions.expiry переведён из INT в BIGINT');
-            }
-          } catch (\PDOException $e) {
-            error_log("Авто-миграция qwees_subscriptions.expiry пропущена: " . $e->getMessage());
-          }
         } elseif (empty($db_selection)) {
           self::closeConnection();
         } else {
