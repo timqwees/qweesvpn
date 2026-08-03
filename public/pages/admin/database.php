@@ -66,8 +66,41 @@ $sortIcon = function ($col) {
 <body class="bg-no-repeat flex item-center w-full overflow-x-hidden bg-gray-100">
     <div class="min-h-screen flex w-full mx-auto">
 
+        <!-- оверлей (мобильная шторка) -->
+        <div id="admin-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+
+        <!-- кнопка открытия меню (мобильная) -->
+        <button id="admin-burger"
+            class="md:hidden fixed top-2 left-2 z-[60] bg-white rounded-lg shadow-md p-2.5 text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+        <script defer>
+            $(document).ready(function () {
+                var $sidebar = $('#admin-sidebar');
+                var $overlay = $('#admin-overlay');
+
+                function closeSidebar() {
+                    $sidebar.removeClass('translate-x-0').addClass('-translate-x-full');
+                    $overlay.addClass('hidden');
+                }
+
+                $('#admin-burger').on('click', function () {
+                    var open = $sidebar.hasClass('translate-x-0');
+                    $sidebar.toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
+                    $overlay.toggleClass('hidden', open);
+                });
+
+                $overlay.on('click', closeSidebar);
+                $sidebar.on('click', 'a, [data-toggle-section]', closeSidebar);
+            });
+        </script>
+
         <!-- navbar с фильтрами -->
-        <aside class="flex flex-col shadow-xl bg-white rounded-xl shrink-0 min-w-[280px] max-w-[280px]">
+        <aside id="admin-sidebar"
+            class="fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 flex flex-col shadow-xl bg-white rounded-xl shrink-0 min-w-[280px] max-w-[280px]">
             <!-- header -->
             <div class="flex flex-col p-4 gap-4">
                 <div class="flex flex-1 justify-between items-center">
@@ -238,17 +271,6 @@ $sortIcon = function ($col) {
                                 ]
                             ],
                         ];
-                    } elseif ($table === 'qwees_price') {
-                        $availableFilters = [
-                            'is_active' => [
-                                'name' => 'Статус тарифа',
-                                'icon' => 'fa-toggle-on',
-                                'options' => [
-                                    ['value' => '1', 'label' => 'Активен', 'condition' => '=', 'color' => 'green'],
-                                    ['value' => '0', 'label' => 'Неактивен', 'condition' => '=', 'color' => 'gray'],
-                                ]
-                            ],
-                        ];
                     } elseif ($table === 'qwees_payments') {
                         $availableFilters = [
                             'status' => [
@@ -321,7 +343,7 @@ $sortIcon = function ($col) {
             </div>
         </aside>
 
-        <main class="mx-auto container px-20 flex-grow bg-gray-100 overflow-auto">
+        <main class="mx-auto container px-4 md:px-20 pt-14 md:pt-0 flex-grow bg-gray-100 overflow-auto">
             <!-- Заголовок -->
             <div class="container mx-auto py-6">
                 <h1 class="text-2xl font-semibold text-gray-800">

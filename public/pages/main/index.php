@@ -4,10 +4,14 @@ use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Lang
 use Setting\Route\Function\Functions;
 
 Auth::auth();//проверка авторизации
+//====================================================================================
 $user = new GetUser();
-if(!$user->onCheckSubscription()) Network::onRedirect('/');//проверка активности подписки
-if ($user->onPaymantStatus()) Network::onRedirect('/pay/status');//Проверка платежей
-$site = Functions::site();
+if (!$user->onCheckSubscription() && (parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/') !== '/')//получает информацию пользователя и проверят подписку (false - обновление подписки | true - все ок)
+    Network::onRedirect('/');
+if ($user->onPaymantStatus())//если в сесии есть payment_id, то оплата не проверена
+    Network::onRedirect('/pay/status');//перенаправляем на страницу проверки
+//===================================================================================
+$site = Functions::site();//после всех провроек получем уже данные сервиса
 
 // язык
 $currentLanguage = Language::getCurrent();
@@ -35,11 +39,12 @@ $formattedVpnStatus = [
     'protocol' => $vpnStatusObj->getProtocol(),
     'ip_address' => $vpnStatusObj->getIpAddress(),
     'location' => $vpnStatusObj->getLocation(),
+    'background_world' => $vpnStatus === 'active' ? 'world_green.svg' : 'world_red.svg',
     'monoblock_image' => [
-        'top' => $vpnStatus === 'active' ? 'on_top.svg' : 'off_top.svg',
-        'down' => $vpnStatus === 'active' ? 'on_down.svg' : 'off_down.svg'
+        'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.svg' : 'layout_bg_red.svg',
+        'layout_spin' => $vpnStatus === 'active' ? 'layout_spin_green.png' : 'layout_spin_red.png',
+        'layout_center' => 'layout_center.svg'
     ],
-    'monoblock_class' => 'animation_monoblock_on'
 ];
 
 // Без активной подписки не показываем реальные параметры узла (пинг/IP/хост из .env)
@@ -53,7 +58,7 @@ if ($vpnStatus !== 'active') {
 }
 
 $formattedUserProfile = [
-    'full_name' => trim($user->getFirstName() . ' ' . $user->getLastName()) ?: 'Пользователь',
+    'full_name' => trim($user->getFirstName() . ' ' . $user->getLastName()) ?: $t('user'),
     'status_text' => $t($user->getStatus() === 'on' ? 'active' : 'inactive'),
     'status_class' => $user->getStatus() === 'on' ? 'text-green-400' : 'text-red-400',
     'days_left' => $user->getCountDays(),
@@ -75,6 +80,9 @@ $formattedSystemInfo = [
 ];
 
 $activeSection = $_GET['section'] ?? 'main';
+if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) {
+    $activeSection = 'main';
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLanguage ?>">
@@ -83,7 +91,16 @@ $activeSection = $_GET['section'] ?? 'main';
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= $t('profile') ?></title>
-
+    <!-- ========== manifest Apps ================ -->
+    <link rel="icon" type="image/png" href="/public/assets/images/icons/logo/manifest/favicon-96x96.png"
+        sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/public/assets/images/icons/logo/manifest/favicon.svg" />
+    <link rel="shortcut icon" href="/public/assets/images/icons/logo/manifest/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180"
+        href="/public/assets/images/icons/logo/manifest/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="QTV" />
+    <link rel="manifest" href="/public/assets/images/icons/logo/manifest/site.webmanifest" />
+    <!-- ========================================== -->
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" as="style"
@@ -118,15 +135,19 @@ $activeSection = $_GET['section'] ?? 'main';
     </noscript>
 </head>
 
-<body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
+<body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden" data-active-section="<?= $activeSection ?>">
     <div class="min-h-screen flex flex-col w-full">
 
         <?php include_once 'public/components/header.php' ?>
 
         <main class="flex sm:my-2 w-full h-full">
 
-            <!-- ################# MENU DESCKTOP ####################-->
-            <aside class="hidden h-full sm:block min-w-[300px] z-20">
+            <!-- Сюда рендерится активный layout (desktop или mobile) -->
+            <div id="layout-root" style="display: contents"></div>
+
+            <!-- ################# LAYOUT DESKTOP (шаблон) ####################-->
+            <template id="layout-desktop">
+            <aside class="h-full min-w-[300px] z-20">
                 <div class="relative sm:text-sm sm:leading-6 my-8">
                     <ul class="fixed flex flex-col gap-6">
 
@@ -191,32 +212,32 @@ $activeSection = $_GET['section'] ?? 'main';
                             </li>
                         </ul>
                     </ul>
+
                 </div>
+                <span class="absolute bottom-5 left-5 text-white text-sm">
+                    QTV <?= $site['versionApp'] ?>
+                </span>
             </aside>
 
             <!-- ################# CONTENT DESCKTOP ####################-->
-            <div class="hidden sm:block rounded-3xl w-full h-full text-white m-4 overflow-clip outer">
+            <div class="rounded-3xl w-full h-full text-white m-4 overflow-clip outer">
 
-                <div class="card">
+                <div class="card js-sections">
                     <div
                         class="absolute inset-0 z-0 bg-gradient-to-br from-green-900/15 via-transparent to-emerald-900/8">
                     </div>
 
                     <!-- SECTION = MAIN -->
+                    <template data-section="main">
                     <section
                         class="flex flex-col gap-6 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
                         data-section="main">
 
                         <!-- оглавление DESCKTOP -->
                         <h1 class="text-3xl font-bold">
-                            <span class="text-[white] loader-letter">Г</span>
-                            <span class="text-[white] loader-letter">л</span>
-                            <span class="text-[white] loader-letter">а</span>
-                            <span class="text-[white] loader-letter">в</span>
-                            <span class="text-[white] loader-letter">н</span>
-                            <span class="text-[white] loader-letter">а</span>
-                            <span class="text-[white] loader-letter">я</span>
-                        </h1>
+                            <?php foreach (mb_str_split($t('main')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
 
                         <!-- контент -->
                         <div class="flex items-start justify-center gap-6 w-full">
@@ -225,24 +246,31 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="glow-card relative min-h-[600px] flex flex-1 flex-col items-center justify-center rounded-2xl overflow-hidden">
                                 <!-- backgound -->
                                 <img decoding="async" loading="lazy"
-                                    src="<?= $site['baseUrl'] ?>/public/assets/images/background/world.svg"
+                                    src="<?= $site['baseUrl'] ?>/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>"
                                     alt="background" class="absolute w-full h-full opacity-20" loading="lazy">
 
                                 <!-- Monoblock decorative elements -->
-                                <div class="flex justify-center items-center flex-col w-1/3">
+                                <div class="relative flex justify-center items-center flex-col w-1/3">
+                                  <!-- bg -->
                                     <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
                                         alt="monoblock_top" title="monoblock_top" loading="lazy"
-                                        class="z-20 w-full <?= htmlspecialchars($formattedVpnStatus['monoblock_class']) ?>">
+                                        class="z-20 w-full absolute z-10">
+                                  <!-- spin -->
                                     <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
                                         alt="monoblock_down" title="monoblock_down" loading="lazy"
-                                        class="-translate-y-[30%] z-10 w-full">
+                                        class="z-10 w-[70%] absolute z-20 animate-spin [animation-duration:10s]">
+                                  <!-- center -->
+                                    <img decoding="async" loading="lazy"
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
+                                        alt="monoblock_down" title="monoblock_down" loading="lazy"
+                                        class="z-10 w-[35%] absolute z-30">
                                 </div>
 
                                 <p
                                     class="text-[white] status-glow absolute text-xl font-medium bottom-10 px-6 py-3 rounded-full bg-white/[0.05] backdrop-blur-md ring-1 ring-white/[0.1]">
-                                    Статус:
+                                    <?= $t('status') ?>:
                                     <span
                                         class="<?= $formattedVpnStatus['status_class'] ?>"><?= $vpnStatusObj->getStatusText() ?></span>
                                 </p>
@@ -260,27 +288,27 @@ $activeSection = $_GET['section'] ?? 'main';
                                                 <i class="fas fa-question-circle text-gray-400 text-xs cursor-help"></i>
                                                 <div
                                                     class="absolute left-0 top-full mt-1 w-64 p-3 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 text-xs text-gray-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                                    <div class="font-semibold text-white mb-1">Статус пинга:</div>
+                                                    <div class="font-semibold text-white mb-1"><?= $t('ping_status') ?></div>
                                                     <div class="space-y-1">
                                                         <div class="flex items-center gap-2">
                                                             <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                                                            <span>&lt; 50мс - Отличный</span>
+                                                            <span><?= $t('ping_excellent') ?></span>
                                                         </div>
                                                         <div class="flex items-center gap-2">
                                                             <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                                            <span>50-150мс - Хороший</span>
+                                                            <span><?= $t('ping_good') ?></span>
                                                         </div>
                                                         <div class="flex items-center gap-2">
                                                             <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                                            <span>&gt; 150мс - Медленный</span>
+                                                            <span><?= $t('ping_slow') ?></span>
                                                         </div>
                                                         <div class="flex items-center gap-2">
                                                             <span class="w-2 h-2 bg-red-400 rounded-full"></span>
-                                                            <span>Нет соединения</span>
+                                                            <span><?= $t('no_connection') ?></span>
                                                         </div>
                                                     </div>
                                                     <div class="mt-2 pt-2 border-t border-gray-700/50 text-gray-400">
-                                                        Чем ниже цифра, тем лучше скорость соединения
+                                                        <?= $t('ping_hint') ?>
                                                     </div>
                                                 </div>
                                             </div>
@@ -313,12 +341,19 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <span class="text-emerald-300 text-sm font-light"
                                             data-server><?= $formattedVpnStatus['location'] ?></span>
                                     </li>
+                                    <!-- content 5 -->
+                                    <li
+                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        <span class="text-gray-300 text-sm"><?= $t('remaining') ?>:</span>
+                                        <span class="text-emerald-300 text-sm font-light" data-server
+                                            data-timeleft></span>
+                                    </li>
                                 </ul>
 
                                 <!-- Action Buttons -->
                                 <ul class="flex flex-col gap-3 mt-6">
                                     <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                        <a href="/install">
+                                        <a href="/install" class="btn_install_tour">
                                             <li
                                                 class="neon-btn elite-btn group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
                                                 <?php if ((new OS())->getOS()['os'] === 'Windows' || (new OS())->getOS()['os'] === 'macOS' || (new OS())->getOS()['os'] === 'Linux'): ?>
@@ -334,7 +369,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                                 <?php endif; ?>
                                                 <div class="flex flex-col items-center justify-start">
                                                     <span
-                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide">Установить
+                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide"><?= $t('install_btn') ?>
                                                         <span class="text-emerald-300">VPN</span>
                                                     </span>
                                                 </div>
@@ -354,8 +389,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                                     class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <div class="flex flex-col items-center justify-start">
                                                     <span
-                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide">Купить
-                                                        <span class="text-emerald-300">подписку</span></span>
+                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide"><?= $t('buy') ?>
+                                                        <span class="text-emerald-300"><?= $t('subscription') ?></span></span>
                                                 </div>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
@@ -370,30 +405,27 @@ $activeSection = $_GET['section'] ?? 'main';
                         </div>
 
                     </section>
+                    </template>
 
                     <!-- SECTION = PROFILE -->
+                    <template data-section="profile">
                     <section
-                        class="hidden flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
+                        class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
                         data-section="profile">
 
                         <!-- Header Card -->
                         <div class="flex flex-col gap-6">
                             <div class="flex items-center justify-between">
                                 <h1 class="text-3xl font-bold">
-                                    <span class="loader-letter text-[white]">П</span>
-                                    <span class="loader-letter text-[white]">р</span>
-                                    <span class="loader-letter text-[white]">о</span>
-                                    <span class="loader-letter text-[white]">ф</span>
-                                    <span class="loader-letter text-[white]">и</span>
-                                    <span class="loader-letter text-[white]">л</span>
-                                    <span class="loader-letter text-[white]">ь</span>
-                                </h1>
+                                    <?php foreach (mb_str_split($t('profile')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
                                 <form action="/auth/logout" method="post">
                                     <button type="submit"
                                         class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all duration-300 group">
                                         <i
                                             class="fa-solid fa-right-from-bracket text-red-400 text-sm group-hover:scale-110 transition-transform"></i>
-                                        <span class="text-red-400 text-sm font-medium">Выйти</span>
+                                        <span class="text-red-400 text-sm font-medium"><?= $t('exit'); ?></span>
                                     </button>
                                 </form>
                             </div>
@@ -405,7 +437,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/1.png"
                                         alt="avatar" class="rounded-full w-20 h-20 ring-2 ring-white/10">
                                     <div
-                                        class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full <?= $user->getStatus() === 'on' ? 'bg-green-400' : 'bg-red-400' ?> ring-2 ring-black">
+                                        class="absolute bottom-0 right-0 w-5 h-5 rounded-full <?= $user->getStatus() === 'on' ? 'bg-green-400' : 'bg-red-400' ?> ring-2 ring-black">
                                     </div>
                                 </div>
                                 <div class="flex flex-col gap-1">
@@ -442,9 +474,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <i class="fa fa-server text-lg"></i>
                                         <span class="text-sm font-medium"><?= $t('remaining') ?></span>
                                     </div>
-                                    <span
-                                        class="text-[white] text-lg font-semibold"><?= $formattedUserProfile['days_left'] ?>
-                                        <?= $t('days') ?></span>
+                                    <span class="text-[white] text-lg font-semibold" data-timeleft></span>
                                 </div>
                                 <div
                                     class="glow-card flex flex-col gap-3 p-4 rounded-xl hover:bg-white/[0.06] transition-colors">
@@ -462,27 +492,27 @@ $activeSection = $_GET['section'] ?? 'main';
                         <!-- VPN Key Section -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
                             <div class="flex flex-col gap-4">
-                                <h3 class="text-xl font-semibold text-gray-300 mt-4">Данные подписки</h3>
+                                <h3 class="text-xl font-semibold text-gray-300 mt-4"><?= $t('subscription_data') ?></h3>
                                 <div class="glow-card relative z-20 flex items-center gap-4 p-5 rounded-xl">
                                     <div class="flex-1 flex flex-col gap-2">
-                                        <label class="text-sm text-gray-400 font-medium">VPN ключ</label>
+                                        <label class="text-sm text-gray-400 font-medium"><?= $t('vpn_key') ?></label>
                                         <code id="vpn-key-desktop"
-                                            class="text-sm text-white/70 bg-black/20 px-3 py-2 rounded-lg break-all">
-                                                                            <?= htmlspecialchars($user->getSubscription()) ?>
-                                                                          </code>
+                                            class="text-sm text-[white]/70 bg-black/20 px-3 py-2 rounded-lg break-all">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <?= htmlspecialchars($user->getSubscription()) ?>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </code>
                                     </div>
                                     <div class="flex gap-2 relative z-30">
                                         <button
                                             onclick="window.open('<?= htmlspecialchars($user->getSubscription()) ?>','_blank')"
-                                            title="Копировать"
+                                            title="<?= $t('copy') ?>"
                                             class="p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer">
                                             <i class="fa fa-share text-gray-400 group-hover:text-white"></i>
                                         </button>
-                                        <button onclick="copyVpnKey()" title="Копировать"
+                                        <button onclick="copyVpnKey()" title="<?= $t('copy') ?>"
                                             class="p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer">
                                             <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                         </button>
-                                        <button onclick="deleteSubscription()" title="Удалить"
+                                        <button onclick="deleteSubscription()" title="<?= $t('delete') ?>"
                                             class="p-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors group cursor-pointer">
                                             <i class="fa fa-trash text-red-400 group-hover:text-red-300"></i>
                                         </button>
@@ -493,7 +523,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Company Links & Logout -->
                         <div class="flex flex-col gap-4 mt-6">
-                            <h3 class="text-xl font-semibold text-gray-300">Компания</h3>
+                            <h3 class="text-xl font-semibold text-gray-300"><?= $t('company') ?></h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <a href="/about"
                                     class="glow-card flex items-center gap-4 p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
@@ -502,8 +532,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <i class="fa-solid fa-building text-amber-400 text-xl"></i>
                                     </div>
                                     <div class="flex flex-col">
-                                        <span class="text-[white] font-medium">О компании</span>
-                                        <span class="text-sm text-gray-400">Наша история и миссия</span>
+                                        <span class="text-[white] font-medium"><?= $t('about_title') ?></span>
+                                        <span class="text-sm text-gray-400"><?= $t('our_story') ?></span>
                                     </div>
                                 </a>
                                 <a href="/requisites"
@@ -513,36 +543,31 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <i class="fa-solid fa-file-invoice text-cyan-400 text-xl"></i>
                                     </div>
                                     <div class="flex flex-col">
-                                        <span class="text-[white] font-medium">Реквизиты</span>
-                                        <span class="text-sm text-gray-400">Юридическая информация</span>
+                                        <span class="text-[white] font-medium"><?= $t('requisites') ?></span>
+                                        <span class="text-sm text-gray-400"><?= $t('legal_info') ?></span>
                                     </div>
                                 </a>
                             </div>
                         </div>
 
                     </section>
+                    </template>
 
                     <!-- SECTION = SETTING -->
+                    <template data-section="setting">
                     <section
-                        class="hidden flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
+                        class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
                         data-section="setting">
 
                         <!-- Header -->
                         <h1 class="text-3xl font-bold">
-                            <span class="loader-letter text-[white]">Н</span>
-                            <span class="loader-letter text-[white]">а</span>
-                            <span class="loader-letter text-[white]">с</span>
-                            <span class="loader-letter text-[white]">т</span>
-                            <span class="loader-letter text-[white]">р</span>
-                            <span class="loader-letter text-[white]">о</span>
-                            <span class="loader-letter text-[white]">й</span>
-                            <span class="loader-letter text-[white]">к</span>
-                            <span class="loader-letter text-[white]">и</span>
-                        </h1>
+                            <?php foreach (mb_str_split($t('settings')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
 
                         <!-- App Settings -->
                         <div class="flex flex-col gap-4 pt-6">
-                            <h3 class="text-lg font-semibold text-gray-300">Приложение</h3>
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('apps'); ?></h3>
                             <div class="flex flex-col gap-3">
                                 <!-- Theme Toggle -->
                                 <div
@@ -553,8 +578,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                             <i class="fa fa-sun text-yellow-400 text-lg"></i>
                                         </div>
                                         <div class="flex flex-col">
-                                            <span class="text-[white] font-medium">Светлая тема</span>
-                                            <span class="text-sm text-gray-400">Переключить оформление</span>
+                                            <span class="text-[white] font-medium"><?= $t('change_theme'); ?></span>
+                                            <span class="text-sm text-gray-400"><?= $t('change_decoration'); ?></span>
                                         </div>
                                     </div>
                                     <label class="inline-flex items-center cursor-pointer">
@@ -590,20 +615,20 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Privacy Settings -->
                         <div class="flex flex-col gap-4 mt-4">
-                            <h3 class="text-lg font-semibold text-gray-300">Конфиденциальность</h3>
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('Confidentiality'); ?></h3>
                             <div class="flex flex-col gap-2">
                                 <!-- <a href="/"
-                                    class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
-                                    <div class="flex items-center gap-4">
-                                        <div
-                                            class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                            <i class="fa fa-credit-card text-purple-400 text-lg"></i>
-                                        </div>
-                                        <span class="text-[white] font-medium">Автооплата</span>
-                                    </div>
-                                    <i
-                                        class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
-                                </a> -->
+                                                                            class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
+                                                                            <div class="flex items-center gap-4">
+                                                                                <div
+                                                                                    class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                                                                    <i class="fa fa-credit-card text-purple-400 text-lg"></i>
+                                                                                </div>
+                                                                                <span class="text-[white] font-medium"><?= $t('auto_payment') ?></span>
+                                                                            </div>
+                                                                            <i
+                                                                                class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
+                                                                        </a> -->
 
                                 <button data-toggle-modal="politic"
                                     class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group text-left">
@@ -612,7 +637,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                             class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                             <i class="fa fa-shield-alt text-emerald-400 text-lg"></i>
                                         </div>
-                                        <span class="text-[white] font-medium">Политика конфиденциальности</span>
+                                        <span class="text-[white] font-medium"><?= $t('politic'); ?></span>
                                     </div>
                                     <i
                                         class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
@@ -625,7 +650,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                             class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                             <i class="fa fa-file-contract text-emerald-400 text-lg"></i>
                                         </div>
-                                        <span class="text-[white] font-medium">Пользовательское соглашение</span>
+                                        <span class="text-[white] font-medium"><?= $t('soglashenia'); ?></span>
                                     </div>
                                     <i
                                         class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
@@ -634,23 +659,19 @@ $activeSection = $_GET['section'] ?? 'main';
                         </div>
 
                     </section>
+                    </template>
 
                     <!-- SECTION = REFER -->
+                    <template data-section="referal">
                     <section
-                        class="hidden flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
+                        class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
                         data-section="referal">
 
                         <!-- Header -->
                         <h1 class="text-3xl font-bold">
-                            <span class="loader-letter text-[white]">Р</span>
-                            <span class="loader-letter text-[white]">е</span>
-                            <span class="loader-letter text-[white]">ф</span>
-                            <span class="loader-letter text-[white]">е</span>
-                            <span class="loader-letter text-[white]">р</span>
-                            <span class="loader-letter text-[white]">а</span>
-                            <span class="loader-letter text-[white]">л</span>
-                            <span class="loader-letter text-[white]">ы</span>
-                        </h1>
+                            <?php foreach (mb_str_split($t('referals')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
 
                         <!-- Stats Overview -->
                         <div class="grid grid-cols-3 gap-4 pt-6">
@@ -658,7 +679,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-emerald-400">
                                     <i class="fa fa-signal text-lg"></i>
-                                    <span class="text-sm font-medium">Статус</span>
+                                    <span class="text-sm font-medium"><?= $t('status'); ?></span>
                                 </div>
                                 <span
                                     class="text-[white] text-xl font-semibold"><?= $formattedUserProfile['subscription_status'] ?></span>
@@ -667,7 +688,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-blue-400">
                                     <i class="fa fa-users text-lg"></i>
-                                    <span class="text-sm font-medium">Рефералы</span>
+                                    <span class="text-sm font-medium"><?= $t('referals'); ?></span>
                                 </div>
                                 <span class="text-[white] text-xl font-semibold"><?= $user->getReferCount() ?></span>
                             </div>
@@ -675,7 +696,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2">
                                     <i class="fa fa-percent text-green-400"></i>
-                                    <span class="text-sm font-medium">Скидка</span>
+                                    <span class="text-sm font-medium"><?= $t('discount'); ?></span>
                                 </div>
                                 <span
                                     class="text-[white] text-xl font-semibold"><?= $user->getDiscountPercent() ?>%</span>
@@ -684,7 +705,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-purple-400">
                                     <i class="fa fa-gift text-lg"></i>
-                                    <span class="text-sm font-medium">Бонус</span>
+                                    <span class="text-sm font-medium"><?= $t('my_bonus'); ?></span>
                                 </div>
                                 <span class="text-[white] text-xl font-semibold"><?= $user->getBonusPercent() ?>%</span>
                             </div>
@@ -692,7 +713,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Referral Link Cards -->
                         <div class="flex flex-col gap-4 mt-4">
-                            <h3 class="text-lg font-semibold text-gray-300">Ваша реферальная ссылка</h3>
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('your_referal_links'); ?></h3>
 
                             <!-- Refer Code -->
                             <div
@@ -702,13 +723,13 @@ $activeSection = $_GET['section'] ?? 'main';
                                     <i class="fa fa-ticket text-emerald-400 text-xl"></i>
                                 </div>
                                 <div class="flex-1 flex flex-col gap-1 min-w-0">
-                                    <label class="text-sm text-gray-400">Ваш код</label>
+                                    <label class="text-sm text-gray-400"><?= $t('your_code'); ?></label>
                                     <code
                                         class="text-[white] text-lg font-semibold truncate"><?= htmlspecialchars($user->getMyRefer()) ?></code>
                                 </div>
                                 <button
-                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer()) ?>', 'Реферальный код')"
-                                    title="Копировать код"
+                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer()) ?>', <?= json_encode($t('referal_code')) ?>)"
+                                    title="<?= $t('copy_code') ?>"
                                     class="p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group shrink-0 cursor-pointer">
                                     <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                 </button>
@@ -722,13 +743,13 @@ $activeSection = $_GET['section'] ?? 'main';
                                     <i class="fa fa-link text-blue-400 text-xl"></i>
                                 </div>
                                 <div class="flex-1 flex flex-col gap-1 min-w-0">
-                                    <label class="text-sm text-gray-400">Полная ссылка</label>
+                                    <label class="text-sm text-gray-400"><?= $t('full_link'); ?></label>
                                     <code
                                         class="text-[white] text-xs truncate"><?= htmlspecialchars($user->getMyRefer() ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?></code>
                                 </div>
                                 <button
-                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer() ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?>', 'Реферальная ссылка')"
-                                    title="Копировать ссылку"
+                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer() ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?>', <?= json_encode($t('referal_link')) ?>)"
+                                    title="<?= $t('copy_link') ?>"
                                     class="p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group shrink-0 cursor-pointer">
                                     <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                 </button>
@@ -737,21 +758,21 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Detailed Stats -->
                         <div class="flex flex-col gap-4 mt-4">
-                            <h3 class="text-lg font-semibold text-gray-300">Статистика</h3>
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('statistic'); ?></h3>
                             <div class="grid grid-cols-2 gap-4">
                                 <div
                                     class="flex flex-col items-center p-6 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
-                                    <span class="text-sm text-gray-400 mb-2">Приглашено</span>
+                                    <span class="text-sm text-gray-400 mb-2"><?= $t('invents'); ?></span>
                                     <span
                                         class="text-3xl font-bold text-green-400"><?= intval($user->getReferCount()) ?></span>
-                                    <span class="text-xs text-gray-500 mt-1">человек</span>
+                                    <span class="text-xs text-gray-500 mt-1"><?= $t('humans'); ?></span>
                                 </div>
                                 <div
                                     class="flex flex-col items-center p-6 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
-                                    <span class="text-sm text-gray-400 mb-2">Бонус</span>
+                                    <span class="text-sm text-gray-400 mb-2"><?= $t('my_bonus'); ?></span>
                                     <span
                                         class="text-3xl font-bold text-green-400"><?= intval($user->getBonusPercent()) ?>%</span>
-                                    <span class="text-xs text-gray-500 mt-1">дней за покупку</span>
+                                    <span class="text-xs text-gray-500 mt-1"><?= $t('days_for_buy'); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -759,20 +780,20 @@ $activeSection = $_GET['section'] ?? 'main';
                         <!-- Referrer Info or Enter Code -->
                         <?php if (!empty($user->getRefer())): ?>
                             <div class="flex flex-col gap-4 mt-4">
-                                <h3 class="text-lg font-semibold text-gray-300">Вы приглашены</h3>
+                                <h3 class="text-lg font-semibold text-gray-300"><?= $t('you_invent'); ?></h3>
                                 <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
                                     <div class="flex justify-between items-center py-2 border-b border-white/5">
-                                        <span class="text-sm text-gray-400">Пригласил</span>
+                                        <span class="text-sm text-gray-400"><?= $t('inventor'); ?></span>
                                         <span
-                                            class="font-medium"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
+                                            class="font-medium"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: $t('unknown')) ?></span>
                                     </div>
                                     <div class="flex justify-between items-center py-2 border-b border-white/5">
-                                        <span class="text-sm text-gray-400">Код</span>
+                                        <span class="text-sm text-gray-400"><?= $t('code'); ?></span>
                                         <span
                                             class="font-mono text-green-400"><?= htmlspecialchars($user->getRefer()) ?></span>
                                     </div>
                                     <div class="flex justify-between items-center py-2">
-                                        <span class="text-sm text-gray-400">Ваша скидка</span>
+                                        <span class="text-sm text-gray-400"><?= $t('your_discount'); ?></span>
                                         <span
                                             class="font-bold text-green-400">-<?= intval($user->getDiscountPercent()) ?>%</span>
                                     </div>
@@ -780,84 +801,94 @@ $activeSection = $_GET['section'] ?? 'main';
                             </div>
                         <?php else: ?>
                             <div class="flex flex-col gap-4 mt-4">
-                                <h3 class="text-lg font-semibold text-gray-300">Ввести реферальный код</h3>
+                                <h3 class="text-lg font-semibold text-gray-300"><?= $t('input_referal_code'); ?></h3>
                                 <div
                                     class="flex flex-col gap-4 p-5 rounded-xl bg-white/[0.03] shadow-[0_4px_16px_rgba(0,0,0,0.2)] ring-1 ring-white/[0.08]">
                                     <div class="flex flex-col gap-2">
-                                        <label class="text-sm text-gray-400">Код реферала</label>
+                                        <label class="text-sm text-gray-400"><?= $t('code_referals'); ?></label>
                                         <input type="text" id="referral-code-input"
                                             class="text-[white] w-full bg-black/20 border rounded-lg px-4 py-3 text-center text-xl tracking-widest uppercase placeholder:text-white/20 focus:outline-none focus:border-green-400/50 focus:ring-2 focus:ring-green-400/20 transition-all"
                                             placeholder="XXXXXXX" maxlength="10">
                                     </div>
                                     <button onclick="activateReferralCode()" id="referral-activate-btn"
                                         class="w-full py-3 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 text-black font-semibold hover:from-green-300 hover:to-emerald-400 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-                                        Использовать код
+                                        <?= $t('use_code'); ?>
                                     </button>
                                 </div>
                             </div>
                         <?php endif; ?>
 
                     </section>
-
+                    </template>
                 </div>
             </div>
+            </template>
 
-            <!-- ################# MENU MOBILE ####################-->
+            <!-- ################# LAYOUT MOBILE (шаблон) ####################-->
+            <template id="layout-mobile">
             <aside data-theme-invert
-                class="sm:hidden z-50 fixed bottom-4 bg-[rgb(78,78,78,0.38)] left-4 right-4 mx-auto rounded-full px-6 py-2">
+                class="z-50 fixed bottom-4 bg-[rgb(78,78,78,0.38)] left-4 right-4 mx-auto rounded-full px-6 py-2">
                 <ul class="mobile flex justify-between items-center gap-4">
                     <li class="bg_active relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="main">
                         <img class="max-h-6" decoding="async" loading="lazy" data-theme-invert loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/home.svg" alt="Домой"
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/home.svg" alt="<?= $t('main') ?>"
                             decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="profile">
                         <img class="max-h-6" decoding="async" loading="lazy" data-theme-invert loading="lazy"
                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/profile.svg"
-                            alt="Профиль" decoding="async">
+                            alt="<?= $t('profile') ?>" decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="setting">
                         <img class="max-h-6" decoding="async" loading="lazy" data-theme-invert loading="lazy"
                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/setting.svg"
-                            alt="Настройки" decoding="async">
+                            alt="<?= $t('settings') ?>" decoding="async">
                     </li>
                     <li class="relative flex items-center justify-center p-3 aspect-square transition-all duration-500 cursor-pointer"
                         data-toggle-section="referal">
                         <img class="max-h-6" decoding="async" loading="lazy" data-theme-invert loading="lazy"
                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/refer.svg"
-                            alt="Дополнительное" decoding="async">
+                            alt="<?= $t('additional') ?>" decoding="async">
                     </li>
                 </ul>
             </aside>
             <!-- ################# CONTENT MOBILE ####################-->
-            <div class="sm:hidden w-full text-whiteoverflow-clip outer_mobile">
+            <div class="js-sections w-full text-white overflow-clip outer_mobile">
 
                 <div class="absolute inset-0 z-0 bg-gradient-to-br from-green-900/35 via-transparent to-emerald-900/48">
                 </div>
                 <!-- SECTION = MAIN -->
+                <template data-section="main">
                 <section
                     class="setka overflow-hidden relative flex flex-col justify-between py-[95px] box-border w-full min-h-[100dvh] p-10"
                     data-section="main">
 
                     <!-- backgound -->
                     <img decoding="async" loading="lazy"
-                        src="<?= $site['baseUrl'] ?>/public/assets/images/background/world.svg" alt="background"
+                        src="<?= $site['baseUrl'] ?>/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>" alt="background"
                         class="absolute h-full opacity-20 -left-[3rem] right-0 top-0 bottom-0 mx-auto scale-[2.5] z-0"
                         loading="lazy">
 
                     <!-- Monoblock decorative elements -->
                     <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
+                      <!-- bg -->
                         <img decoding="async" loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['top']) ?>"
-                            alt="monoblock_top" loading="lazy" title="monoblock_top"
-                            class="z-20 w-full <?= htmlspecialchars($formattedVpnStatus['monoblock_class']) ?>">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
+                            alt="monoblock_top" title="monoblock_top" loading="lazy"
+                            class="z-20 w-[70%] absolute z-10">
+                      <!-- spin -->
                         <img decoding="async" loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['down']) ?>"
-                            alt="monoblock_part2" loading="lazy" title="monoblock_down"
-                            class="-translate-y-[30%] z-10 w-full">
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
+                            alt="monoblock_down" title="monoblock_down" loading="lazy"
+                            class="z-10 w-[50%] absolute z-20 animate-spin [animation-duration:10s]">
+                      <!-- center -->
+                        <img decoding="async" loading="lazy"
+                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
+                            alt="monoblock_down" title="monoblock_down" loading="lazy"
+                            class="z-10 w-[22%] absolute z-30">
                     </div>
 
                     <!-- information -->
@@ -869,14 +900,14 @@ $activeSection = $_GET['section'] ?? 'main';
                                 <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
                                     <div class="flex items-center gap-4">
                                         <img decoding="async" loading="lazy"
-                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/netherlands.svg"
-                                            alt="" loading="lazy" decoding="async" class="h-6">
+                                            src="<?= $site['baseUrl'] . (new Setting\Route\Function\Controllers\Location\Location)->getLocation()['url'] ?>"
+                                            alt="" loading="lazy" decoding="async" class="rounded-md h-6">
                                         <div class="flex flex-col justify-start text-lg text-white">
                                             <p class="lowercase">
                                                 <?= htmlspecialchars($formattedVpnStatus['location'] ?: 'vpn') ?>
                                             </p>
                                             <p class="text-sm">
-                                                <strong class="text-white/50">Cтатус:</strong><span
+                                                <strong class="text-white/50"><?= $t('status') ?>:</strong><span
                                                     class="text-green-400">&nbsp;<?= htmlspecialchars($formattedVpnStatus['status_text']) ?></span>
                                             </p>
                                         </div>
@@ -886,11 +917,11 @@ $activeSection = $_GET['section'] ?? 'main';
                                         alt="" loading="lazy" decoding="async" class="h-6">
                                 <?php else: ?>
                                     <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/netherlands.svg"
-                                        alt="" loading="lozy" decoding="async" class="h-6">
+                                        src="<?= $site['baseUrl'] . (new Setting\Route\Function\Controllers\Location\Location)->getLocation()['url'] ?>"
+                                        alt="" loading="lozy" decoding="async" class="rounded-md h-6">
                                     <div class="flex flex-col items-center justify-start text-lg text-white">
                                         <!-- no -->
-                                        <p class="uppercase">vpn <span class="text-[#FF6378]">неактивен</span></p>
+                                        <p class="uppercase">vpn <span class="text-[#FF6378]"><?= $t('inactive') ?></span></p>
                                         <!-- yes -->
                                     </div>
                                     <img decoding="async" loading="lazy"
@@ -901,13 +932,13 @@ $activeSection = $_GET['section'] ?? 'main';
                             <!-- block 2 -->
                             <li class="glow-card_mobile relative w-full p-[15px] bg-[rgb(255,255,255,0.1)] rounded-xl">
                                 <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                    <a href="/install" class="z-10 flex justify-between items-center">
+                                    <a href="/install" class="btn_install_tour z-10 flex justify-between items-center">
                                         <img data-theme-invert decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                             alt="" loading="lazy"
-                                            class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                            class="rounded-md h-6 opacity-70 group-hover:opacity-100 transition-opacity">
                                         <div class="flex flex-col items-center justify-start text-lg text-white">
-                                            <span class="z-10 uppercase text-center flex gap-2">установить <span
+                                            <span class="z-10 uppercase text-center flex gap-2"><?= $t('install_btn') ?> <span
                                                     class="word_hidden">vpn</span>
                                             </span>
                                         </div>
@@ -922,8 +953,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                             alt="" loading="lozy" decoding="async" class="h-6 invert">
                                         <div class="flex flex-col items-center justify-start text-lg text-white">
                                             <!-- no -->
-                                            <span href="/pay" class="z-10 uppercase text-center flex gap-2">купить <span
-                                                    class="word_hidden">подписку</span>
+                                            <span href="/pay" class="z-10 uppercase text-center flex gap-2"><?= $t('buy') ?> <span
+                                                    class="word_hidden"><?= $t('subscription') ?></span>
                                             </span>
                                             <!-- yes -->
                                         </div>
@@ -970,26 +1001,23 @@ $activeSection = $_GET['section'] ?? 'main';
                     </div>
 
                 </section>
+                </template>
                 <!-- SECTION = PROFILE -->
+                <template data-section="profile">
                 <section
-                    class="setka hidden overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
+                    class="setka overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
                     data-section="profile">
                     <div class="px-6 pt-[5.5rem]">
                         <div class="flex items-center justify-between mb-4">
                             <h1 class="text-2xl font-bold">
-                                <span class="loader-letter text-white">П</span>
-                                <span class="loader-letter text-white">р</span>
-                                <span class="loader-letter text-white">о</span>
-                                <span class="loader-letter text-white">ф</span>
-                                <span class="loader-letter text-white">и</span>
-                                <span class="loader-letter text-white">л</span>
-                                <span class="loader-letter text-white">ь</span>
-                            </h1>
+                                <?php foreach (mb_str_split($t('profile')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
                             <form action="/auth/logout" method="post">
                                 <button type="submit"
                                     class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 transition-all">
                                     <i class="fa-solid fa-right-from-bracket text-red-400 text-xs"></i>
-                                    <span class="text-red-400 text-xs font-medium">Выйти</span>
+                                    <span class="text-red-400 text-xs font-medium"><?= $t('exit') ?></span>
                                 </button>
                             </form>
                         </div>
@@ -1036,9 +1064,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <i class="fa fa-server"></i>
                                         <span class="text-xs font-medium"><?= $t('remaining') ?></span>
                                     </div>
-                                    <span class="text-white text-sm font-semibold"
-                                        data-days-left><?= $formattedUserProfile['days_left'] ?>
-                                        <?= $t('days') ?></span>
+                                    <span class="text-white text-sm font-semibold" data-timeleft></span>
                                 </div>
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-yellow-400">
@@ -1054,33 +1080,33 @@ $activeSection = $_GET['section'] ?? 'main';
                         <!-- data -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
                             <div class="mt-4 flex flex-col gap-4 mb-4">
-                                <h4 class="text-white text-xl font-semibold">Данные</h4>
+                                <h4 class="text-white text-xl font-semibold"><?= $t('data') ?></h4>
                                 <ul class="flex flex-col gap-2.5">
                                     <li class="glow-card_mobile flex p-4 justify-between items-center rounded-xl">
                                         <!-- info -->
                                         <div class="flex flex-col justify-center w-[150px] gap-1">
-                                            <h4 class="text-white text-sm font-semibold">VPN ключ</h4>
+                                            <h4 class="text-white text-sm font-semibold"><?= $t('vpn_key') ?></h4>
                                             <code id="vpn-key"
                                                 class="overflow-hidden h-8 break-all text-[12px] text-white/50">
-                                                                                    <?php echo htmlspecialchars($user->getSubscription()); ?>
-                                                                                </code>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <?php echo htmlspecialchars($user->getSubscription()); ?>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </code>
                                         </div>
                                         <!-- button -->
                                         <div class="flex gap-2 justify-end items-center">
                                             <button
                                                 onclick="window.open('<?= htmlspecialchars($user->getSubscription()) ?>','_blank')"
-                                                title="Копировать"
+                                                title="<?= $t('copy') ?>"
                                                 class="z-10 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group cursor-pointer">
                                                 <i class="fa fa-share text-gray-400 group-hover:text-white"></i>
                                             </button>
                                             <button onclick="copyVpnKey()"
                                                 class="z-10 text-lg text-gray-400 hover:text-white transition-colors"
-                                                title="Копировать ключ">
+                                                title="<?= $t('copy_key') ?>">
                                                 <i class="fa fa-copy"></i>
                                             </button>
                                             <button onclick="deleteSubscription()"
                                                 class="z-10 text-lg text-red-400 hover:text-red-300 transition-colors"
-                                                title="Удалить подписку">
+                                                title="<?= $t('delete_subscription') ?>">
                                                 <i class="fa fa-trash"></i>
                                             </button>
                                         </div>
@@ -1091,7 +1117,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Company Links & Logout -->
                         <div class="mt-6 flex flex-col gap-4">
-                            <h4 class="text-white text-xl font-semibold">Компания</h4>
+                            <h4 class="text-white text-xl font-semibold"><?= $t('company') ?></h4>
                             <div class="grid grid-cols-2 gap-3">
                                 <a href="/about"
                                     class="glow-card_mobile flex flex-col items-center justify-center gap-2 p-4 rounded-xl">
@@ -1099,7 +1125,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
                                         <i class="fa-solid fa-building text-amber-400 text-lg"></i>
                                     </div>
-                                    <span class="text-white text-sm font-medium">О компании</span>
+                                    <span class="text-white text-sm font-medium"><?= $t('about_title') ?></span>
                                 </a>
                                 <a href="/requisites"
                                     class="glow-card_mobile flex flex-col items-center justify-center gap-2 p-4 rounded-xl">
@@ -1107,7 +1133,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
                                         <i class="fa-solid fa-file-invoice text-cyan-400 text-lg"></i>
                                     </div>
-                                    <span class="text-white text-sm font-medium">Реквизиты</span>
+                                    <span class="text-white text-sm font-medium"><?= $t('requisites') ?></span>
                                 </a>
                             </div>
 
@@ -1115,26 +1141,21 @@ $activeSection = $_GET['section'] ?? 'main';
                     </div>
 
                 </section>
+                </template>
                 <!-- SECTION = SETTING -->
+                <template data-section="setting">
                 <section
-                    class="setka hidden px-6 pt-[5rem] overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
+                    class="setka px-6 pt-[5rem] overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
                     data-section="setting">
 
                     <h1 class="text-2xl font-bold mb-4">
-                        <span class="loader-letter text-white">Н</span>
-                        <span class="loader-letter text-white">а</span>
-                        <span class="loader-letter text-white">с</span>
-                        <span class="loader-letter text-white">т</span>
-                        <span class="loader-letter text-white">р</span>
-                        <span class="loader-letter text-white">о</span>
-                        <span class="loader-letter text-white">й</span>
-                        <span class="loader-letter text-white">к</span>
-                        <span class="loader-letter text-white">и</span>
-                    </h1>
+                        <?php foreach (mb_str_split($t('settings')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
 
                     <!-- 1 -->
                     <div class="flex flex-col gap-4 mb-4">
-                        <h4 class="text-white text-xl font-semibold">Настройки приложения</h4>
+                        <h4 class="text-white text-xl font-semibold"><?= $t('app_settings') ?></h4>
                         <ul class="flex flex-col gap-2.5">
                             <!-- theme -->
                             <li
@@ -1144,8 +1165,8 @@ $activeSection = $_GET['section'] ?? 'main';
                                         <i class="fa fa-sun text-yellow-400 text-lg"></i>
                                     </div>
                                     <div class="flex flex-col">
-                                        <span class="text-white font-medium">Светлая тема</span>
-                                        <span class="text-sm text-gray-400">Переключить оформление</span>
+                                        <span class="text-white font-medium"><?= $t('light') ?></span>
+                                        <span class="text-sm text-gray-400"><?= $t('change_decoration') ?></span>
                                     </div>
                                 </div>
                                 <label class="inline-flex items-center cursor-pointer">
@@ -1180,19 +1201,19 @@ $activeSection = $_GET['section'] ?? 'main';
 
                     <!-- 2 -->
                     <div class="flex flex-col gap-4 mb-4">
-                        <h4 class="text-white text-xl font-semibold">Конфиденциальность</h4>
+                        <h4 class="text-white text-xl font-semibold"><?= $t('Confidentiality') ?></h4>
                         <div class="flex flex-col gap-2">
                             <!-- <a href="/"
-                                class="glow-card_mobile flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                        <i class="fa fa-credit-card text-purple-400 text-lg"></i>
-                                    </div>
-                                    <span class="text-white font-medium">Автооплата</span>
-                                </div>
-                                <i
-                                    class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
-                            </a> -->
+                                                                                                            class="glow-card_mobile flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
+                                                                                                            <div class="flex items-center gap-4">
+                                                                                                                <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                                                                                                    <i class="fa fa-credit-card text-purple-400 text-lg"></i>
+                                                                                                                </div>
+                                                                                                                <span class="text-white font-medium"><?= $t('auto_payment') ?></span>
+                                                                                                            </div>
+                                                                                                            <i
+                                                                                                                class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
+                                                                                                        </a> -->
                             <button data-toggle-modal="politic"
                                 class="glow-card_mobile flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group text-left">
                                 <div class="flex items-center gap-4">
@@ -1200,7 +1221,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                         <i class="fa fa-shield-alt text-emerald-400 text-lg"></i>
                                     </div>
-                                    <span class="text-white font-medium">Политика конфиденциальности</span>
+                                    <span class="text-white font-medium"><?= $t('politic');?></span>
                                 </div>
                                 <i
                                     class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
@@ -1212,7 +1233,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                         class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                                         <i class="fa fa-file-contract text-emerald-400 text-lg"></i>
                                     </div>
-                                    <span class="text-white font-medium">Пользовательское соглашение</span>
+                                    <span class="text-white font-medium"><?= $t('soglashenia');?></span>
                                 </div>
                                 <i
                                     class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
@@ -1222,28 +1243,24 @@ $activeSection = $_GET['section'] ?? 'main';
 
 
                 </section>
+                </template>
                 <!-- SECTION = REFER -->
+                <template data-section="referal">
                 <section
-                    class="setka hidden overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
+                    class="setka overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
                     data-section="referal">
                     <div class="px-6 pt-[5.5rem] flex flex-col gap-5">
                         <h1 class="text-2xl font-bold">
-                            <span class="loader-letter text-white">Р</span>
-                            <span class="loader-letter text-white">е</span>
-                            <span class="loader-letter text-white">ф</span>
-                            <span class="loader-letter text-white">е</span>
-                            <span class="loader-letter text-white">р</span>
-                            <span class="loader-letter text-white">а</span>
-                            <span class="loader-letter text-white">л</span>
-                            <span class="loader-letter text-white">ы</span>
-                        </h1>
+                            <?php foreach (mb_str_split($t('referals')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
 
                         <div class="grid grid-cols-2 gap-3">
                             <div
                                 class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-emerald-400">
                                     <i class="fa fa-signal text-lg"></i>
-                                    <span class="text-xs font-medium">Статус</span>
+                                    <span class="text-xs font-medium"><?= $t('status'); ?></span>
                                 </div>
                                 <span
                                     class="text-white text-sm font-semibold"><?= $formattedUserProfile['subscription_status'] ?></span>
@@ -1252,7 +1269,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-blue-400">
                                     <i class="fa fa-users text-lg"></i>
-                                    <span class="text-xs font-medium">Рефералы</span>
+                                    <span class="text-xs font-medium"><?= $t('referals'); ?></span>
                                 </div>
                                 <span class="text-white text-sm font-semibold"><?= $user->getReferCount() ?></span>
                             </div>
@@ -1260,7 +1277,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2">
                                     <i class="fa fa-percent text-green-400"></i>
-                                    <span class="text-white text-xs font-medium">Скидка</span>
+                                    <span class="text-white text-xs font-medium"><?= $t('discount'); ?></span>
                                 </div>
                                 <span
                                     class="text-white text-sm font-semibold"><?= $user->getDiscountPercent() ?>%</span>
@@ -1269,7 +1286,7 @@ $activeSection = $_GET['section'] ?? 'main';
                                 class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-purple-400">
                                     <i class="fa fa-gift text-lg"></i>
-                                    <span class="text-xs font-medium">Бонус</span>
+                                    <span class="text-xs font-medium"><?= $t('bonus'); ?></span>
                                 </div>
                                 <span class="text-white text-sm font-semibold"><?= $user->getBonusPercent() ?>%</span>
                             </div>
@@ -1277,7 +1294,7 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Referral link/cards -->
                         <div class="flex flex-col gap-3">
-                            <h4 class="text-white text-lg font-semibold">Ваша реферальная ссылка</h4>
+                            <h4 class="text-white text-lg font-semibold"><?= $t('your_referal_links'); ?></h4>
 
                             <div class="glow-card_mobile flex items-center gap-3 p-4 rounded-xl">
                                 <div
@@ -1285,15 +1302,15 @@ $activeSection = $_GET['section'] ?? 'main';
                                     <i class="fa fa-ticket text-emerald-400"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-xs text-gray-400">Ваш код</div>
+                                    <div class="text-xs text-gray-400"><?= $t('your_code'); ?></div>
                                     <div class="text-white font-semibold truncate">
                                         <?= htmlspecialchars($user->getMyRefer()) ?>
                                     </div>
                                 </div>
                                 <button
-                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer()) ?>', 'Реферальный код')"
+                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer()) ?>', <?= json_encode($t('referal_code')) ?>)"
                                     class="z-10 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group shrink-0 cursor-pointer"
-                                    title="Копировать код">
+                                    title="<?= $t('copy_code') ?>">
                                     <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                 </button>
                             </div>
@@ -1304,15 +1321,15 @@ $activeSection = $_GET['section'] ?? 'main';
                                     <i class="fa fa-link text-blue-400"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-xs text-gray-400">Ссылка</div>
+                                    <div class="text-xs text-gray-400"><?= $t('links'); ?></div>
                                     <p class="text-white text-xs truncate">
                                         <?= htmlspecialchars($user->getMyRefer() ? 'https://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?>
                                     </p>
                                 </div>
                                 <button
-                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer() ? 'https://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?>', 'Реферальная ссылка')"
+                                    onclick="copyToClipboard('<?= htmlspecialchars($user->getMyRefer() ? 'https://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $user->getMyRefer() : '') ?>', <?= json_encode($t('referal_link')) ?>)"
                                     class="z-10 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors group shrink-0 cursor-pointer"
-                                    title="Копировать ссылку">
+                                    title="<?= $t('copy_link') ?>">
                                     <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                 </button>
                             </div>
@@ -1320,45 +1337,45 @@ $activeSection = $_GET['section'] ?? 'main';
 
                         <!-- Activation code -->
                         <div class="flex flex-col gap-3">
-                            <h4 class="text-white text-lg font-semibold">Активировать код</h4>
+                            <h4 class="text-white text-lg font-semibold"><?= $t('active_code'); ?></h4>
                             <div class="glow-card_mobile flex flex-col gap-3 p-4 rounded-xl">
-                                <label class="text-xs text-gray-400">Код реферала</label>
+                                <label class="text-xs text-gray-400"><?= $t('code_referals'); ?></label>
                                 <input type="text" id="referral-code-input-mobile"
                                     class="z-10 text-white w-full bg-transparent border border-green-400/50 rounded-lg px-4 py-3 text-center text-xl tracking-widest uppercase placeholder:text-white/20 focus:outline-none focus:border-green-400/50 focus:ring-2 focus:ring-green-400/20 transition-all"
                                     placeholder="XXXXXXX" maxlength="10">
                                 <button onclick="activateReferralCode('mobile')" id="referral-activate-btn-mobile"
                                     class="w-full py-3 rounded-lg bg-gradient-to-r from-green-400 to-emerald-500 text-black font-semibold hover:from-green-300 hover:to-emerald-400 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
-                                    Использовать код
+                                    <?= $t('use_code'); ?>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Referrer info -->
                         <div class="flex flex-col gap-3">
-                            <h4 class="text-white text-lg font-semibold">Ваш реферер</h4>
+                            <h4 class="text-white text-lg font-semibold"><?= $t('your_refer'); ?></h4>
                             <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
                                 <?php if (!empty($user->getRefer())): ?>
                                     <div class="flex justify-between gap-4">
-                                        <span class="text-sm text-gray-400">Код</span>
+                                        <span class="text-sm text-gray-400"><?= $t('code'); ?></span>
                                         <span
                                             class="text-sm text-white font-semibold truncate"><?= htmlspecialchars($user->getRefer()) ?></span>
                                     </div>
                                     <div class="flex justify-between gap-4">
-                                        <span class="text-sm text-gray-400">Имя</span>
+                                        <span class="text-sm text-gray-400"><?= $t('name'); ?></span>
                                         <span
-                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: 'Неизвестно') ?></span>
+                                            class="text-sm text-white font-semibold truncate"><?= htmlspecialchars(Profile::getReferrerNameStatic($user->getRefer()) ?: $t('unknown')) ?></span>
                                     </div>
                                 <?php else: ?>
-                                    <div class="text-sm text-gray-400">Реферер не указан</div>
+                                    <div class="text-sm text-gray-400"><?= $t('referal_no_have'); ?></div>
                                 <?php endif; ?>
                                 <div class="flex justify-between gap-4">
-                                    <span class="text-sm text-gray-400">Вы получили</span>
+                                    <span class="text-sm text-gray-400"><?= $t('you_get'); ?></span>
                                     <span class="text-sm text-white font-semibold">
                                         <?php if ($formattedUserProfile['discount_percent'] > 0): ?>
                                             <span
                                                 class="text-green-400">-<?= intval($formattedUserProfile['discount_percent']) ?>%</span>
                                         <?php else: ?>
-                                            <span class="text-gray-400">Нет скидки</span>
+                                            <span class="text-gray-400"><?= $t('not_discount'); ?></span>
                                         <?php endif; ?>
                                     </span>
                                 </div>
@@ -1368,186 +1385,193 @@ $activeSection = $_GET['section'] ?? 'main';
                     </div>
 
                 </section>
+                </template>
             </div>
+            </template>
         </main>
 
-        <!-- modal = Политика конфиденциальности -->
+        <!-- modal = <?= $t('politic') ?> -->
         <div data-modal="politic" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Политика конфиденциальности</h3>
+                    <h3><?= $t('politic') ?></h3>
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Политика конфиденциальности <?= htmlspecialchars($site['ООО']) ?></strong></p>
+                    <p><strong><?= $t('politic') ?> <?= htmlspecialchars($site['ООО']) ?></strong></p>
                     <hr class="my-4">
 
-                    <p><strong>Дата вступления в силу:</strong> 26.03.2026</p>
+                    <p><strong><?= $t('pol_effective_date') ?></strong> 26.03.2026</p>
                     <hr class="my-4">
 
-                    <p><strong>1. Общие положения</strong></p>
-                    <p>Настоящая Политика конфиденциальности описывает, какие данные собирает сервис
-                        <?= htmlspecialchars($site['ООО']) ?> и как они
-                        используются.
+                    <p><strong><?= $t('pol_s1') ?></strong></p>
+                    <p><?= $t('pol_s1_1') ?>
+                        <?= htmlspecialchars($site['ООО']) ?> <?= $t('pol_s1_1_end') ?>
                     </p>
-                    <p>Используя сервис, пользователь соглашается с данной Политикой.</p>
+                    <p><?= $t('pol_s1_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>2. Какие данные мы собираем</strong></p>
-                    <p>Мы можем собирать следующие данные:</p>
-                    <p>- адрес электронной почты (при регистрации);</p>
-                    <p>- технические данные устройства (тип устройства, версия ОС);</p>
-                    <p>- данные об использовании сервиса (ошибки, сбои, диагностика).</p>
+                    <p><strong><?= $t('pol_s2') ?></strong></p>
+                    <p><?= $t('pol_s2_1') ?></p>
+                    <p><?= $t('pol_s2_2') ?></p>
+                    <p><?= $t('pol_s2_3') ?></p>
+                    <p><?= $t('pol_s2_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>3. Какие данные мы НЕ собираем</strong></p>
-                    <p><?= htmlspecialchars($site['ООО']) ?> придерживается политики конфиденциальности и не собирает:
+                    <p><strong><?= $t('pol_s3') ?></strong></p>
+                    <p><?= htmlspecialchars($site['ООО']) ?> <?= $t('pol_s3_1') ?>
                     </p>
-                    <p>- историю посещенных сайтов;</p>
-                    <p>- содержимое интернет-трафика;</p>
-                    <p>- DNS-запросы пользователей;</p>
-                    <p>- реальные IP-адреса (при использовании VPN-соединения).</p>
+                    <p><?= $t('pol_s3_2') ?></p>
+                    <p><?= $t('pol_s3_3') ?></p>
+                    <p><?= $t('pol_s3_4') ?></p>
+                    <p><?= $t('pol_s3_5') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>4. Цели обработки данных</strong></p>
-                    <p>Собранные данные используются для:</p>
-                    <p>- предоставления и улучшения сервиса;</p>
-                    <p>- технической поддержки пользователей;</p>
-                    <p>- обеспечения безопасности и предотвращения злоупотреблений.</p>
+                    <p><strong><?= $t('pol_s4') ?></strong></p>
+                    <p><?= $t('pol_s4_1') ?></p>
+                    <p><?= $t('pol_s4_2') ?></p>
+                    <p><?= $t('pol_s4_3') ?></p>
+                    <p><?= $t('pol_s4_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>5. Передача данных третьим лицам</strong></p>
-                    <p>Мы не продаем и не передаем персональные данные третьим лицам, за исключением случаев:</p>
-                    <p>- требования законодательства;</p>
-                    <p>- защиты прав и безопасности сервиса;</p>
-                    <p>- обработки платежей через сторонние платежные системы.</p>
+                    <p><strong><?= $t('pol_s5') ?></strong></p>
+                    <p><?= $t('pol_s5_1') ?></p>
+                    <p><?= $t('pol_s5_2') ?></p>
+                    <p><?= $t('pol_s5_3') ?></p>
+                    <p><?= $t('pol_s5_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>6. Хранение данных</strong></p>
-                    <p>Данные хранятся только столько, сколько необходимо для работы сервиса.</p>
-                    <p>Мы принимаем разумные меры для защиты информации от несанкционированного доступа.</p>
+                    <p><strong><?= $t('pol_s6') ?></strong></p>
+                    <p><?= $t('pol_s6_1') ?></p>
+                    <p><?= $t('pol_s6_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>7. Права пользователя</strong></p>
-                    <p>Пользователь имеет право:</p>
-                    <p>- запросить доступ к своим данным;</p>
-                    <p>- требовать исправления или удаления данных;</p>
-                    <p>- отозвать согласие на обработку данных.</p>
+                    <p><strong><?= $t('pol_s7') ?></strong></p>
+                    <p><?= $t('pol_s7_1') ?></p>
+                    <p><?= $t('pol_s7_2') ?></p>
+                    <p><?= $t('pol_s7_3') ?></p>
+                    <p><?= $t('pol_s7_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>8. Cookies</strong></p>
-                    <p>Мы можем использовать cookies для улучшения работы сайта и сервиса.</p>
-                    <p>Пользователь может отключить cookies в настройках браузера.</p>
+                    <p><strong><?= $t('pol_s8') ?></strong></p>
+                    <p><?= $t('pol_s8_1') ?></p>
+                    <p><?= $t('pol_s8_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>9. Изменения политики</strong></p>
-                    <p><?= htmlspecialchars($site['ООО']) ?> может обновлять данную Политику.</p>
-                    <p>Изменения вступают в силу с момента публикации.</p>
+                    <p><strong><?= $t('pol_s9') ?></strong></p>
+                    <p><?= htmlspecialchars($site['ООО']) ?> <?= $t('pol_s9_1') ?></p>
+                    <p><?= $t('pol_s9_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>10. Контакты</strong></p>
+                    <p><strong><?= $t('pol_s10') ?></strong></p>
                     <p>Email: <?= $site['контакты']['Почта'] ?></p>
-                    <p>Сайт: <?= $site['baseUrl'] ?></p>
+                    <p><?= $t('website_colon') ?> <?= $site['baseUrl'] ?></p>
                 </div>
                 <div class="modal-footer">
-                    <button class="modal-btn-close">Закрыть</button>
+                    <button class="modal-btn-close"><?= $t('close') ?></button>
                 </div>
             </div>
         </div>
 
-        <!-- modal = Пользовательское соглашение -->
+        <!-- modal = <?= $t('soglashenia') ?> -->
         <div data-modal="access" class="modal-overlay hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>Пользовательское соглашение</h3>
+                    <h3><?= $t('soglashenia') ?></h3>
                     <button class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p><strong>Пользовательское соглашение <?= htmlspecialchars($site['ООО']) ?></strong></p>
+                    <p><strong><?= $t('soglashenia') ?> <?= htmlspecialchars($site['ООО']) ?></strong></p>
                     <hr class="my-4">
 
-                    <p><strong>Дата вступления в силу:</strong> 26.03.2026</p>
+                    <p><strong><?= $t('pol_effective_date') ?></strong> 26.03.2026</p>
                     <hr class="my-4">
 
-                    <p><strong>1. Общие положения</strong></p>
-                    <p>Настоящее Пользовательское соглашение регулирует отношения между сервисом
-                        <?= htmlspecialchars($site['ООО']) ?> и
-                        пользователем.
+                    <p><strong><?= $t('pol_s1') ?></strong></p>
+                    <p><?= $t('sog_s1_1') ?>
+                        <?= htmlspecialchars($site['ООО']) ?> <?= $t('sog_s1_1_end') ?>
                     </p>
-                    <p>Используя сервис, пользователь подтверждает согласие с условиями.</p>
-                    <p>Если пользователь не согласен — он обязан прекратить использование.</p>
+                    <p><?= $t('sog_s1_2') ?></p>
+                    <p><?= $t('sog_s1_3') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>2. Описание услуги</strong></p>
-                    <p><?= htmlspecialchars($site['ООО']) ?> предоставляет услуги VPN, включая:</p>
-                    <p>- шифрование интернет-трафика;</p>
-                    <p>- защиту конфиденциальности;</p>
-                    <p>- изменение IP-адреса.</p>
-                    <p>Сервис предоставляется «как есть» без гарантий.</p>
+                    <p><strong><?= $t('sog_s2') ?></strong></p>
+                    <p><?= htmlspecialchars($site['ООО']) ?> <?= $t('sog_s2_1') ?></p>
+                    <p><?= $t('sog_s2_2') ?></p>
+                    <p><?= $t('sog_s2_3') ?></p>
+                    <p><?= $t('sog_s2_4') ?></p>
+                    <p><?= $t('sog_s2_5') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>3. Регистрация и доступ</strong></p>
-                    <p>Для использования может потребоваться регистрация.</p>
-                    <p>Пользователь обязан предоставлять достоверные данные и не передавать доступ третьим лицам.</p>
-                    <p>Пользователь несет ответственность за действия в аккаунте.</p>
+                    <p><strong><?= $t('sog_s3') ?></strong></p>
+                    <p><?= $t('sog_s3_1') ?></p>
+                    <p><?= $t('sog_s3_2') ?></p>
+                    <p><?= $t('sog_s3_3') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>4. Допустимое использование</strong></p>
-                    <p>Запрещено использовать сервис для:</p>
-                    <p>- нарушения законодательства;</p>
-                    <p>- распространения вредоносного ПО;</p>
-                    <p>- атак (DDoS, brute-force и т.д.);</p>
-                    <p>- спама и мошенничества.</p>
-                    <p>При нарушении аккаунт может быть заблокирован.</p>
+                    <p><strong><?= $t('sog_s4') ?></strong></p>
+                    <p><?= $t('sog_s4_1') ?></p>
+                    <p><?= $t('sog_s4_2') ?></p>
+                    <p><?= $t('sog_s4_3') ?></p>
+                    <p><?= $t('sog_s4_4') ?></p>
+                    <p><?= $t('sog_s4_5') ?></p>
+                    <p><?= $t('sog_s4_6') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>5. Конфиденциальность</strong></p>
-                    <p><?= htmlspecialchars($site['ООО']) ?> уважает конфиденциальность пользователей.</p>
-                    <p>Мы можем собирать технические данные для работы сервиса.</p>
-                    <p>Мы не храним историю посещений и содержимое трафика.</p>
-                    <p>Данные могут быть раскрыты только по закону.</p>
+                    <p><strong><?= $t('sog_s5') ?></strong></p>
+                    <p><?= htmlspecialchars($site['ООО']) ?> <?= $t('sog_s5_1') ?></p>
+                    <p><?= $t('sog_s5_2') ?></p>
+                    <p><?= $t('sog_s5_3') ?></p>
+                    <p><?= $t('sog_s5_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>6. Платежи и подписка</strong></p>
-                    <p>Некоторые функции доступны по подписке.</p>
-                    <p>Подписка может продлеваться автоматически.</p>
-                    <p>Пользователь может отменить подписку.</p>
-                    <p>Возврат средств осуществляется согласно политике возвратов.</p>
+                    <p><strong><?= $t('sog_s6') ?></strong></p>
+                    <p><?= $t('sog_s6_1') ?></p>
+                    <p><?= $t('sog_s6_2') ?></p>
+                    <p><?= $t('sog_s6_3') ?></p>
+                    <p><?= $t('sog_s6_4') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>7. Ограничение ответственности</strong></p>
-                    <p><?= htmlspecialchars($site['ООО']) ?> не несет ответственности за:</p>
-                    <p>- действия пользователей;</p>
-                    <p>- потерю данных;</p>
-                    <p>- сбои в работе сервиса.</p>
-                    <p>Использование происходит на риск пользователя.</p>
+                    <p><strong><?= $t('sog_s7') ?></strong></p>
+                    <p><?= htmlspecialchars($site['ООО']) ?> <?= $t('sog_s7_1') ?></p>
+                    <p><?= $t('sog_s7_2') ?></p>
+                    <p><?= $t('sog_s7_3') ?></p>
+                    <p><?= $t('sog_s7_4') ?></p>
+                    <p><?= $t('sog_s7_5') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>8. Блокировка доступа</strong></p>
-                    <p>Сервис имеет право ограничить или удалить аккаунт при нарушении условий.</p>
-                    <p>Пользователь может прекратить использование в любое время.</p>
+                    <p><strong><?= $t('sog_s8') ?></strong></p>
+                    <p><?= $t('sog_s8_1') ?></p>
+                    <p><?= $t('sog_s8_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>9. Изменения соглашения</strong></p>
-                    <p>Сервис может обновлять условия в любое время.</p>
-                    <p>Продолжение использования означает согласие с изменениями.</p>
+                    <p><strong><?= $t('sog_s9') ?></strong></p>
+                    <p><?= $t('sog_s9_1') ?></p>
+                    <p><?= $t('sog_s9_2') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>10. Применимое право</strong></p>
-                    <p>Соглашение регулируется законодательством [укажи страну].</p>
+                    <p><strong><?= $t('sog_s10') ?></strong></p>
+                    <p><?= $t('sog_s10_1') ?></p>
                     <hr class="my-4">
 
-                    <p><strong>11. Контакты</strong></p>
+                    <p><strong><?= $t('sog_s11') ?></strong></p>
                     <p>Email: <?= $site['контакты']['Почта'] ?></p>
-                    <p>Сайт: <?= $site['baseUrl'] ?></p>
+                    <p><?= $t('website_colon') ?> <?= $site['baseUrl'] ?></p>
                 </div>
                 <div class="modal-footer">
-                    <button class="modal-btn-close">Закрыть</button>
+                    <button class="modal-btn-close"><?= $t('close') ?></button>
                 </div>
             </div>
             /div>
         </div>
-        </section>
+
+        <script>
+            // Устанавливаем тему в localStorage из PHP при загрузке
+            const currentThemeFromPHP = '<?= $formattedUserProfile['theme'] ?>';
+            if (!localStorage.getItem('theme')) {
+                localStorage.setItem('theme', currentThemeFromPHP);
+            }
+        </script>
 
         <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
         <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
@@ -1558,12 +1582,12 @@ $activeSection = $_GET['section'] ?? 'main';
             function copyVpnKey() {
                 const el = document.getElementById('vpn-key-desktop') || document.getElementById('vpn-key');
                 const text = el?.textContent?.trim();
-                text ? copyToClipboard(text, 'VPN ключ') : showNotification('VPN ключ не найден', 'error');
+                text ? copyToClipboard(text, <?= json_encode($t('vpn_key')) ?>) : showNotification(<?= json_encode($t('vpn_key_not_found')) ?>, 'error');
             }
 
             // Удаление подписки
             async function deleteSubscription() {
-                if (!confirm('Вы уверены, что хотите удалить подписку?')) return;
+                if (!confirm(<?= json_encode($t('confirm_delete_subscription')) ?>)) return;
 
                 try {
                     const res = await fetch('/api/subscription/delete', {
@@ -1579,7 +1603,7 @@ $activeSection = $_GET['section'] ?? 'main';
                     } catch {
                         // Если не JSON, считаем успехом если HTTP 200 и подписка пропала
                         if (res.ok) {
-                            showNotification('Подписка удалена', 'success');
+                            showNotification(<?= json_encode($t('subscription_deleted')) ?>, 'success');
                             setTimeout(() => location.reload(), 1500);
                             return;
                         }
@@ -1590,13 +1614,13 @@ $activeSection = $_GET['section'] ?? 'main';
                     const isPartial = data.status === 'partial';
 
                     if (isOk || isPartial) {
-                        showNotification(data.message || 'Подписка удалена', 'success');
+                        showNotification(data.message || <?= json_encode($t('subscription_deleted')) ?>, 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
-                        showNotification(data.message || data.error || 'Ошибка удаления', 'error');
+                        showNotification(data.message || data.error || <?= json_encode($t('delete_error')) ?>, 'error');
                     }
                 } catch (e) {
-                    showNotification('Ошибка сети', 'error');
+                    showNotification(<?= json_encode($t('network_error')) ?>, 'error');
                 }
             }
 
@@ -1616,52 +1640,19 @@ $activeSection = $_GET['section'] ?? 'main';
                 setTimeout(() => (element.remove(), container.children.length || container.remove()), 4400);
             }
 
-            // Устанавливаем тему в localStorage из PHP при загрузке
-            const currentThemeFromPHP = '<?= $formattedUserProfile['theme'] ?>';
-            if (!localStorage.getItem('theme')) {
-                localStorage.setItem('theme', currentThemeFromPHP);
-            }
-
-            // Обновление темы в статистике профиля из localStorage
-            function updateThemeInProfile() {
-                const currentTheme = localStorage.getItem('theme') || 'Темная';
-                const themeElements = document.querySelectorAll('[data-theme-text]');
-
-                themeElements.forEach(element => {
-                    element.textContent = currentTheme;
-                });
-
-                // Также обновляем все элементы с классом .theme-display
-                const themeDisplays = document.querySelectorAll('.theme-display');
-                themeDisplays.forEach(element => {
-                    element.textContent = currentTheme;
-                });
-            }
-
-            // Вызываем при загрузке страницы
-            document.addEventListener('DOMContentLoaded', updateThemeInProfile);
-
-            // Вызываем при изменении темы
-            const darkModeToggle = document.querySelector('[data-darkModeToggle]');
-            if (darkModeToggle) {
-                darkModeToggle.addEventListener('change', () => {
-                    const newTheme = darkModeToggle.checked ? 'Светлая' : 'Темная';
-                    localStorage.setItem('theme', newTheme);
-                    updateThemeInProfile();
-                });
-            }
+            // ============================================================================
             // Универсальная функция копирования
-            function copyToClipboard(text, label = 'Текст') {
+            function copyToClipboard(text, label = <?= json_encode($t('text_default')) ?>) {
                 if (!text) {
-                    showNotification('Нечего копировать', 'error');
+                    showNotification(<?= json_encode($t('nothing_to_copy')) ?>, 'error');
                     return;
                 }
                 // Пробуем современный API (требует HTTPS)
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(text).then(() => {
-                        showNotification(`${label} скопирован!`, 'success');
+                        showNotification(`${label} <?= $t('copied') ?>`, 'success');
                     }).catch(err => {
-                        console.error('Ошибка копирования:', err);
+                        console.error(<?= json_encode($t('copy_error_colon')) ?>, err);
                         fallbackCopy(text, label);
                     });
                 } else {
@@ -1679,10 +1670,10 @@ $activeSection = $_GET['section'] ?? 'main';
                 textarea.select();
                 try {
                     document.execCommand('copy');
-                    showNotification(`${label} скопирован!`, 'success');
+                    showNotification(`${label} <?= $t('copied') ?>`, 'success');
                 } catch (err) {
                     console.error('Fallback copy failed:', err);
-                    showNotification('Ошибка копирования', 'error');
+                    showNotification(<?= json_encode($t('copy_error')) ?>, 'error');
                 }
                 document.body.removeChild(textarea);
             }
@@ -1698,7 +1689,7 @@ $activeSection = $_GET['section'] ?? 'main';
                 const code = codeInput ? codeInput.value.trim() : '';
 
                 if (!code) {
-                    showNotification('Пожалуйста, введите реферальный код', 'error');
+                    showNotification(<?= json_encode($t('enter_referal_code')) ?>, 'error');
                     return;
                 }
 
@@ -1724,16 +1715,16 @@ $activeSection = $_GET['section'] ?? 'main';
                                 showNotification(data.message, 'error');
                                 if (btn) {
                                     btn.disabled = false;
-                                    btn.textContent = 'Использовать';
+                                    btn.textContent = <?= json_encode($t('use')) ?>;
                                 }
                             }
                         })
                         .catch(error => {
                             console.error('Ошибка:', error);
-                            showNotification('Ошибка сервера при активации', 'error');
+                            showNotification(<?= json_encode($t('server_error_activation')) ?>, 'error');
                             if (btn) {
                                 btn.disabled = false;
-                                btn.textContent = 'Использовать';
+                                btn.textContent = <?= json_encode($t('use')) ?>;
                             }
                         });
                 }
@@ -1753,7 +1744,56 @@ $activeSection = $_GET['section'] ?? 'main';
                 });
             });
         </script>
+
+        <script defer>
+            const expiry = <?= htmlspecialchars($user->getExpiry()) / 1000 /*секунд*/ ?>;
+
+            /**
+             * Обратный отсчёт подписки. Секции рендерятся лениво (появляются/исчезают),
+             * поэтому элементы [data-timeleft] ищем в живой DOM каждый тик.
+             * Один интервал на страницу — без накопления таймеров.
+             */
+            setInterval(function () {
+                const elements = document.querySelectorAll('[data-timeleft]');
+                if (!elements.length) return;
+
+                const remaining = expiry - Math.floor(Date.now() / 1000);
+                if (remaining <= 0) {
+                    elements.forEach(function (el) {
+                        if (!el.classList.contains('text-red-400')) {
+                            el.classList.add('text-red-400');
+                        }
+                        el.textContent = <?= json_encode($t('subscription_inactive')) ?>;//в случае, если клиент не купил подписку ему не показывалось (подписка истекла)
+                    });
+                    return;
+                }
+
+                const days = Math.floor(remaining / 86400);
+                const hours = Math.floor((remaining % 86400) / 3600);
+                const minutes = Math.floor((remaining % 3600) / 60);
+                const seconds = remaining % 60;
+
+                // версии для показа
+                let timer_show = 0;
+                if (days > 1) { timer_show = `${days} ${days === 1 ? <?= json_encode($t('day_1')) ?> : <?= json_encode($t('days')) ?>}`;}
+                  else if (days === 1) { timer_show = `${days} <?= $t('day_1') ?>`; }
+                    else if (hours > 0) { timer_show = `${hours} ${hours === 1 ? <?= json_encode($t('hour_1')) ?> : <?= json_encode($t('hours_plural')) ?>}`; } 
+                      else if (hours === 1) { timer_show = `${hours} <?= $t('hour_1') ?> ${minutes} ${minutes === 1 ? <?= json_encode($t('minute_1')) ?> : <?= json_encode($t('minutes_plural')) ?>}`; } 
+                        else if (minutes > 4) { timer_show = `${minutes} ${minutes === 1 ? <?= json_encode($t('minute_1')) ?> : <?= json_encode($t('minutes_plural')) ?>} ${seconds} ${seconds === 1 ? <?= json_encode($t('second_1')) ?> : <?= json_encode($t('seconds_plural')) ?>}`; } 
+                          else if (minutes <= 4 && minutes !== 1) { timer_show = `${minutes} <?= $t('minute_2') ?> ${seconds} ${seconds === 1 ? <?= json_encode($t('second_1')) ?> : <?= json_encode($t('seconds_plural')) ?>}`; } 
+                            else if (minutes === 1) { timer_show = `${minutes} <?= $t('minute_1') ?> ${seconds} ${seconds === 1 ? <?= json_encode($t('second_1')) ?> : <?= json_encode($t('seconds_plural')) ?>}`; } 
+                              else if (minutes === 0) { timer_show = `${seconds} <?= $t('seconds_plural') ?>`; }
+
+                elements.forEach(function (el) {
+                    if (el.classList.contains('text-red-400')) {
+                        el.classList.remove('text-red-400');
+                    }
+                    el.textContent = timer_show;
+                });
+            }, 1000);
+        </script>
     </div>
+    <?php include_once "public/components/tour.php" ?>
 </body>
 
 </html>

@@ -7,7 +7,7 @@ namespace Setting\Route\Function\Controllers\Refer\Bonus;
 use App\Config\Database;
 use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
-
+use DateTime, DateTimeZone;
 /**
  * Bonus - Обработка бонусов реферальной системы
  * Простая логика начисления наград
@@ -85,23 +85,20 @@ class Bonus
                 ),
                 FILE_APPEND
             );
-            $this->extendSubscriptionDateEndDbOnly($uniID, $days);
+            $this->extendSubscriptionExpiryDbOnly($uniID, $days);
         }
     }
 
-    /** Резерв: продлить date_end в БД без панели (как в старой логике). */
-    private function extendSubscriptionDateEndDbOnly(string $uniID, int $days): void
+    /** Резерв: продлить expiry (мс) в БД без панели (как в старой логике). */
+    private function extendSubscriptionExpiryDbOnly(string $uniID, int $days): void
     {
-        $result = Database::send('SELECT date_end FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
-        $currentEnd = (is_array($result) && $result !== []) ? ($result[0]['date_end'] ?? null) : null;
-        if ($currentEnd && strtotime((string) $currentEnd) > time()) {
-            $newEnd = date('Y-m-d', strtotime((string) $currentEnd . " +{$days} days"));
-        } else {
-            $newEnd = date('Y-m-d', strtotime("+{$days} days"));
-        }
+        $result = Database::send('SELECT expiry FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+        $currentExpiry = (is_array($result) && $result !== []) ? (int) ($result[0]['expiry'] ?? 0) : 0;
+        $nowMs = (new DateTime('now', new DateTimeZone('Europe/Moscow')))->getTimestamp() * 1000;
+        $newExpiry = max($nowMs, $currentExpiry) + $days * 86400000;
         Database::send(
-            'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
-            [$newEnd, $uniID]
+            'UPDATE qwees_subscriptions SET expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+            [$newExpiry, $uniID]
         );
     }
 

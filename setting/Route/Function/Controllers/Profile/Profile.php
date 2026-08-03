@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Profile;
 
 use App\Config\Database;
+use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 
 class Profile
 {
@@ -77,7 +78,7 @@ class Profile
             'subscription_info' => [
                 'status' => $this->user->getStatus() === 'on' ? 'active' : 'inactive',
                 'subscription' => $this->user->getSubscription(),
-                'date_end' => $this->user->getDateEnd(),
+                'expiry' => $this->user->getExpiry(),
                 'count_days' => $this->user->getCountDays(),
                 'count_devices' => $this->user->getCountDevices(),
                 'amount' => $this->user->getAmount()
@@ -100,7 +101,7 @@ class Profile
     {
         return [
             'personal_info' => ['first_name' => '', 'last_name' => '', 'email' => '', 'uniID' => '', 'registration_date' => ''],
-            'subscription_info' => ['status' => 'inactive', 'subscription' => '', 'date_end' => '', 'count_days' => 0, 'count_devices' => 0, 'amount' => 0],
+            'subscription_info' => ['status' => 'inactive', 'subscription' => '', 'expiry' => 0, 'count_days' => 0, 'count_devices' => 0, 'amount' => 0],
             'referal_info' => ['refer_link' => '', 'my_refer_link' => '', 'refer_count' => 0, 'has_discount' => false],
             'pricing_info' => self::_pricingInfo()
         ];
@@ -108,14 +109,21 @@ class Profile
 
     private static function _pricingInfo(): array
     {
-        $prices = Database::send('SELECT * FROM qwees_price');
-        $priceData = $prices[0] ?? [];
+        $prices1m = PriceConfig::getPrices()[1] ?? [];
+        $meta = PriceConfig::getTariffMeta();
+        $pricingInfo = [];
 
-        return [
-            'basic' => ['name' => 'Basic', 'price' => $priceData['basic'] ?? 100, 'days' => 30, 'devices' => 2],
-            'classic' => ['name' => 'Classic', 'price' => $priceData['clasic'] ?? 200, 'days' => 30, 'devices' => 5],
-            'pro' => ['name' => 'Pro', 'price' => $priceData['pro'] ?? 300, 'days' => 30, 'devices' => 10]
-        ];
+        // Всё строится из единого объекта тарифов — никаких захардкоженных тарифов
+        foreach ($meta as $tariffName => $tariff) {
+            $pricingInfo[$tariffName] = [
+                'name'    => ucfirst($tariffName),
+                'price'   => $prices1m[$tariffName] ?? 0,
+                'days'    => $tariff['periods'][1]['days'] ?? 30,
+                'devices' => $tariff['devices'],
+            ];
+        }
+
+        return $pricingInfo;
     }
 
     private static function _referrerName(string $referCode): string

@@ -17,21 +17,22 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
     {
         $this->client = $uniID !== null ? (array) self::get($uniID) : (array) self::get();
     }
+
     /**
      * Summary of onCheckSubscription
      * @return bool True - все в порядке | False - статус подписки обновлен
      */
     public function onCheckSubscription(): bool
     {
-        $status = (string) $this->client['status'] ?? 'off';
-        $dateEnd = (string) $this->client['date_end'] ?? '';
-        $uniID = (string) ($this->client['uniID'] ?? '');
-        if ($status === 'on' && !empty($dateEnd)) {
+        $status = (string) $this->client['status'] ?? 'off';//on | off
+        $expiryMs = (int) ($this->client['expiry'] ?? 0);//мс
+        $uniID = (string) ($this->client['uniID'] ?? '');//qwe......
+        if ($status === 'on' && $expiryMs > 0) {
             //проверка времени
             $timezone = new DateTimeZone('Europe/Moscow');//UTC+3
             $current_DateTime = new DateTime('now', $timezone);//текущее время
-            $end_DateTime = new DateTime($dateEnd . " 23:59:59", $timezone);//время окончания
-            if ($end_DateTime < $current_DateTime) {//время в подписке не менее текущего
+            $end_DateTime = new DateTime('@' . ($expiryMs / 1000))->setTimezone($timezone);//время окончания
+            if ($end_DateTime < $current_DateTime) {//время подписки меньше текущего времени
                 if (!empty($uniID)) {
                     $xray = new Xray();
                     $result = $xray->DeleteKey($uniID);
@@ -43,7 +44,7 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
                                 "[%s] [ИСТЕКШАЯ] Подписка %s истекла (%s) — удалена из БД и X-UI\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
-                                $dateEnd
+                                date('Y-m-d H:i:s', (int) ($expiryMs / 1000))
                             ),
                             FILE_APPEND
                         );
@@ -132,9 +133,9 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
         return (int) ($this->client['count_devices'] ?? 0);
     }
 
-    public function getDateEnd(): string
+    public function getExpiry(): int
     {
-        return (string) ($this->client['date_end'] ?? '');
+        return (int) ($this->client['expiry'] ?? 0);//мс
     }
 
     public function getDiscountPercent(): int

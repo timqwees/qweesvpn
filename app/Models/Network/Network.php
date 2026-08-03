@@ -258,7 +258,8 @@ class Network extends Session
     {
         try {
             if (empty($path)) {
-                throw new \Exception("Путь для перенаправления не может быть пустым");
+                // Пустой путь — не ошибка, просто некуда редиректить
+                return false;
             }
 
             // Убираем дублирование search в пути

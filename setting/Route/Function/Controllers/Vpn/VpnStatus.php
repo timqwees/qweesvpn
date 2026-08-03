@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Vpn;
 
 use Setting\Route\Function\Controllers\Client\GetUser;
+use DateTime, DateTimeZone;
 
 class VpnStatus
 {
@@ -38,11 +39,11 @@ class VpnStatus
     {
         $isActive = $this->user->getStatus() === 'on';
         $subscription = $this->user->getSubscription();
-        $dateEnd = $this->user->getDateEnd();
+        $expiry = $this->user->getExpiry();
 
         // Проверяем, не истекла ли подписка
-        if ($isActive && !empty($dateEnd)) {
-            $isExpired = strtotime($dateEnd) < time();
+        if ($isActive && $expiry > 0) {
+            $isExpired = ($expiry / 1000) < time();
             if ($isExpired) {
                 return 'inactive';
             }
@@ -54,11 +55,11 @@ class VpnStatus
     public function getStatusText(): string
     {
         $status = $this->user->getStatus();
-        $dateEnd = $this->user->getDateEnd();
+        $expiry = $this->user->getExpiry();
 
         // Проверяем, не истекла ли подписка
-        if ($status === 'on' && !empty($dateEnd)) {
-            if (strtotime($dateEnd) < time()) {
+        if ($status === 'on' && $expiry > 0) {
+            if (($expiry / 1000) < time()) {
                 return 'Неактивен';
             }
         }
@@ -71,14 +72,14 @@ class VpnStatus
         return $this->user->getSubscription();
     }
 
-    public function getDateEnd(): string
+    public function getExpiry(): int
     {
-        return $this->user->getDateEnd();
+        return $this->user->getExpiry();
     }
 
     public function getDaysLeft(): int
     {
-        return $this->calculateDaysLeft($this->user->getDateEnd());
+        return $this->calculateDaysLeft($this->user->getExpiry());
     }
 
     public function getCountDays(): int
@@ -159,7 +160,7 @@ class VpnStatus
     public function getLocation(): string
     {
         return self::getCachedData('location', function () {
-            $serverCode = $_ENV['VLESS_SERVER'] ?? 'NL';
+            $serverCode = $_ENV['VLESS_SERVER'] ?? 'FI';
 
             // Быстрое преобразование кода в название
             $countryNames = [
@@ -195,14 +196,14 @@ class VpnStatus
 
         $isActive = $this->user->getStatus() === 'on';
         $subscription = $this->user->getSubscription();
-        $dateEnd = $this->user->getDateEnd();
+        $expiry = $this->user->getExpiry();
         $countDays = $this->user->getCountDays();
         $countDevices = $this->user->getCountDevices();
 
         // Проверяем, не истекла ли подписка
         $isExpired = false;
-        if ($isActive && !empty($dateEnd)) {
-            $isExpired = strtotime($dateEnd) < time();
+        if ($isActive && $expiry > 0) {
+            $isExpired = ($expiry / 1000) < time();
             if ($isExpired) {
                 $isActive = false;
             }
@@ -217,8 +218,8 @@ class VpnStatus
             'status' => $status,
             'status_text' => $isActive ? 'Активен' : 'Неактивен',
             'subscription' => $subscription,
-            'date_end' => $dateEnd,
-            'days_left' => $this->calculateDaysLeft($dateEnd),
+            'expiry' => $expiry,
+            'days_left' => $this->calculateDaysLeft($expiry),
             'count_days' => $countDays,
             'count_devices' => $countDevices,
             // Реальный пинг/скорость с сервера здесь не измеряются — не подставляем случайные числа
@@ -239,14 +240,14 @@ class VpnStatus
             'status' => 'inactive',
             'status_text' => 'Неактивен',
             'subscription' => '',
-            'date_end' => '',
+            'expiry' => 0,
             'days_left' => 0,
             'count_days' => 0,
             'count_devices' => 0,
             'ping' => ['ms' => null, 'status' => 'inactive'],
             'protocol' => 'VLESS',
             'ip_address' => '0.0.0.0',
-            'location' => $_ENV['VLESS_SERVER'] ?? 'NL',
+            'location' => $_ENV['VLESS_SERVER'] ?? 'Сервер не активен :(',
             'speed' => ['download' => null, 'upload' => null, 'status' => 'inactive']
         ];
     }
@@ -254,15 +255,15 @@ class VpnStatus
     /**
      * Рассчитывает оставшиеся дни
      */
-    private function calculateDaysLeft(string $dateEnd): int
+    private function calculateDaysLeft(int $expiryMs): int
     {
-        if (empty($dateEnd))
+        if ($expiryMs <= 0)
             return 0;
 
-        $endDate = new \DateTime($dateEnd);
-        $now = new \DateTime();
+        $endDate = new DateTime('@' . ($expiryMs / 1000), new DateTimeZone('Europe/Moscow'));
+        $now = new DateTime('now', new DateTimeZone('Europe/Moscow'));
 
-        return $endDate < $now ? 0 : $now->diff($endDate)->days;
+        return $endDate < $now ? 0 : $now->diff($endDate)->days;//сколько дней осталось
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Setting\Route\Function\Controllers\Admin;
 
 use App\Config\Database;
 use App\Models\Network\Network;
+use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 
 class AdminDatabase
 {
@@ -307,9 +308,9 @@ class AdminDatabase
             return;
         }
 
-        // Специальная обработка для таблицы цен — обновляем по name
-        if ($table === 'qwees_price' && empty($id)) {
-            $this->savePrices($url);
+        // Специальная обработка для конфигурации цен — перезапись PriceConfig.php
+        if ($table === 'price_config' && empty($id)) {
+            $this->savePriceConfig($url);
             return;
         }
 
@@ -329,7 +330,7 @@ class AdminDatabase
                 : "/admin/database?table=" . urlencode($table)
             );
         } else {
-            Network::onRedirect($url);
+            Network::onRedirect($url ?: '/admin');
         }
     }
 
@@ -338,6 +339,7 @@ class AdminDatabase
      */
     private function addNewUser(string $url): void
     {
+        $url = $url ?: '/admin';
         $userData = [
             'first_name' => $_POST['first_name'] ?? '',
             'last_name' => $_POST['last_name'] ?? '',
@@ -357,38 +359,92 @@ class AdminDatabase
         Network::onRedirect($redirectUrl);
     }
 
-    private function savePrices(string $url): void
+    /**
+     * Сохранение цен из админ-панели — перезаписывает цены в PriceConfig.php
+     * (новая система: вся настройка тарифов в одном объекте, БД не участвует)
+     */
+    private function savePriceConfig(string $url): void
     {
-        // Получаем все тарифы
-        $prices = self::getData('qwees_price');
+        $url = $url ?: '/admin';
 
-        foreach ($prices as $priceRow) {
-            $name = $priceRow['name'];
-            if (isset($_POST[$name]) && $_POST[$name] !== '') {//поле есть
-                $newPrice = (int) $_POST[$name];//получаем содержание поля name='...'
-                if ($newPrice > 0) {
-                    Database::send(
-                        "UPDATE qwees_price SET price = ? WHERE name = ?",
-                        [$newPrice, $name]
-                    );
-                    // Записываем в лог для отладки
-                    $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
-                    file_put_contents(
-                        $logFile,
-                        sprintf(
-                            "[%s] [SUCCESS] Изменена цена тарифа %s с %s ₽ на %s ₽\n",
-                            date('Y-m-d H:i:s'),
-                            strtoupper($name),
-                            $priceRow['price'],
-                            $newPrice
-                        ),
-                        FILE_APPEND
-                    );
+        $config = PriceConfig::getConfig();
+        // Собираем поля из обеих версий формы (desktop: price, mobile: price_m)
+        $prices = [];
+        foreach (['price', 'price_m'] as $group) {
+            foreach (($_POST[$group] ?? []) as $tariffName => $monthsList) {
+                foreach ($monthsList as $months => $value) {
+                    if ($value !== '') {
+                        $prices[$tariffName][$months] = $value;
+                    }
                 }
             }
         }
+        $changed = [];
 
-        Network::onRedirect($url);
+        foreach ($config as $tariffName => &$tariff) {
+            foreach ($tariff['periods'] as $months => &$period) {
+                $newPrice = (int) ($prices[$tariffName][$months] ?? 0);
+                if ($newPrice > 0 && $newPrice !== (int) $period['price']) {
+                    $changed[] = strtoupper($tariffName) . ' ' . $months . 'мес: ' . $period['price'] . ' → ' . $newPrice . ' ₽';
+                    $period['price'] = $newPrice;
+                }
+            }
+            unset($period);
+        }
+        unset($tariff);
+
+        if (empty($changed)) {
+            $separator = strpos($url, '?') !== false ? '&' : '?';
+            Network::onRedirect($url . $separator . 'message_status=info&message_msg=' . urlencode('Цены не изменялись'));
+            return;
+        }
+
+        $file = __DIR__ . '/../Kassa/PriceConfig.php';
+        $content = file_get_contents($file);
+        if ($content === false) {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Не удалось прочитать PriceConfig.php'));
+            return;
+        }
+
+        $newBlock = "private static array \$config = " . self::buildConfigPhp($config) . ";";
+        $content = preg_replace('/private static array \$config = \[.*?\];/s', $newBlock, $content, 1);
+
+        if ($content === null || !file_put_contents($file, $content)) {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Не удалось сохранить PriceConfig.php'));
+            return;
+        }
+
+        $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
+        file_put_contents(
+            $logFile,
+            sprintf("[%s] [SUCCESS] Изменены цены: %s\n", date('Y-m-d H:i:s'), implode('; ', $changed)),
+            FILE_APPEND
+        );
+
+        $separator = strpos($url, '?') !== false ? '&' : '?';
+        Network::onRedirect($url . $separator . 'message_status=success&message_msg=' . urlencode('Цены сохранены: ' . implode('; ', $changed)));
+    }
+
+    /**
+     * Сформировать PHP-код массива $config в читаемом виде
+     */
+    private static function buildConfigPhp(array $config): string
+    {
+        $lines = ["["];
+        foreach ($config as $tariffName => $tariff) {
+            $lines[] = "\t\t'{$tariffName}' => [";
+            $lines[] = "\t\t\t'label'   => '{$tariff['label']}',";
+            $lines[] = "\t\t\t'devices' => {$tariff['devices']},";
+            $lines[] = "\t\t\t'desc'    => '{$tariff['desc']}',";
+            $lines[] = "\t\t\t'periods' => [";
+            foreach ($tariff['periods'] as $months => $period) {
+                $lines[] = "\t\t\t\t" . str_pad((string) $months, 2, ' ', STR_PAD_LEFT) . " => ['days' => {$period['days']}, 'price' => {$period['price']}],";
+            }
+            $lines[] = "\t\t\t],";
+            $lines[] = "\t\t],";
+        }
+        $lines[] = "\t]";
+        return implode("\n", $lines);
     }
 
     /* ######################## Состовные функции ############################## */
@@ -445,7 +501,7 @@ class AdminDatabase
      */
     public static function getUsersWithSubscriptions(int $limit = 50): array
     {
-        $sql = "SELECT u.*, s.status as sub_status, s.subscription, s.amount, s.count_days, s.count_devices, s.date_end 
+        $sql = "SELECT u.*, s.status as sub_status, s.subscription, s.amount, s.count_days, s.count_devices, s.expiry 
                 FROM qwees_users u 
                 LEFT JOIN qwees_subscriptions s ON u.uniID = s.uniID 
                 ORDER BY u.id DESC 
@@ -493,9 +549,15 @@ class AdminDatabase
 
         $usersWithoutSubscriptions = max(0, $totalUsers - $usersWithSubscriptions);
 
-        // Статистика цен
-        $avgPrice = self::aggregate('qwees_price', 'AVG', 'price');
-        $maxPrice = self::aggregate('qwees_price', 'MAX', 'price');
+        // Статистика цен — из конфигурации PriceConfig (единый объект тарифов)
+        $allPrices = [];
+        foreach (PriceConfig::getConfig() as $tariff) {
+            foreach ($tariff['periods'] as $period) {
+                $allPrices[] = (int) $period['price'];
+            }
+        }
+        $avgPrice = !empty($allPrices) ? round(array_sum($allPrices) / count($allPrices), 1) : 0;
+        $maxPrice = !empty($allPrices) ? max($allPrices) : 0;
 
         return [
             'totalUsers' => $totalUsers,

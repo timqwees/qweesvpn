@@ -75,7 +75,9 @@ Routes::get('/admin/login', 'on_AdminLogin');
 //POST
 Routes::post('/admin/logout', [AdminAuth::class, 'onLogout']);
 Routes::post('/admin/save', [AdminDatabase::class, 'onAdminSave']);
-Routes::post('/admin/addClient', [AdminXray::class, 'onAdminAddClient']);
+Routes::post('/admin/addClientDays', [AdminXray::class, 'onAdminAddClientDays']);
+Routes::post('/admin/addClientHours', [AdminXray::class, 'onAdminAddClientHours']);
+Routes::post('/admin/addClientMinutes', [AdminXray::class, 'onAdminAddClientMinutes']);
 Routes::post('/admin/reduceClient', [AdminXray::class, 'onAdminReduceClient']);
 Routes::post('/admin/cleanlogs', [AdminXray::class, 'onAdminCleanLogs']);
 Routes::post('/admin/login', [AdminAuth::class, 'onLogin']);

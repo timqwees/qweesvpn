@@ -43,7 +43,7 @@ namespace App\Models\User;
 use App\Config\Database;
 use App\Models\Network\Network;
 use App\Models\Network\Message;
-
+use DateTime, DateTimeZone;
 class User extends Network
 {
   public string $table_name;
@@ -237,7 +237,7 @@ class User extends Network
         $customName = preg_replace('/[^a-zA-Z0-9_-]/', '', $customName);
         $fileName = $customName . ".$ext";
       } else {
-        $fileName = $prefix . '_' . time() . ".$ext";
+        $fileName = $prefix . '_' . new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() . ".$ext";
       }
 
       $fullPath = "$uploadPath/$fileName";
@@ -245,7 +245,7 @@ class User extends Network
       // Проверяем, существует ли файл с таким именем
       if (file_exists($fullPath)) {
         // Добавляем временную метку к имени файла
-        $fileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . ".$ext";
+        $fileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() . ".$ext";
         $fullPath = "$uploadPath/$fileName";
       }
 

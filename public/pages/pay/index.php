@@ -3,32 +3,54 @@
 use Setting\Route\Function\Functions;
 use Setting\Route\Function\Controllers\Auth\Auth;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
+use Setting\Route\Function\Controllers\Language\Language;
 
 Auth::auth();
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 
-// === Формирование цен из базы данных ===
+// === Формирование цен из единого объекта тарифов (PriceConfig) ===
 $hasReferral = PriceConfig::hasReferralDiscount();
-$prices = PriceConfig::getPrices($hasReferral);   // [1 => ['basic'=>150,...], 6 => [...], 12 => [...]]
+$prices = PriceConfig::getPrices($hasReferral);   // [1 => ['basic'=>150,...], 3 => [...], 6 => [...], 12 => [...]]
 $tariffMeta = PriceConfig::getTariffMeta();
 
-// Удобные переменные для шаблона
-$p1 = $prices[1];   // цены за 1 месяц
-$p6 = $prices[6];   // цены за 6 месяцев (за месяц)
-$p12 = $prices[12]; // цены за 12 месяцев (за месяц)
+// desc в конфиге — ключ перевода (device_1/device_4/device_10)
+foreach ($tariffMeta as &$meta) {
+    $meta['desc'] = $t($meta['desc']);
+}
+unset($meta);
 
-// Итого за период
-$t1  = ['basic' => $p1['basic'] * 1,  'clasic' => $p1['clasic'] * 1,  'pro' => $p1['pro'] * 1];
-$t6  = ['basic' => $p6['basic'] * 6,  'clasic' => $p6['clasic'] * 6,  'pro' => $p6['pro'] * 6];
-$t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' => $p12['pro'] * 12];
+// TARIFF_DATA для JS строится из единого объекта тарифов
+$tariffData = [];
+foreach (PriceConfig::getTariffConfig() as $key => $cfg) {
+    $tariffData[$key] = [
+        'period'      => $cfg['months'],
+        'tariff'      => $cfg['tariff'],
+        'periodLabel' => $t('month_' . $cfg['months']),
+    ];
+}
+
+// Удобные переменные для шаблона
+$p1  = $prices[1]  ?? [];
+$p3  = $prices[3]  ?? [];
+$p6  = $prices[6]  ?? [];
+$p12 = $prices[12] ?? [];
+
+// Итого за период — для всех тарифов из объекта сразу (без хардкода названий)
+$t1  = array_map(fn($price) => $price * 1,  $p1);
+$t3  = array_map(fn($price) => $price * 3,  $p3);
+$t6  = array_map(fn($price) => $price * 6,  $p6);
+$t12 = array_map(fn($price) => $price * 12, $p12);
 ?>
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="<?= $currentLanguage ?>" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Оплата</title>
+    <title><?= $t('pay_title') ?></title>
 
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style" defer>
@@ -80,12 +102,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
                             <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                         <!-- text -->
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите подписку</h3>
-                            <div class="text-center text-white/70">Получите полную свободу от реклам и запретов!</div>
+                            <h3 class="text-xl font-bold font-sans"><?= $t('choose_subscription') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('pay_desc') ?></div>
                         </div>
                     </div>
                     <!-- grid -->
@@ -94,38 +116,37 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_b border_light_r pb-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Аноним</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('anonymous') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Маскируем вашу сеть от
-                                перехватов</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('anon_desc') ?></p>
                         </div>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Скрость</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('speed') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Даем скорость более 1000 Mb/s</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('speed_desc') ?></p>
                         </div>
                         <!-- block 3 -->
                         <div class="relative flex items-end pr-6 flex-col p-2 gap-2 border_light_r">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('no_ads') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Блокируем все рекламы в интернете</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('no_ads_desc') ?></p>
                         </div>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Скрытность</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('privacy') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Защита ваших данных в сети</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('privacy_desc') ?></p>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -137,45 +158,68 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">1 Месяц</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p1['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p1['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
-                                        <p class="text-sm">₽/Месяц</p>
+                                        <p class="text-sm"><?= $t('per_month') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                                        <input type="radio" name="subscription" value="1month" class="sr-only peer"/>
                                         <div
-                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
                                     </div>
                                 </div>
                             </label>
                             <!-- input 2 -->
+                            <label data-select-section="next_3"
+                                class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- titile -->
+                                <div class="flex flex-col justify-center">
+                                    <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p3['basic'] ?>₽</p>
+                                </div>
+                                <!-- part 2 -->
+                                <div class="flex items-center justify-center gap-4">
+                                    <!-- price -->
+                                    <div class="flex flex-col text-center">
+                                        <span class="text-3xl font-bold"><?= $t3['basic'] ?></span>
+                                        <p class="text-sm"><?= $t('per_3m') ?></p>
+                                    </div>
+                                    <!-- radio button -->
+                                    <div class="flex items-center justify-center">
+                                        <input type="radio" name="subscription" value="3months" class="sr-only peer" />
+                                        <div
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
                             <label data-select-section="next_6"
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p6['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p6['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
-                                        <p class="text-sm">₽/6 Мес</p>
+                                        <p class="text-sm"><?= $t('per_6m') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
                                         <input type="radio" name="subscription" value="6months" class="sr-only peer" />
                                         <div
-                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
                                     </div>
                                 </div>
@@ -185,32 +229,36 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p12['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p12['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
-                                        <p class="text-sm">₽/12 Мес</p>
+                                        <p class="text-sm"><?= $t('per_12m') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
                                         <input type="radio" name="subscription" value="12months" class="sr-only peer" />
                                         <div
-                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
                                     </div>
                                 </div>
                             </label>
                         </div>
                         <!-- button next to -->
-                        <button onclick=" return false" data-toggle-section="main" data-main
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            Выбрать и продолжить <i class="fa fa-arrow-right"></i>
+                        <button onclick="return false" data-toggle-section="main" data-main
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('choose_continue') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будут тарифы</span>
+                        <a href="/"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
+                        </a>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_tariffs') ?></span>
                     </div>
 
                 </section>
@@ -223,13 +271,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
                             <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                         <!-- text -->
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
-                                оплату!
+                            <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                             </div>
                         </div>
                     </div>
@@ -244,22 +291,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -269,13 +316,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
@@ -285,22 +332,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -310,13 +357,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
@@ -326,22 +373,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -351,45 +398,44 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
 
                 <!-- на 6 месяцев -->
-                <section data-section="next_6"
+                <section data-section="next_3"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
                             <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                         <!-- text -->
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
-                                оплату!
+                            <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                             </div>
                         </div>
                     </div>
@@ -404,22 +450,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['basic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_1"
+                                            <input type="radio" name="subscription" value="3months_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -429,14 +475,14 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -445,22 +491,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['clasic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_4"
+                                            <input type="radio" name="subscription" value="3months_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -470,14 +516,14 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -486,22 +532,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['pro'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_10"
+                                            <input type="radio" name="subscription" value="3months_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -511,26 +557,184 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['pro'] ?>₽</span></p>
+                            </label>
+                        </div>
+                        <!-- button next to -->
+                        <button onclick="return false" data-toggle-section="finish"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
+                        </button>
+                        <button onclick="return false" data-toggle-section="main"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
+                        </button>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
+                    </div>
+
+                </section>
+
+                <section data-section="next_6"
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    <!-- icon -->
+                    <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
+                        <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
+                            <img class="max-h-12" decoding="async" loading="lazy"
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async" data-theme-invert>
+                        </div>
+                        <!-- text -->
+                        <div class="flex flex-col items-center justify-center">
+                            <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- select tarif -->
+                    <div class="flex flex-col gap-3">
+                        <!-- inputs -->
+                        <div class="flex flex-col gap-4 buy">
+                            <!-- input 1 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_1"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                            </label>
+                            <!-- input 2 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_4"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                            </label>
+                            <!-- input 3 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_10"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
@@ -543,13 +747,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
                             <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                         <!-- text -->
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                            <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную
-                                оплату!
+                            <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                             </div>
                         </div>
                     </div>
@@ -564,22 +767,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -589,13 +792,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
@@ -605,22 +808,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -630,13 +833,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
@@ -646,22 +849,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -671,26 +874,26 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-thee-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
@@ -703,13 +906,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
                             <img class="max-h-12" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                         <!-- text -->
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Завершение</h3>
-                            <div class="text-center text-white/70">Осталось оплатить собранный вами тариф иначать
-                                пользоваться VPN!
+                            <h3 class="text-xl font-bold font-sans"><?= $t('finish_title') ?></h3>
+                            <div class="text-center text-white/70"><?= $t('finish_desc') ?>
                             </div>
                         </div>
                     </div>
@@ -724,15 +926,15 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold" id="finish-period">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light" id="finish-tariff">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold" id="finish-period"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light" id="finish-tariff"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold" id="finish-price-per-month"></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                     </div>
                                 </div>
@@ -741,29 +943,28 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light" id="finish-devices">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light" id="finish-devices"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70" id="finish-total"></span>₽</p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span class="text-white/70"
+                                        id="finish-total"></span>₽</p>
                             </label>
                         </div>
 
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите способ
-                                оплаты</h3>
+                            <h3 class="text-xl font-bold font-sans"><?= $t('pay_method') ?></h3>
                             <div class="flex w-full flex-col wrap gap-4 justify-center items-center mt-4">
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-desktop" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
-                                            alt="sbp">
+                                            alt="sbp" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -771,12 +972,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment-desktop" value="iomoney" class="sr-only peer" />
+                                        <input type="radio" name="payment-desktop" value="iomoney"
+                                            class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
-                                            alt="iomoney">
+                                            alt="iomoney" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -784,12 +986,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-desktop" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
-                                            alt="sber">
+                                            alt="sber" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -797,12 +999,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-desktop" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
-                                            alt="tbank">
+                                            alt="tbank" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -813,13 +1015,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
 
                         <!-- button next to -->
                         <button type="button"
-                            class="payment-submit-btn flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa-solid fa-cart-shopping"></i>
+                            class="payment-submit-btn flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa-solid fa-cart-shopping"></i></span>
                         </button>
 
-                        <a href="/"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> вернутся на главную
+                        <a href="/pay"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_to_start') ?></span>
                         </a>
 
                     </div>
@@ -836,13 +1038,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                     </div>
                     <!-- text -->
                     <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите подписку</h3>
-                        <div class="text-center text-white/70">Получите полную свободу от реклам и запретов!</div>
+                        <h3 class="text-xl font-bold font-sans"><?= $t('choose_subscription') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('pay_desc') ?></div>
                     </div>
                     <!-- grid -->
                     <div class="grid grid-cols-2 grid-rows-2 gap-2">
@@ -850,38 +1052,37 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="relative flex flex-col p-2 gap-2 border_light_b border_light_r pb-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Аноним</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('anonymous') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Маскируем вашу сеть от
-                                перехватов</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('anon_desc') ?></p>
                         </div>
                         <!-- block 2 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_b pl-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/speed.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Скрость</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('speed') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Даем скорость более 1000 Mb/s</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('speed_desc') ?></p>
                         </div>
                         <!-- block 3 -->
                         <div class="relative flex flex-col p-2 gap-2 border_light_r">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/ads.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Без рекламы</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('no_ads') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Блокируем все рекламы в интернете</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('no_ads_desc') ?></p>
                         </div>
                         <!-- block 4 -->
                         <div class="relative flex flex-col p-2 gap-2 pl-4">
                             <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/shield.svg"
-                                    alt="icon1" loading="lazy">
-                                <h4 class="text-lg font-bold font-sans">Скрытность</h4>
+                                    alt="icon1" loading="lazy" data-theme-invert>
+                                <h4 class="text-lg font-bold font-sans"><?= $t('privacy') ?></h4>
                             </div>
-                            <p class="text-sm text-sans text-white/70 break-all">Защита ваших данных в сети</p>
+                            <p class="text-sm text-sans text-white/70 break-all"><?= $t('privacy_desc') ?></p>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -893,15 +1094,15 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">1 Месяц</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p1['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p1['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
-                                        <p class="text-sm">₽/Месяц</p>
+                                        <p class="text-sm"><?= $t('per_month') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
@@ -913,19 +1114,42 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </div>
                             </label>
                             <!-- input 2 -->
-                            <label data-select-section="next_6"
+                            <label data-select-section="next_3"
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p6['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p3['basic'] ?>₽</p>
+                                </div>
+                                <!-- part 2 -->
+                                <div class="flex items-center justify-center gap-4">
+                                    <!-- price -->
+                                    <div class="flex flex-col text-center">
+                                        <span class="text-3xl font-bold"><?= $t3['basic'] ?></span>
+                                        <p class="text-sm"><?= $t('per_3m') ?></p>
+                                    </div>
+                                    <!-- radio button -->
+                                    <div class="flex items-center justify-center">
+                                        <input type="radio" name="subscription" value="3months" class="sr-only peer" />
+                                        <div
+                                            class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+<label data-select-section="next_6"
+                                class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- titile -->
+                                <div class="flex flex-col justify-center">
+                                    <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p6['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
-                                        <p class="text-sm">₽/6 Мес</p>
+                                        <p class="text-sm"><?= $t('per_6m') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
@@ -941,15 +1165,15 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 class="flex bg-gradient-to-r from-white/20 to-white/5 bg_active justify-between px-6 py-1.5 rounded-full cursor-pointer hover:border-white/40 transition-colors">
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
-                                    <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                    <p class="text-white/70 font-light">Ежемесячная от <?= $p12['basic'] ?>₽</p>
+                                    <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p12['basic'] ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
                                         <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
-                                        <p class="text-sm">₽/12 Мес</p>
+                                        <p class="text-sm"><?= $t('per_12m') ?></p>
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
@@ -963,10 +1187,10 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         </div>
                         <!-- button next to -->
                         <button onclick=" return false" data-toggle-section="main" data-main
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            Выбрать и продолжить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('choose_continue') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будут тарифы</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_tariffs') ?></span>
                     </div>
 
                 </section>
@@ -979,13 +1203,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                     </div>
                     <!-- text -->
                     <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -999,22 +1223,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1024,13 +1248,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
@@ -1040,22 +1264,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1065,13 +1289,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
@@ -1081,22 +1305,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">1 Месяц</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="1month_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1106,45 +1330,45 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
 
                 <!-- на 6 месяцев -->
-                <section data-section="next_6"
+                <section data-section="next_3"
                     class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                     </div>
                     <!-- text -->
                     <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -1158,22 +1382,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['basic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_1"
+                                            <input type="radio" name="subscription" value="3months_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1183,14 +1407,14 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1199,22 +1423,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['clasic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_4"
+                                            <input type="radio" name="subscription" value="3months_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1224,14 +1448,14 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1240,22 +1464,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">6 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <span class="text-3xl font-bold"><?= $p3['pro'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
-                                            <input type="radio" name="subscription" value="6months_10"
+                                            <input type="radio" name="subscription" value="3months_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1265,26 +1489,184 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t3['pro'] ?>₽</span></p>
+                            </label>
+                        </div>
+                        <!-- button next to -->
+                        <button onclick="return false" data-toggle-section="finish"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
+                        </button>
+                        <button onclick="return false" data-toggle-section="main"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
+                        </button>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
+                    </div>
+
+                </section>
+
+                <section data-section="next_6"
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    <!-- icon -->
+                    <div class="mobile w-full flex justify-center items-center">
+                        <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
+                            <img class="max-h-6" decoding="async" loading="lazy"
+                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
+                                alt="Домой" decoding="async" data-theme-invert>
+                        </div>
+                    </div>
+                    <!-- text -->
+                    <div class="flex flex-col items-center justify-center">
+                        <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
+                        </div>
+                    </div>
+                    <!-- select tarif -->
+                    <div class="flex flex-col gap-3">
+                        <!-- inputs -->
+                        <div class="flex flex-col gap-4 buy">
+                            <!-- input 1 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_1"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                            </label>
+                            <!-- input 2 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_4"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
+                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                            </label>
+                            <!-- input 3 -->
+                            <label
+                                class="flex flex-col gap-2 bg-gradient-to-r from-white/20 to-white/5 bg_active px-6 py-2 rounded-3xl cursor-pointer hover:border-white/40 transition-colors">
+                                <!-- верхний -->
+                                <div class="flex justify-between">
+                                    <!-- titile -->
+                                    <div class=" flex flex-col justify-center">
+                                        <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
+                                    </div>
+                                    <!-- part 2 -->
+                                    <div class="flex items-center justify-center gap-4">
+                                        <!-- price -->
+                                        <div class="flex flex-col text-center">
+                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
+                                        </div>
+                                        <!-- radio button -->
+                                        <div class="flex items-center justify-center">
+                                            <input type="radio" name="subscription" value="6months_10"
+                                                class="sr-only peer" />
+                                            <div
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- нижний -->
+                                <div class="relative flex flex-col gap-2 justify-between">
+                                    <div class="flex">
+                                        <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
+                                                src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
+                                </div>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
@@ -1297,13 +1679,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                     </div>
                     <!-- text -->
                     <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Выберите тариф</h3>
-                        <div class="text-center text-white/70">От выбранного тарифа зависит цена на ежемесячную оплату!
+                        <h3 class="text-xl font-bold font-sans"><?= $t('choose_tariff') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('tariff_desc') ?>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -1317,22 +1699,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_1"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1342,13 +1724,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
@@ -1358,22 +1740,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Family</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_family') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_4"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1383,13 +1765,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif2.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">4 устройства (для семьи)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
@@ -1399,22 +1781,22 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light">Тариф Business</p>
+                                        <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light"><?= $t('tariff_business') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
                                         <div class="flex items-center justify-center">
                                             <input type="radio" name="subscription" value="12months_10"
                                                 class="sr-only peer" />
                                             <div
-                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
+                                                class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                             </div>
                                         </div>
                                     </div>
@@ -1424,26 +1806,26 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif3.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light">10 устройств (для бизнеса)</p>
+                                    <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
                                         class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
                         <button onclick="return false" data-toggle-section="finish"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa fa-arrow-right"></i>
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa fa-arrow-right"></i></span>
                         </button>
                         <button onclick="return false" data-toggle-section="main"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> Вернуться назад
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_pay') ?></span>
                         </button>
-                        <span class="text-center text-white/70 text-sm">Далее будет покупка</span>
+                        <span class="text-center text-white/70 text-sm"><?= $t('next_buy') ?></span>
                     </div>
 
                 </section>
@@ -1456,14 +1838,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
                             <img class="max-h-6" decoding="async" loading="lazy"
                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/crown.svg"
-                                alt="Домой" decoding="async">
+                                alt="Домой" decoding="async" data-theme-invert>
                         </div>
                     </div>
                     <!-- text -->
                     <div class="flex flex-col items-center justify-center">
-                        <h3 class="text-xl font-bold font-sans">Завершение</h3>
-                        <div class="text-center text-white/70">Осталось оплатить собранный вами тариф иначать
-                            пользоваться VPN!
+                        <h3 class="text-xl font-bold font-sans"><?= $t('finish_title') ?></h3>
+                        <div class="text-center text-white/70"><?= $t('finish_desc') ?>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -1477,15 +1858,15 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 <div class="flex justify-between">
                                     <!-- titile -->
                                     <div class=" flex flex-col justify-center">
-                                        <h5 class="text-xl font-bold" id="finish-period-m">12 Месяцев</h5>
-                                        <p class="text-white/70 font-light" id="finish-tariff-m">Тариф MYSELF</p>
+                                        <h5 class="text-xl font-bold" id="finish-period-m"><?= $t('month_12') ?></h5>
+                                        <p class="text-white/70 font-light" id="finish-tariff-m"><?= $t('tariff_myself') ?></p>
                                     </div>
                                     <!-- part 2 -->
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
                                             <span class="text-3xl font-bold" id="finish-price-per-month-m"></span>
-                                            <p class="text-sm">₽/Месяц</p>
+                                            <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                     </div>
                                 </div>
@@ -1494,29 +1875,29 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                     <div class="flex">
                                         <div class="flex gap-2"><img class="max-h-6" decoding="async" loading="lazy"
                                                 src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/buy/tarif1.svg"
-                                                alt="icon1" loading="lazy">
-                                            <h4 class="text-lg font-bold font-sans uppercase">Количество устройств</h4>
+                                                alt="icon1" loading="lazy" data-theme-invert>
+                                            <h4 class="text-lg font-bold font-sans uppercase"><?= $t('devices_count') ?></h4>
                                         </div>
                                     </div>
-                                    <p class="text-white/70 font-light" id="finish-devices-m">1 устройство (для себя)</p>
+                                    <p class="text-white/70 font-light" id="finish-devices-m"><?= $t('device_1') ?>
+                                    </p>
                                 </div>
-                                <p class="absolute bottom-2 right-4 text-sm">Итого: <span
-                                        class="text-white/70" id="finish-total-m"></span>₽</p>
+                                <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span class="text-white/70"
+                                        id="finish-total-m"></span>₽</p>
                             </label>
                         </div>
 
                         <div class="flex flex-col items-center justify-center">
-                            <h3 class="text-xl font-bold font-sans">Выберите способ
-                                оплаты</h3>
+                            <h3 class="text-xl font-bold font-sans"><?= $t('pay_method') ?></h3>
                             <div class="flex w-full flex-col wrap gap-4 justify-center items-center mt-4">
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-mobile" value="sbp" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sbp.svg"
-                                            alt="sbp">
+                                            alt="sbp" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1524,12 +1905,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
-                                        <input type="radio" name="payment-mobile" value="iomoney" class="sr-only peer" />
+                                        <input type="radio" name="payment-mobile" value="iomoney"
+                                            class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/iomoney.svg"
-                                            alt="iomoney">
+                                            alt="iomoney" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1537,12 +1919,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-mobile" value="sber" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/sberbank.svg"
-                                            alt="sber">
+                                            alt="sber" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1550,12 +1932,12 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                                 </label>
                                 <label
                                     class="flex w-full font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-between items-center gap-2 p-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                                    Оплатить через:
+                                    <span data-theme-invert><?= $t('pay_via') ?></span>
                                     <div class="flex gap-2 items-center justify-center">
                                         <input type="radio" name="payment-mobile" value="tbank" class="sr-only peer" />
                                         <img decoding="async" loading="lazy" class="h-6"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/payment/tbank.svg"
-                                            alt="tbank">
+                                            alt="tbank" data-theme-invert>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1566,13 +1948,13 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
 
                         <!-- button next to -->
                         <button type="button"
-                            class="payment-submit-btn flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            завершить и купить <i class="fa-solid fa-cart-shopping"></i>
+                            class="payment-submit-btn flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><?= $t('finish_buy') ?> <i class="fa-solid fa-cart-shopping"></i></span>
                         </button>
 
-                        <a href="/"
-                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors">
-                            <i class="fa fa-arrow-left"></i> вернутся на главную
+                        <a href="/pay"
+                            class="flex font-bold bg-gradient-to-r from-white/10 to-white/5 bg_active justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-white/40 transition-colors" data-theme-invert>
+                            <span data-theme-invert><i class="fa fa-arrow-left"></i> <?= $t('back_to_start') ?></span>
                         </a>
 
                     </div>
@@ -1585,53 +1967,7 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
             const TARIFF_META = <?= json_encode($tariffMeta, JSON_UNESCAPED_UNICODE) ?>;
             const HAS_REFERRAL = <?= $hasReferral ? 'true' : 'false' ?>;
 
-            const TARIFF_DATA = {
-                '1month_1': {
-                    period: 1,
-                    tariff: 'basic',
-                    periodLabel: '1 Месяц'
-                },
-                '1month_4': {
-                    period: 1,
-                    tariff: 'clasic',
-                    periodLabel: '1 Месяц'
-                },
-                '1month_10': {
-                    period: 1,
-                    tariff: 'pro',
-                    periodLabel: '1 Месяц'
-                },
-                '6months_1': {
-                    period: 6,
-                    tariff: 'basic',
-                    periodLabel: '6 Месяцев'
-                },
-                '6months_4': {
-                    period: 6,
-                    tariff: 'clasic',
-                    periodLabel: '6 Месяцев'
-                },
-                '6months_10': {
-                    period: 6,
-                    tariff: 'pro',
-                    periodLabel: '6 Месяцев'
-                },
-                '12months_1': {
-                    period: 12,
-                    tariff: 'basic',
-                    periodLabel: '12 Месяцев'
-                },
-                '12months_4': {
-                    period: 12,
-                    tariff: 'clasic',
-                    periodLabel: '12 Месяцев'
-                },
-                '12months_10': {
-                    period: 12,
-                    tariff: 'pro',
-                    periodLabel: '12 Месяцев'
-                },
-            };
+            const TARIFF_DATA = <?= json_encode($tariffData, JSON_UNESCAPED_UNICODE) ?>;
 
             // Запоминаем последний выбранный тариф для каждого layout
             var lastSelected = {
@@ -1650,23 +1986,23 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
 
                 var $layout = $('[data-pay-layout="' + layoutKey + '"]');
                 $layout.find('#finish-period' + suffix).text(data.periodLabel);
-                $layout.find('#finish-tariff' + suffix).text('Тариф ' + meta.label);
+                $layout.find('#finish-tariff' + suffix).text(<?= json_encode($t('tariff_short')) ?> + meta.label);
                 $layout.find('#finish-price-per-month' + suffix).text(pricePerMonth);
                 $layout.find('#finish-devices' + suffix).text(meta.desc);
                 $layout.find('#finish-total' + suffix).text(total + '₽');
             }
 
-            $(document).ready(function() {
+            $(document).ready(function () {
 
                 // Выбор периода — запоминаем целевую секцию в [data-main]
-                $('[data-select-section]').on('click', function() {
+                $('[data-select-section]').on('click', function () {
                     var sectionId = $(this).attr('data-select-section');
                     var $layout = $(this).closest('[data-pay-layout]');
                     $layout.find('[data-main]').attr('data-toggle-section', sectionId);
                 });
 
                 // При выборе тарифа — сразу запоминаем и обновляем finish
-                $(document).on('change', 'input[name="subscription"]', function() {
+                $(document).on('change', 'input[name="subscription"]', function () {
                     var val = $(this).val();
                     if (!TARIFF_DATA[val]) return;
 
@@ -1676,8 +2012,8 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                     updateFinishSection(layoutKey, val);
                 });
 
-                // Кнопка "завершить и купить" (переход на finish) — обновляем на случай если JS ещё не отработал
-                $(document).on('click', '[data-toggle-section="finish"]', function() {
+                // Кнопка "<?= $t('finish_buy') ?>" (переход на finish) — обновляем на случай если JS ещё не отработал
+                $(document).on('click', '[data-toggle-section="finish"]', function () {
                     var $layout = $(this).closest('[data-pay-layout]');
                     var layoutKey = $layout.attr('data-pay-layout');
 
@@ -1694,17 +2030,17 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                 });
 
                 // Также обновляем finish секцию когда она становится видимой (после toggle)
-                $(document).on('click', '[data-toggle-section]', function() {
+                $(document).on('click', '[data-toggle-section]', function () {
                     var sectionId = $(this).attr('data-toggle-section');
                     if (sectionId === 'finish') {
-                        setTimeout(function() {
+                        setTimeout(function () {
                             var isDesktop = window.matchMedia('(min-width: 640px)').matches;
                             var layoutKey = isDesktop ? 'desktop' : 'mobile';
                             var $layout = $('[data-pay-layout="' + layoutKey + '"]');
-                            
+
                             var checked = $layout.find('input[name="subscription"]:checked').val();
                             var tariffVal = checked || lastSelected[layoutKey];
-                            
+
                             if (tariffVal) {
                                 updateFinishSection(layoutKey, tariffVal);
                             }
@@ -1713,7 +2049,7 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                 });
 
                 // Кнопка оплатить
-                $('.payment-submit-btn').on('click', function(e) {
+                $('.payment-submit-btn').on('click', function (e) {
                     e.preventDefault();
 
                     var isDesktop = window.matchMedia('(min-width: 640px)').matches;
@@ -1726,22 +2062,17 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                     var selectedPayment = $layout.find('input[name="' + paymentName + '"]:checked').val();
 
                     if (!selectedTariff) {
-                        alert('Пожалуйста, выберите тариф');
+                        alert(<?= json_encode($t('select_tariff_alert')) ?>);
                         return;
                     }
                     if (!selectedPayment) {
-                        alert('Пожалуйста, выберите способ оплаты');
+                        alert(<?= json_encode($t('select_method_alert')) ?>);
                         return;
                     }
 
-                    var tariffInfo = TARIFF_DATA[selectedTariff];
-                    var amount = tariffInfo ?
-                        PRICES[tariffInfo.period][tariffInfo.tariff] * tariffInfo.period :
-                        0;
-
                     var btn = $(this);
                     var originalText = btn.html();
-                    btn.html('<i class="fas fa-spinner fa-spin"></i> Обработка...').prop('disabled', true);
+                    btn.html('<i class="fas fa-spinner fa-spin"></i> <?= $t('processing') ?>').prop('disabled', true);
 
                     $.ajax({
                         url: '/api/payment/create',
@@ -1750,27 +2081,26 @@ $t12 = ['basic' => $p12['basic'] * 12, 'clasic' => $p12['clasic'] * 12, 'pro' =>
                         timeout: 60000,
                         data: JSON.stringify({
                             tariff: selectedTariff,
-                            paymentMethod: selectedPayment,
-                            amount: amount
+                            paymentMethod: selectedPayment
                         }),
-                        success: function(response) {
+                        success: function (response) {
                             if (response.success) {
                                 window.location.href = response.payment_url;
                             } else {
-                                alert('Ошибка при создании платежа: ' + response.error);
+                                alert(<?= json_encode($t('payment_error')) ?> + response.error);
                                 btn.html(originalText).prop('disabled', false);
                             }
                         },
-                        error: function(xhr, status) {
+                        error: function (xhr, status) {
                             if (status === 'timeout') {
-                                alert('Время ожидания истекло. Попробуйте снова.');
+                                alert(<?= json_encode($t('timeout_error')) ?>);
                             } else if (xhr.status === 401) {
                                 var r = xhr.responseJSON || {};
                                 if (r.redirect) window.location.href = r.redirect;
                             } else {
                                 var msg = (xhr.responseJSON && xhr.responseJSON.error) ?
                                     xhr.responseJSON.error :
-                                    'Произошла ошибка. Попробуйте ещё раз.';
+                                    <?= json_encode($t('generic_error')) ?>;
                                 alert(msg);
                             }
                             btn.html(originalText).prop('disabled', false);

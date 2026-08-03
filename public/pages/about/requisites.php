@@ -1,16 +1,20 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Functions;
 // Auth::auth();
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 ?>
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="<?= $currentLanguage ?>" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Реквизиты компании</title>
+    <title><?= $t('requisites_title') ?></title>
 
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style">
@@ -67,14 +71,14 @@ $site = Functions::site();
                                 <i class="fa-solid fa-file-invoice text-2xl text-green-400"></i>
                             </div>
                             <div>
-                                <h1 class="text-3xl font-bold text-white tracking-wide">Реквизиты компании</h1>
-                                <p class="text-gray-400 text-sm">Официальные данные для документооборота</p>
+                                <h1 class="text-3xl font-bold text-white tracking-wide"><?= $t('requisites_title') ?></h1>
+                                <p class="text-gray-400 text-sm"><?= $t('requisites_desc') ?></p>
                             </div>
                         </div>
                         <a href="/export/pdf?type=requisites"
                             class="elite-btn glow-card group relative flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105">
                             <i class="fa-solid fa-file-pdf text-green-300 group-hover:text-white transition-colors"></i>
-                            <span class="text-[white] font-medium">Экспорт PDF</span>
+                            <span class="text-[white] font-medium"><?= $t('export_pdf') ?></span>
                         </a>
                     </div>
 
@@ -95,14 +99,14 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 via-transparent to-transparent flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm ">
                                         <i class="fa-solid fa-building"></i>
                                     </div>
-                                    <h2 class="text-xl font-bold text-white">Основная информация</h2>
+                                    <h2 class="text-xl font-bold text-white"><?= $t('basic_info') ?></h2>
                                 </div>
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['информация']['Полное название']) && $site['информация']['Полное название'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Полное название</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('full_name') ?></span>
                                             <span class="text-white font-medium text-sm">
                                                 <?= htmlspecialchars($site['информация']['Полное название']) ?>
                                             </span>
@@ -111,7 +115,7 @@ $site = Functions::site();
                                     <?php if (isset($site['информация']['ИНН']) && $site['информация']['ИНН'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">ИНН</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('inn') ?></span>
                                             <span class="text-emerald-400 font-medium font-mono text-sm">
                                                 <?= htmlspecialchars($site['информация']['ИНН']) ?>
                                             </span>
@@ -120,7 +124,7 @@ $site = Functions::site();
                                     <?php if (isset($site['информация']['ОГРН']) && $site['информация']['ОГРН'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">ОГРН</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('ogrn') ?></span>
                                             <span class="text-emerald-400 font-medium font-mono text-sm">
                                                 <?= htmlspecialchars($site['информация']['ОГРН']) ?>
                                             </span>
@@ -129,7 +133,7 @@ $site = Functions::site();
                                     <?php if (isset($site['информация']['КПП']) && $site['информация']['КПП'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">КПП</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('kpp') ?></span>
                                             <span class="text-emerald-400 font-medium font-mono text-sm">
                                                 <?= htmlspecialchars($site['информация']['КПП']) ?>
                                             </span>
@@ -154,14 +158,14 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-transparent to-transparent flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm ">
                                         <i class="fa-solid fa-university"></i>
                                     </div>
-                                    <h2 class="text-xl font-bold text-white">Банковские реквизиты</h2>
+                                    <h2 class="text-xl font-bold text-white"><?= $t('bank_requisites') ?></h2>
                                 </div>
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['банк']['Банк']) && $site['банк']['Банк'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Банк</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('bank') ?></span>
                                             <span
                                                 class="text-white font-medium text-sm"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
                                         </div>
@@ -169,7 +173,7 @@ $site = Functions::site();
                                     <?php if (isset($site['банк']['БИК']) && $site['банк']['БИК'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">БИК</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('bik') ?></span>
                                             <span
                                                 class="text-cyan-400 font-medium font-mono text-sm"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
                                         </div>
@@ -177,7 +181,7 @@ $site = Functions::site();
                                     <?php if (isset($site['банк']['Расчетный счет']) && $site['банк']['Расчетный счет'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Расчетный счет</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('settlement_account') ?></span>
                                             <span
                                                 class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
                                         </div>
@@ -185,7 +189,7 @@ $site = Functions::site();
                                     <?php if (isset($site['банк']['Корр. счет']) && $site['банк']['Корр. счет'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Корр. счет</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('corr_account') ?></span>
                                             <span
                                                 class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Корр. счет']) ?></span>
                                         </div>
@@ -222,14 +226,14 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-transparent to-transparent flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm ">
                                         <i class="fa-solid fa-address-card"></i>
                                     </div>
-                                    <h2 class="text-xl font-bold text-white">Контактная информация</h2>
+                                    <h2 class="text-xl font-bold text-white"><?= $t('contact_info') ?></h2>
                                 </div>
 
                                 <div class="space-y-4">
                                     <?php if (isset($site['контакты']['Директор']) && $site['контакты']['Директор'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Директор</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('director') ?></span>
                                             <span
                                                 class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
                                         </div>
@@ -237,7 +241,7 @@ $site = Functions::site();
                                     <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Почта</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('mail') ?></span>
                                             <span
                                                 class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
                                         </div>
@@ -245,7 +249,7 @@ $site = Functions::site();
                                     <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Телефон</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('phone') ?></span>
                                             <span
                                                 class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
                                         </div>
@@ -253,7 +257,7 @@ $site = Functions::site();
                                     <?php if (isset($site['контакты']['мессенджер']['telegram']) && $site['контакты']['мессенджер']['telegram'] !== ''): ?>
                                         <div
                                             class="gradient-border flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300">
-                                            <span class="text-gray-400 text-sm">Поддержка</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('support') ?></span>
                                             <span class="text-purple-400 font-medium">tg: <a
                                                     href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
                                             </span>
@@ -292,7 +296,7 @@ $site = Functions::site();
                                     class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
                                     <i
                                         class="fa-solid fa-envelope text-purple-400 group-hover:scale-110 transition-transform"></i>
-                                    <span class="text-gray-400 text-sm">Написать</span>
+                                    <span class="text-gray-400 text-sm"><?= $t('write') ?></span>
                                 </a>
                             <?php endif; ?>
                             <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
@@ -300,14 +304,14 @@ $site = Functions::site();
                                     class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group">
                                     <i
                                         class="fa-solid fa-phone text-green-400 group-hover:scale-110 transition-transform"></i>
-                                    <span class="text-gray-400 text-sm">Позвонить</span>
+                                    <span class="text-gray-400 text-sm"><?= $t('call') ?></span>
                                 </a>
                             <?php endif; ?>
                             <button onclick="window.print()"
                                 class="flex-1 gradient-border flex items-center justify-center gap-2 p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 group cursor-pointer">
                                 <i
                                     class="fa-solid fa-print text-cyan-400 group-hover:scale-110 transition-transform"></i>
-                                <span class="text-gray-400 text-sm">Печать</span>
+                                <span class="text-gray-400 text-sm"><?= $t('print') ?></span>
                             </button>
                         </div>
                     </div>
@@ -325,7 +329,7 @@ $site = Functions::site();
                                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                 <i class="fa-solid fa-file-invoice text-lg text-green-400"></i>
                             </div>
-                            <h1 class="text-xl font-bold text-white">Реквизиты</h1>
+                            <h1 class="text-xl font-bold text-white"><?= $t('requisites') ?></h1>
                         </div>
                         <a href="/export/pdf?type=requisites"
                             class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500/80 to-green-600/80 text-[white] text-sm font-medium rounded-lg">
@@ -347,33 +351,33 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 via-transparent to-transparent flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm ">
                                         <i class="fa-solid fa-building"></i>
                                     </div>
-                                    <h2 class="text-lg font-bold text-white">Основная информация</h2>
+                                    <h2 class="text-lg font-bold text-white"><?= $t('basic_info') ?></h2>
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['информация']['Полное название']) && $site['информация']['Полное название'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">Название</span>
+                                            <span class="text-gray-400"><?= $t('name_short') ?></span>
                                             <span
                                                 class="text-white font-medium text-right"><?= htmlspecialchars($site['информация']['Полное название']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ИНН']) && $site['информация']['ИНН'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">ИНН</span>
+                                            <span class="text-gray-400"><?= $t('inn') ?></span>
                                             <span
                                                 class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['ИНН']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['ОГРН']) && $site['информация']['ОГРН'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">ОГРН</span>
+                                            <span class="text-gray-400"><?= $t('ogrn') ?></span>
                                             <span
                                                 class="text-emerald-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['информация']['ОГРН']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['информация']['КПП']) && $site['информация']['КПП'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">КПП</span>
+                                            <span class="text-gray-400"><?= $t('kpp') ?></span>
                                             <span
                                                 class="text-emerald-400 font-medium font-mono"><?= htmlspecialchars($site['информация']['КПП']) ?></span>
                                         </div>
@@ -394,26 +398,26 @@ $site = Functions::site();
                                     shrink-0 shadow-sm ">
                                         <i class=" fa-solid fa-university"></i>
                                     </div>
-                                    <h2 class="text-lg font-bold text-white">Банковские реквизиты</h2>
+                                    <h2 class="text-lg font-bold text-white"><?= $t('bank_requisites') ?></h2>
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['банк']['Банк']) && $site['банк']['Банк'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">Банк</span>
+                                            <span class="text-gray-400"><?= $t('bank') ?></span>
                                             <span
                                                 class="text-white font-medium text-right"><?= htmlspecialchars($site['банк']['Банк']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['БИК']) && $site['банк']['БИК'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">БИК</span>
+                                            <span class="text-gray-400"><?= $t('bik') ?></span>
                                             <span
                                                 class="text-cyan-400 font-medium font-mono"><?= htmlspecialchars($site['банк']['БИК']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['банк']['Расчетный счет']) && $site['банк']['Расчетный счет'] !== ''): ?>
                                         <div class="flex justify-between items-center rounded-lg bg-white/[0.03] p-2">
-                                            <span class="text-gray-400">Р/с</span>
+                                            <span class="text-gray-400"><?= $t('rs') ?></span>
                                             <span
                                                 class="text-cyan-400 font-medium font-mono text-xs"><?= htmlspecialchars($site['банк']['Расчетный счет']) ?></span>
                                         </div>
@@ -433,33 +437,33 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 via-transparent to-transparent flex items-center justify-center text-white font-bold text-lg shrink-0 shadow-sm ">
                                         <i data-theme-invert class="fa-solid fa-address-card"></i>
                                     </div>
-                                    <h2 class=" text-lg font-bold text-white">Контактная информация</h2>
+                                    <h2 class=" text-lg font-bold text-white"><?= $t('contact_info') ?></h2>
                                 </div>
                                 <div class="space-y-3 text-sm">
                                     <?php if (isset($site['контакты']['Директор']) && $site['контакты']['Директор'] !== ''): ?>
                                         <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                            <span class="text-gray-400 text-sm">Директор</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('director') ?></span>
                                             <span
                                                 class="text-white font-medium text-sm"><?= htmlspecialchars($site['контакты']['Директор']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Почта']) && $site['контакты']['Почта'] !== ''): ?>
                                         <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                            <span class="text-gray-400 text-sm">Почта</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('mail') ?></span>
                                             <span
                                                 class="text-purple-400 font-medium"><?= htmlspecialchars($site['контакты']['Почта']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['Телефон']) && $site['контакты']['Телефон'] !== ''): ?>
                                         <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                            <span class="text-gray-400 text-sm">Телефон</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('phone') ?></span>
                                             <span
                                                 class="text-white font-medium"><?= htmlspecialchars($site['контакты']['Телефон']) ?></span>
                                         </div>
                                     <?php endif; ?>
                                     <?php if (isset($site['контакты']['мессенджер']['telegram']) && $site['контакты']['мессенджер']['telegram'] !== ''): ?>
                                         <div class="flex items-center rounded-lg justify-between p-3 bg-white/[0.03]">
-                                            <span class="text-gray-400 text-sm">Поддержка</span>
+                                            <span class="text-gray-400 text-sm"><?= $t('support') ?></span>
                                             <span class="text-purple-400 font-medium">tg: <a
                                                     href="https://t.me/<?= htmlspecialchars(ltrim($site['контакты']['мессенджер']['telegram'], '@')) ?>"><?= htmlspecialchars($site['контакты']['мессенджер']['telegram']) ?></a>
                                             </span>
@@ -482,13 +486,13 @@ $site = Functions::site();
                                 <a href="tel:<?= htmlspecialchars(preg_replace('/[^\d+]/', '', $site['контакты']['Телефон'])) ?>"
                                     class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
                                     <i class="fa-solid fa-phone text-green-400 text-lg"></i>
-                                    <span class="text-gray-400 text-xs">Звонок</span>
+                                    <span class="text-gray-400 text-xs"><?= $t('call') ?></span>
                                 </a>
                             <?php endif; ?>
                             <button onclick="window.print()"
                                 class="gradient-border flex flex-col items-center justify-center gap-1 p-3 rounded-xl bg-white/[0.03]">
                                 <i class="fa-solid fa-print text-cyan-400 text-lg"></i>
-                                <span class="text-gray-400 text-xs">Печать</span>
+                                <span class="text-gray-400 text-xs"><?= $t('print') ?></span>
                             </button>
                         </div>
                     </div>

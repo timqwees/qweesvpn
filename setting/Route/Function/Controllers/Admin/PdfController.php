@@ -144,30 +144,30 @@ class PdfController
 
         // Финансовая статистика
         if (Database::isMysql()) {
-            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND status='on'")[0]['total'] ?? 0;
-            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND status='on'")[0]['total'] ?? 0;
-            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 1 DAY) AND status='on'")[0]['total'] ?? 0;
+            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= UNIX_TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 30 DAY)) * 1000 AND status='on'")[0]['total'] ?? 0;
+            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= UNIX_TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 7 DAY)) * 1000 AND status='on'")[0]['total'] ?? 0;
+            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= UNIX_TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 1 DAY)) * 1000 AND status='on'")[0]['total'] ?? 0;
             $monthlyDataSql = "
                 SELECT 
-                    DATE_FORMAT(date_end, '%Y-%m') as month,
+                    DATE_FORMAT(FROM_UNIXTIME(expiry / 1000), '%Y-%m') as month,
                     COUNT(*) as users_count
                 FROM qwees_subscriptions 
-                WHERE date_end >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-                GROUP BY DATE_FORMAT(date_end, '%Y-%m')
+                WHERE expiry >= UNIX_TIMESTAMP(DATE_SUB(CURDATE(), INTERVAL 12 MONTH)) * 1000
+                GROUP BY DATE_FORMAT(FROM_UNIXTIME(expiry / 1000), '%Y-%m')
                 ORDER BY month DESC
                 LIMIT 12
             ";
         } else {
-            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-30 days') AND status='on'")[0]['total'] ?? 0;
-            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-7 days') AND status='on'")[0]['total'] ?? 0;
-            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE date_end >= date('now', '-1 day') AND status='on'")[0]['total'] ?? 0;
+            $monthlyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= strftime('%s', 'now', '-30 days') * 1000 AND status='on'")[0]['total'] ?? 0;
+            $weeklyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= strftime('%s', 'now', '-7 days') * 1000 AND status='on'")[0]['total'] ?? 0;
+            $dailyRevenue = Database::send("SELECT COALESCE(SUM(amount), 0) as total FROM qwees_subscriptions WHERE expiry >= strftime('%s', 'now', '-1 day') * 1000 AND status='on'")[0]['total'] ?? 0;
             $monthlyDataSql = "
                 SELECT 
-                    strftime('%Y-%m', date_end) as month,
+                    strftime('%Y-%m', expiry / 1000, 'unixepoch') as month,
                     COUNT(*) as users_count
                 FROM qwees_subscriptions 
-                WHERE date_end >= date('now', '-12 months')
-                GROUP BY strftime('%Y-%m', date_end)
+                WHERE expiry >= strftime('%s', 'now', '-12 months') * 1000
+                GROUP BY strftime('%Y-%m', expiry / 1000, 'unixepoch')
                 ORDER BY month DESC
                 LIMIT 12
             ";

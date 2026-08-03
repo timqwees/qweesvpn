@@ -21,9 +21,16 @@ class PaymentController
             $input = file_get_contents('php://input');
             $data = json_decode($input, true);
 
-            if (empty($data['tariff']) || empty($data['paymentMethod']) || empty($data['amount'])) {
+            if (empty($data['tariff']) || empty($data['paymentMethod'])) {
                 throw new \Exception('Missing required data');
             }
+
+            // Сумма считается СЕРВЕРОМ из единого объекта тарифов — клиент не может её подменить
+            $tariffCfg = PriceConfig::getTariffConfig()[$data['tariff']] ?? null;
+            if ($tariffCfg === null) {
+                throw new \Exception('Invalid tariff');
+            }
+            $amount = PriceConfig::getPrices(PriceConfig::hasReferralDiscount())[$tariffCfg['months']][$tariffCfg['tariff']] * $tariffCfg['months'];
 
             // Check authentication but don't redirect - return proper error
             $uniID = Session::init('user')['uniID'] ?? null;
@@ -41,17 +48,13 @@ class PaymentController
             $kassa = new Kassa();
 
             $site = Functions::site();
-            $tariffDescriptions = [
-                '1month_1' => 'Подписка ' . $site['ООО'] . ' на 1 месяц (1 устройство)',
-                '1month_4' => 'Подписка ' . $site['ООО'] . ' на 1 месяц (4 устройства)',
-                '1month_10' => 'Подписка ' . $site['ООО'] . ' на 1 месяц (10 устройств)',
-                '6months_1' => 'Подписка ' . $site['ООО'] . ' на 6 месяцев (1 устройство)',
-                '6months_4' => 'Подписка ' . $site['ООО'] . ' на 6 месяцев (4 устройства)',
-                '6months_10' => 'Подписка ' . $site['ООО'] . ' на 6 месяцев (10 устройств)',
-                '12months_1' => 'Подписка ' . $site['ООО'] . ' на 12 месяцев (1 устройство)',
-                '12months_4' => 'Подписка ' . $site['ООО'] . ' на 12 месяцев (4 устройства)',
-                '12months_10' => 'Подписка ' . $site['ООО'] . ' на 12 месяцев (10 устройств)'
-            ];
+            // Описания тарифов строятся автоматически из конфигурации PriceConfig
+            $tariffDescriptions = [];
+            foreach (PriceConfig::getTariffConfig() as $tariffKey => $cfg) {
+                $monthsWord = $cfg['months'] === 1 ? 'месяц' : ($cfg['months'] < 5 ? 'месяца' : 'месяцев');
+                $devicesWord = $cfg['devices'] === 1 ? 'устройство' : ($cfg['devices'] < 5 ? 'устройства' : 'устройств');
+                $tariffDescriptions[$tariffKey] = 'Подписка ' . $site['ООО'] . ' на ' . $cfg['months'] . ' ' . $monthsWord . ' (' . $cfg['devices'] . ' ' . $devicesWord . ')';
+            }
 
             $description = $tariffDescriptions[$data['tariff']] ?? 'Подписка ' . $site['ООО'];
 
@@ -71,7 +74,7 @@ class PaymentController
             // запрос на создание оплаты
             $apiStart = microtime(true);
             $paymentResult = $kassa->createPayment(
-                amount: (float) $data['amount'],
+                amount: (float) $amount,
                 description: $description,
                 customerEmail: $data['email'] ?? null,
                 customerPhone: $data['phone'] ?? null,
@@ -91,7 +94,7 @@ class PaymentController
             if ($paymentResult['success']) {
                 Session::init('kassa', [
                     'payment_id' => $paymentResult['payment_id'],
-                    'amount' => $data['amount'],
+                    'amount' => $amount,
                     'tariff' => $data['tariff'],
                     'paymentMethod' => $data['paymentMethod']
                 ]);

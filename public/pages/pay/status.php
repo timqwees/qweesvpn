@@ -1,9 +1,13 @@
 <?php declare(strict_types=1);
 use Setting\Route\Function\Controllers\Kassa\Kassa;
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Functions;
 use App\Config\Session;
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 
 Auth::auth();
 $paymentId = Session::init('kassa')['payment_id'] ?? null;
@@ -12,9 +16,9 @@ $paymentStatus = [
     'status' => 'unknown',
     'paid' => false,
     'error' => null
-];
+];//подготовили данные по умолчанию
 
-if ($paymentId) {
+if ($paymentId) {//true - this is object
     $paymentStatus = (new Kassa())->startPaymentStatus($paymentId);//DB SEND + KEY VPN
     Session::init('kassa', null);
 
@@ -34,12 +38,12 @@ if ($paymentId) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="<?= $currentLanguage ?>" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><?php echo $paymentStatus['paid'] ? 'Оплата успешна' : 'Статус оплаты'; ?></title>
+    <title><?= $t($paymentStatus['paid'] ? 'pay_success' : 'pay_status_title') ?></title>
 
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style">
@@ -78,8 +82,8 @@ if ($paymentId) {
 
 <body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
     <div class="min-h-screen flex flex-col w-full container mx-auto">
-        
-<?php include_once 'public/components/header.php' ?>
+
+        <?php include_once 'public/components/header.php' ?>
 
         <main class="rounded-xl card flex sm:my-2 w-full">
             <div class="w-full text-white setka">
@@ -99,30 +103,30 @@ if ($paymentId) {
                         <h3 class="text-2xl font-bold font-sans mb-2">
                             <?php
                             if ($paymentStatus['paid']) {
-                                echo 'Оплата прошла успешно!';
+                                echo $t('pay_ok');
                             } elseif ($paymentStatus['status'] === 'pending') {
-                                echo 'Оплата в обработке';
+                                echo $t('pay_pending');
                             } elseif ($paymentStatus['status'] === 'canceled') {
-                                echo 'Оплата отменена';
+                                echo $t('pay_canceled');
                             } elseif ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid']) {
-                                echo 'Оплата подтверждена, активация...';
+                                echo $t('pay_activating');
                             } else {
-                                echo 'Проверка статуса платежа';
+                                echo $t('check_status');
                             }
                             ?>
                         </h3>
                         <div class="text-white/70">
                             <?php
                             if ($paymentStatus['paid']) {
-                                echo 'Ваша подписка активирована';
+                                echo $t('sub_active');
                             } elseif ($paymentStatus['status'] === 'pending') {
-                                echo 'Платеж обрабатывается, это может занять несколько минут';
+                                echo $t('sub_processing');
                             } elseif ($paymentStatus['status'] === 'canceled') {
-                                echo 'Платеж не был завершен. Вы можете попробовать снова';
+                                echo $t('sub_not_completed');
                             } elseif ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid']) {
-                                echo 'Платеж успешно подтвержден, активация VPN в процессе...';
+                                echo $t('sub_confirm_activating');
                             } else {
-                                echo 'Проверяем статус вашего платежа...';
+                                echo $t('checking_status');
                             }
                             ?>
                         </div>
@@ -131,39 +135,39 @@ if ($paymentId) {
                     <!-- payment info -->
                     <div class="bg-white/10 rounded-2xl p-4 mb-4">
                         <div class="flex justify-between mb-2">
-                            <span class="text-white/70">ID платежа:</span>
+                            <span class="text-white/70"><?= $t('payment_id') ?></span>
                             <span
                                 id="payment-id text-end"><?php echo htmlspecialchars($paymentId ?? 'TEST_PAYMENT'); ?></span>
                         </div>
                         <div class="flex justify-between mb-2">
-                            <span class="text-white/70">Статус:</span>
+                            <span class="text-white/70"><?= $t('status_colon') ?></span>
                             <span
                                 class="<?php echo $paymentStatus['paid'] ? 'text-green-400' : ($paymentStatus['status'] === 'canceled' ? 'text-red-400' : ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid'] ? 'text-blue-400' : 'text-yellow-400')); ?>">
                                 <?php
                                 if ($paymentStatus['paid']) {
-                                    echo 'Оплачено';
+                                    echo $t('paid');
                                 } elseif ($paymentStatus['status'] === 'pending') {
-                                    echo 'В обработке';
+                                    echo $t('in_process');
                                 } elseif ($paymentStatus['status'] === 'canceled') {
-                                    echo 'Отменено';
+                                    echo $t('canceled');
                                 } elseif ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid']) {
-                                    echo 'Активация...';
+                                    echo $t('activating');
                                 } else {
-                                    echo 'Проверка...';
+                                    echo $t('checking');
                                 }
                                 ?>
                             </span>
                         </div>
                         <?php if ($paymentStatus['success']): ?>
                             <div class="flex justify-between mb-2">
-                                <span class="text-white/70">Сумма:</span>
+                                <span class="text-white/70"><?= $t('amount_colon') ?></span>
                                 <span><?php echo htmlspecialchars((string) ($paymentStatus['amount'] ?? '0')); ?>
                                     <?php echo htmlspecialchars($paymentStatus['currency'] ?? 'RUB'); ?></span>
                             </div>
                         <?php endif; ?>
                         <div class="flex justify-between">
-                            <span class="text-white/70">Активация:</span>
-                            <span><?php echo $paymentStatus['paid'] ? 'Мгновенно' : 'После оплаты'; ?></span>
+                            <span class="text-white/70"><?= $t('activation_colon') ?></span>
+                            <span><?php echo $paymentStatus['paid'] ? $t('instantly') : $t('after_payment'); ?></span>
                         </div>
                     </div>
 
@@ -172,38 +176,38 @@ if ($paymentId) {
                         <div class="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 mb-4">
                             <div class="flex items-center gap-2 mb-3">
                                 <i class="fas fa-shield-alt text-green-400"></i>
-                                <h4 class="text-green-400 font-bold">Информация о подписке</h4>
+                                <h4 class="text-green-400 font-bold"><?= $t('sub_info') ?></h4>
                             </div>
 
                             <?php if ($subscriptionInfo['issued']): ?>
                                 <div class="space-y-2">
                                     <div class="flex justify-between">
-                                        <span class="text-white/70">Статус подписки:</span>
-                                        <span class="text-green-400 font-medium">Активна</span>
+                                        <span class="text-white/70"><?= $t('sub_status') ?></span>
+                                        <span class="text-green-400 font-medium"><?= $t('active_fem') ?></span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-white/70">Длительность:</span>
-                                        <span><?php echo htmlspecialchars((string) $subscriptionInfo['days']); ?> дней</span>
+                                        <span class="text-white/70"><?= $t('duration_colon') ?></span>
+                                        <span><?php echo htmlspecialchars((string) $subscriptionInfo['days']); ?> <?= $t('days') ?></span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-white/70">Действует до:</span>
-                                        <span><?php echo htmlspecialchars(date('d.m.Y', strtotime($subscriptionInfo['end_date']))); ?></span>
+                                        <span class="text-white/70"><?= $t('valid_until') ?></span>
+                                        <span><?php echo htmlspecialchars((int) $subscriptionInfo['end_date'] > 0 ? date('d.m.Y', (int) $subscriptionInfo['end_date'] / 1000) : ''); ?></span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-white/70">Устройств:</span>
+                                        <span class="text-white/70"><?= $t('devices_colon') ?></span>
                                         <span><?php echo htmlspecialchars((string) $subscriptionInfo['devices']); ?></span>
                                     </div>
                                 </div>
                             <?php else: ?>
                                 <div class="text-red-400 text-sm">
                                     <?php if ($subscriptionInfo['error']): ?>
-                                        Ошибка активации: <?php echo htmlspecialchars($subscriptionInfo['error']); ?>
+                                        <?= $t('activation_error') ?><?php echo htmlspecialchars($subscriptionInfo['error']); ?>
                                         <div class="text-yellow-400 text-xs mt-2">
-                                            Ваш платеж успешно обработан, но возникла проблема с созданием VPN-клиента.
-                                            Пожалуйста, свяжитесь с поддержкой для активации подписки.
+                                            <?= $t('vpn_client_error') ?>
+                                            <?= $t('contact_support') ?>
                                         </div>
                                     <?php else: ?>
-                                        Подписка активируется в течение нескольких минут...
+                                        <?= $t('activating_minutes') ?>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
@@ -215,20 +219,20 @@ if ($paymentId) {
                         <?php if ($paymentStatus['status'] === 'pending' || ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid'])): ?>
                             <button onclick="location.reload()"
                                 class="flex font-bold bg-gradient-to-r from-yellow-500/20 to-yellow-500/5 border border-yellow-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-yellow-500/50 transition-colors">
-                                <i class="fa fa-refresh"></i> Обновить статус
+                                <i class="fa fa-refresh"></i> <?= $t('refresh_status') ?>
                             </button>
                         <?php endif; ?>
 
                         <?php if ($paymentStatus['status'] === 'canceled' || !$paymentStatus['success']): ?>
                             <a href="/pay"
                                 class="flex font-bold bg-gradient-to-r from-red-500/20 to-red-500/5 border border-red-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-red-500/50 transition-colors">
-                                <i class="fa fa-credit-card"></i> Попробовать снова
+                                <i class="fa fa-credit-card"></i> <?= $t('try_again') ?>
                             </a>
                         <?php endif; ?>
 
                         <a href="/"
                             class="flex font-bold bg-gradient-to-r from-green-500/20 to-green-500/5 border border-green-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-green-500/50 transition-colors">
-                            <i class="fa fa-home"></i> На главную
+                            <i class="fa fa-home"></i> <?= $t('go_home') ?>
                         </a>
                     </div>
                 </section>

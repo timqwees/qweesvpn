@@ -3,16 +3,17 @@
 declare(strict_types=1);//cтрогая типизация
 
 namespace Setting\Route\Function\Controllers\Vpn;
+use DateTime, DateTimeZone;
 
 class Math
 {
 
-    public static function canculateDay($data_end)
+    public static function canculateDay(mixed $data_end)
     {
         if (empty($data_end))
             return ['status' => 'off', 'showDate' => 'Нет подписки', 'time_left' => 0];
 
-        $time_left = strtotime($data_end) - time();
+        $time_left = strtotime($data_end) - new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp();
 
         if ($time_left <= 0)
             return ['status' => 'off', 'showDate' => 'Истекла', 'time_left' => 0];
@@ -28,12 +29,12 @@ class Math
         return ['status' => 'on', 'showDate' => $showDate, 'time_left' => $time_left];
     }
 
-    public static function calculateEndDate($days)
+    public static function calculateEndDate(mixed $days)
     {
         if (empty($days) || $days <= 0)
             return ['status' => 'error', 'message' => 'Некорректное количество дней'];
 
-        $current_time = time();
+        $current_time = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp();
         $end_time = strtotime("+$days days", $current_time);
 
         return [

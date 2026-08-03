@@ -7,7 +7,7 @@ namespace Setting\Route\Function\Controllers\Vpn\V2ray;
 use Setting\Route\Function\Controllers\Client\GetUser;
 use App\Config\Database;
 use Setting\Route\Function\Functions;
-
+use DateTime, DateTimeZone;
 class Xray
 {
     /**
@@ -344,24 +344,17 @@ class Xray
     }
 
     /**
-     * Продление date_end в БД по uniID (источник — строка подписки, не сессия GetUser).
-     * Логика согласована с панелью: max(сейчас, текущий date_end) + bonusDays календарных дней.
+     * Синхронизация expiry (мс) в БД по uniID (источник — время истечения, которое панель 3x-ui
+     * установила клиенту). Приходит из ответа панели, чтобы не было рассинхронизации.
      */
-    private static function syncUserDateEndByUniID(string $uniID, int $bonusDays): void
+    private static function syncUserExpiryByUniID(string $uniID, int $expiryMs): void
     {
-        if ($bonusDays <= 0 || $uniID === '') {
+        if ($expiryMs <= 0 || $uniID === '') {
             return;
         }
-        $subData = Database::send('SELECT date_end FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
-        if (empty($subData[0])) {
-            return;
-        }
-        $dateEnd = (string) ($subData[0]['date_end'] ?? '');
-        $base = !empty($dateEnd) ? max(strtotime($dateEnd . ' 23:59:59'), time()) : time();
-        $newEnd = $base + $bonusDays * 86400;
         Database::send(
-            'UPDATE qwees_subscriptions SET date_end = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
-            [date('Y-m-d', $newEnd), $uniID]
+            'UPDATE qwees_subscriptions SET expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
+            [$expiryMs, $uniID]
         );
     }
 
@@ -374,7 +367,7 @@ class Xray
      * - Поиск существующего: по subId === uniID (надёжнее имени)
      * - email в URL при update/delete — реальный email из записи панели (= getFirstName())
      */
-    private function addClientPanelApi(int $days, string $uniID, $device_limit = null): array|false
+    private function addClientPanelApi(int $days, string $uniID, int $device_limit, string $switch = ''): array|false
     {
         $user = new GetUser($uniID);
 
@@ -413,7 +406,6 @@ class Xray
             $settings['clients'] = [];
         }
 
-        $expiry = (time() + ((int) $days * 86400)) * 1000;
         if ($device_limit === null) {
             $device_limit = isset($_ENV['XUI_DEVICE_LIMIT']) ? (int) $_ENV['XUI_DEVICE_LIMIT'] : 1;
         }
@@ -422,21 +414,34 @@ class Xray
 
         // Ищем клиента по subId (= uniID) — надёжнее имени, т.к. имя может совпадать у разных юзеров
         $existingIndex = null;
+        $currentExpiryMs = 0;
         foreach ($settings['clients'] as $idx => $c) {
             if (!is_array($c)) {
                 continue;
             }
             if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
                 $existingIndex = $idx;
+                $currentExpiryMs = (int) ($c['expiryTime'] ?? 0);
                 break;
             }
         }
 
+        // Продление или выдача с нуля: при обновлении существующего клиента срок считается от
+        // max(сейчас, текущий expiry панели), иначе — от текущего момента (не сбрасываем остаток).
+        $now = new DateTime('now', new DateTimeZone('Europe/Moscow'));
+        $base = new DateTime('@' . (max($now->getTimestamp() * 1000, $currentExpiryMs) / 1000));
+        $base->setTimezone(new DateTimeZone('Europe/Moscow'));
+
+        if ($switch === 'hours') {
+            $expiry = $base->modify('+' . (int) $days . ' hours')->getTimestamp() * 1000;
+        } elseif($switch === 'minutes') {
+            $expiry = $base->modify('+' . (int) $days . ' minutes')->getTimestamp() * 1000;
+        } else {//default
+          // настройка выдачи времени подписки (всем по умолчанию ровно до конца отсеченного дня 23:59:59, пишем 22 так как +1 xray делает при 23 = 00:59:59)
+          $expiry = $base->modify('+' . (int) $days . ' days')->setTime(22, 59, 59)->getTimestamp() * 1000;
+        }
+
         if ($existingIndex !== null) {
-            // --- ОБНОВЛЕНИЕ существующего клиента ---
-            // 3.1.0: POST /panel/api/clients/update/:email
-            // :email = реальный email клиента из панели (= getFirstName(), установленный при создании)
-            // Тело — полный объект (replace, не patch), берём существующий и перезаписываем нужные поля
             $existingClient = $settings['clients'][$existingIndex];
             $currentEmail = (string) ($existingClient['email'] ?? $uniID);
 
@@ -537,9 +542,9 @@ class Xray
      *                                 ]
      *                                 При ошибке возвращает false и записывает лог
      */
-    public function addClient($days, $uniID, $device_limit = null): array|false
+    public function addClient(int $days, string $uniID, int $device_limit, string $switch = ''): array|false
     {
-        return $this->addClientPanelApi($days, (string) $uniID, $device_limit);
+        return $this->addClientPanelApi($days, $uniID, $device_limit, $switch);
     }
 
     /**
@@ -570,6 +575,7 @@ class Xray
 
         $found = false;
         $clientRow = null;
+        $newExpiry = 0;
         foreach ($settings['clients'] as $idx => $c) {
             if (!is_array($c)) {
                 continue;
@@ -577,9 +583,10 @@ class Xray
             // Ищем по subId (= uniID) — уникальный ключ; email (= имя) может совпадать у разных юзеров
             if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
                 $currentExpiry = (int) ($c['expiryTime'] ?? 0);
-                $nowMs = time() * 1000;
+                $nowMs = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() * 1000;
                 $baseMs = max($nowMs, $currentExpiry);
-                $settings['clients'][$idx]['expiryTime'] = $baseMs + $bonusDays * 86400000;
+                $newExpiry = $baseMs + $bonusDays * 86400000;
+                $settings['clients'][$idx]['expiryTime'] = $newExpiry;
                 $settings['clients'][$idx]['enable'] = true;
                 $found = true;
                 $clientRow = $settings['clients'][$idx];
@@ -591,7 +598,7 @@ class Xray
             $lim = isset($_ENV['XUI_DEVICE_LIMIT']) ? (int) $_ENV['XUI_DEVICE_LIMIT'] : 1;
             $add = $this->addClientPanelApi($bonusDays, $uniID, $lim);
             if (is_array($add) && ($add['success'] ?? false) === true) {
-                self::syncUserDateEndByUniID($uniID, $bonusDays);
+                self::syncUserExpiryByUniID($uniID, (int) ($add['client_data']['expiryTime'] ?? 0));
                 return ['status' => 'ok', 'message' => 'Клиент создан, бонусные дни начислены'];
             }
             return ['status' => 'error', 'message' => 'Клиент не найден в панели и не удалось создать'];
@@ -608,7 +615,7 @@ class Xray
         $payload = array_merge($clientRow, ['enable' => true]);
         $updateUser = self::threeXuiHttp('POST', $path, $payload);
         if ($updateUser !== false && ($updateUser['success'] ?? false) === true) {
-            self::syncUserDateEndByUniID($uniID, $bonusDays);
+            self::syncUserExpiryByUniID($uniID, $newExpiry);
             return ['status' => 'ok', 'message' => 'Бонусные дни добавлены'];
         }
         file_put_contents(
@@ -625,7 +632,7 @@ class Xray
     }
 
     /**
-     * Продлевает клиента через API панели 3x-ui (`updateClient` / `addClient`). Обновляет date_end в БД.
+     * Продлевает клиента через API панели 3x-ui (`updateClient` / `addClient`). Обновляет expiry (мс) в БД.
      *
      * @return array{status: string, message: string}
      */
@@ -794,8 +801,8 @@ class Xray
         }
 
         Database::send(
-            'DELETE FROM qwees_subscriptions WHERE status != ? AND date_end < ?',
-            [strval('off'), date('Y-m-d')]
+            'DELETE FROM qwees_subscriptions WHERE status != ? AND expiry < ?',
+            [strval('off'), (string) (time() * 1000)]
         );
         file_put_contents(
             self::logFile(),

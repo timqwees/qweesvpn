@@ -40,6 +40,8 @@
 
 namespace App\Config;
 
+use DateTime, DateTimeZone;
+
 class Session
 {
     private static $cookieName = "__qweescore_cookie";
@@ -145,7 +147,7 @@ class Session
             @setcookie(
                 self::$cookieName,
                 '',
-                time() - 3600,
+                new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() - 3600,
                 '/',
                 '',
                 false,
@@ -157,7 +159,7 @@ class Session
         @setcookie(
             self::$cookieName,
             json_encode(self::$data, JSON_UNESCAPED_UNICODE),
-            time() + self::$lifetime,
+            new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + self::$lifetime,
             '/',
             '',
             false,

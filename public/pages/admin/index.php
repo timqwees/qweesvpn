@@ -5,11 +5,32 @@ use Setting\Route\Function\Controllers\Admin\AdminAuth;
 AdminAuth::auth();
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
+use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 use App\Config\Session;
 use Setting\Route\Function\Functions;
 
 $site = Functions::site();
 $admin = new AdminDatabase();
+
+// Конфигурация тарифов (единый объект из PriceConfig)
+$tariffConfig = PriceConfig::getConfig();
+
+// Все сроки (объединение по тарифам) — шапка таблицы цен
+$periods = [];
+foreach ($tariffConfig as $tariff) {
+    foreach ($tariff['periods'] as $months => $period) {
+        $periods[$months] = $period;
+    }
+}
+ksort($periods);
+
+// Цветовые акценты для карточек тарифов
+$tariffAccents = [
+    'basic'  => ['badge' => 'bg-blue-50 text-blue-700 ring-1 ring-blue-200',   'accent' => 'border-l-blue-500'],
+    'clasic' => ['badge' => 'bg-green-50 text-green-700 ring-1 ring-green-200', 'accent' => 'border-l-green-500'],
+    'pro'    => ['badge' => 'bg-red-50 text-red-700 ring-1 ring-red-200',      'accent' => 'border-l-red-500'],
+];
+$defaultAccent = ['badge' => 'bg-gray-100 text-gray-700 ring-1 ring-gray-300', 'accent' => 'border-l-gray-400'];
 
 // админ id
 $adminID = Session::init('admin')['auth'][1];
@@ -38,10 +59,42 @@ $colors = [
 <body class="bg-no-repeat flex item-center w-full overflow-x-hidden bg-gray-100">
     <div class="min-h-screen flex w-full mx-auto">
 
+        <!-- оверлей (мобильная шторка) -->
+        <div id="admin-overlay" class="fixed inset-0 bg-black/40 z-40 hidden md:hidden"></div>
+
+        <!-- кнопка открытия меню (мобильная) -->
+        <button id="admin-burger"
+            class="md:hidden fixed top-2 left-2 z-[60] bg-white rounded-lg shadow-md p-2.5 text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+        </button>
+        <script defer>
+            $(document).ready(function () {
+                var $sidebar = $('#admin-sidebar');
+                var $overlay = $('#admin-overlay');
+
+                function closeSidebar() {
+                    $sidebar.removeClass('translate-x-0').addClass('-translate-x-full');
+                    $overlay.addClass('hidden');
+                }
+
+                $('#admin-burger').on('click', function () {
+                    var open = $sidebar.hasClass('translate-x-0');
+                    $sidebar.toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
+                    $overlay.toggleClass('hidden', open);
+                });
+
+                $overlay.on('click', closeSidebar);
+                $sidebar.on('click', 'a, [data-toggle-section]', closeSidebar);
+            });
+        </script>
+
         <!-- navbar -->
         <?php include_once 'includes/sidebar.php'; ?>
 
-        <main class="flex-1 px-4 md:px-6 lg:px-8 overflow-x-hidden">
+        <main class="flex-1 px-4 pt-14 md:pt-0 md:px-6 lg:px-8 overflow-x-hidden">
 
             <!-- Секция: Главная -->
             <section class="max-w-7xl mx-auto my-3" data-section="main">
@@ -232,12 +285,12 @@ $colors = [
 
                                     if ($current_date && $last_date && $current_date !== $last_date) {
                                         ob_start();
-                            ?>
+                                        ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
                                             <?= date('d M Y', strtotime($matches[1])) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
-                            <?php
+                                        <?php
                                         ob_end_flush();
                                     }
 
@@ -254,9 +307,9 @@ $colors = [
                         </div>
                     </div>
 
-                    <script>
-                        $(document).ready(function() {
-                            $('[data-show-logs]').on('click', function(event) {
+                    <script defer>
+                        $(document).ready(function () {
+                            $('[data-show-logs]').on('click', function (event) {
                                 $('[data-logs]').toggleClass('blur-sm');
                                 if ($(this).hasClass('fa-eye-low-vision')) {
                                     $(this).removeClass('fa-eye-low-vision');
@@ -352,7 +405,7 @@ $colors = [
                                     y: {
                                         beginAtZero: true,
                                         ticks: {
-                                            callback: function(value) {
+                                            callback: function (value) {
                                                 return value.toLocaleString('ru-RU') + ' ₽';
                                             }
                                         }
@@ -399,7 +452,7 @@ $colors = [
                                     y: {
                                         beginAtZero: true,
                                         ticks: {
-                                            callback: function(value) {
+                                            callback: function (value) {
                                                 return value.toLocaleString('ru-RU') + ' чел.';
                                             }
                                         }
@@ -468,7 +521,7 @@ $colors = [
                         <div class="mb-8 h-[400px]">
                             <canvas id="chart_plans"></canvas>
                         </div>
-                        <script>
+                        <script defer>
                             const plansCtx = document.getElementById('chart_plans');
                             if (plansCtx) {
                                 const labels = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'subscription') : []) ?>;
@@ -503,7 +556,7 @@ $colors = [
                                                 },
                                                 tooltip: {
                                                     callbacks: {
-                                                        label: function(context) {
+                                                        label: function (context) {
                                                             const label = context.label || '';
                                                             const value = context.parsed || 0;
                                                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -527,92 +580,197 @@ $colors = [
             <!-- Секция: Цены -->
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="price">
                 <!-- Заголовок -->
-                <div class="py-6 flex-col flex md:flex-row justify-between items-center">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                <div class="py-6 flex-col flex md:flex-row md:items-center justify-between gap-2">
+                    <h1 class="text-2xl font-bold text-gray-800">
                         Настройка цен
                     </h1>
+                    <p class="text-sm text-gray-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-code text-primary-400"></i>
+                        Единый объект тарифов PriceConfig.php — применяется сразу
+                    </p>
                 </div>
 
-                <!-- Измение цен -->
-                <div class="bg-white border border-border rounded-2xl p-4 sm:p-6 w-full">
-                    <h2 class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight">
-                        Панель смены цен</h2>
-                    <form class="grid grid-cols-1 sm:grid-cols-2 gap-10 mt-4" action="/admin/save" method="POST">
+                <div class="bg-white border border-border rounded-2xl overflow-hidden">
+                    <form action="/admin/save" method="POST">
                         <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
-                        <input type="hidden" name="table" value="qwees_price">
+                        <input type="hidden" name="table" value="price_config">
 
-                        <!-- Текущие цены -->
-                        <div class="relative">
-                            <h3>Текущие цены:</h3>
-                            <div class="flex flex-col gap-4">
-                                <?php if ($admin->getReadonly('price') === Null)
-                                    $admin->setReadonly(['price']);
-                                foreach (AdminDatabase::getData('qwees_price') as $key => $value): ?>
-                                    <!-- ITEMS 1 -->
-                                    <div class="flex gap-3 items-center">
-                                        <!-- не пишем name, чтобы не отправлялись в POST -->
-                                        <input
-                                            class="px-3 py-2 rounded-lg bg-muted border border-border text-purple-400 placeholder-gray-400 focus:ring-accent focus:outline-none mt-2 cursor-no-drop"
-                                            value="<?= htmlspecialchars($value['price']) ?> ₽"
-                                            <?= $admin->getReadonly('price') ?>>
-                                        <label for="plus-val" class="px-1 text-xs">Тариф<br>
-                                            <?= strtoupper(htmlspecialchars($value['name'])) ?>:
-                                        </label>
-                                        <!-- chnage visual -->
-                                        <ul data-visual="<?= htmlspecialchars($value['name']) ?>"
-                                            class="flex gap-2 items-center transition">
-                                            <li class="text-red-500 line-through">
-                                                <?= htmlspecialchars($value['price']) ?> ₽
-                                            </li>
-                                            <li>>></li>
-                                            <li
-                                                class="text-white underline animate-pulse bg-[#6783FF] px-3 py-1 rounded-lg">
-                                            </li>
-                                        </ul>
-                                        <!-- end -->
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="w-full text-sm table-fixed">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-border">
+                                        <th class="w-44 text-left px-4 py-3.5 font-semibold text-gray-600">
+                                            Тариф
+                                            <span class="block text-[11px] font-normal text-gray-400 mt-0.5">лимит устройств</span>
+                                        </th>
+                                        <?php foreach ($periods as $months => $period): ?>
+                                            <th class="px-3 py-3.5 text-center font-semibold text-gray-600 whitespace-nowrap">
+                                                <span class="text-base"><?= $months ?> мес</span>
+                                                <span class="block text-[11px] font-normal text-gray-400 mt-0.5"><?= $period['days'] ?> дней · ₽/мес</span>
+                                            </th>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($tariffConfig as $tariffName => $tariff): ?>
+                                        <?php
+                                        $accents = $tariffAccents[$tariffName] ?? $defaultAccent;
+                                        $devices = (int) $tariff['devices'];
+                                        $devWord = $devices === 1 ? 'устройство' : ($devices < 5 ? 'устройства' : 'устройств');
+                                        ?>
+                                        <tr class="border-b border-border last:border-b-0 hover:bg-gray-50/60 transition-colors <?= $accents['accent'] ?> border-l-4">
+                                            <td class="px-4 py-4">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg font-bold uppercase tracking-wide text-xs <?= $accents['badge'] ?>">
+                                                    <?= htmlspecialchars($tariffName) ?>
+                                                </span>
+                                                <div class="text-xs text-gray-500 mt-1.5">
+                                                    <span class="text-gray-700 font-medium"><?= htmlspecialchars($tariff['label']) ?></span>
+                                                    · <?= $devices ?> <?= $devWord ?>
+                                                </div>
+                                            </td>
+                                            <?php foreach ($tariff['periods'] as $months => $period): ?>
+                                                <td class="px-3 py-3 align-top">
+                                                    <div data-cell="<?= htmlspecialchars($tariffName) ?>-<?= $months ?>" class="rounded-lg p-2 -m-1 transition">
+                                                        <div class="flex items-center justify-between mb-1.5 px-0.5">
+                                                            <span class="text-[11px] text-gray-400 uppercase tracking-wide">сейчас</span>
+                                                            <span class="text-xs font-medium text-gray-400 line-through"><?= $period['price'] ?> ₽</span>
+                                                        </div>
+                                                        <div class="relative">
+                                                            <input type="number"
+                                                                name="price[<?= htmlspecialchars($tariffName) ?>][<?= $months ?>]"
+                                                                placeholder="<?= $period['price'] ?>"
+                                                                data-input="<?= htmlspecialchars($tariffName) ?>-<?= $months ?>"
+                                                                data-current="<?= $period['price'] ?>"
+                                                                class="w-full px-3 py-2 pr-7 rounded-lg bg-muted border border-border text-gray-800 placeholder-gray-400 focus:ring-accent focus:outline-none text-sm"
+                                                                min="0">
+                                                            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">₽</span>
+                                                        </div>
+                                                        <div class="mt-1.5 flex items-center justify-between px-0.5 h-5">
+                                                            <span data-visual class="hidden text-xs font-semibold text-green-600"></span>
+                                                            <span data-changed class="hidden text-[10px] font-bold uppercase tracking-wide text-green-700 bg-green-50 px-1.5 py-0.5 rounded">изменено</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
                         </div>
 
-                        <div class="relative">
-                            <h3>Изменение цен:</h3>
-                            <div class="flex flex-col gap-4">
-
-                                <?php foreach (AdminDatabase::getData('qwees_price') as $key => $value): ?>
-                                    <div class="relative">
-                                        <label for="<?= htmlspecialchars($value['name']) ?>"
-                                            class="absolute right-10 border rounded-md top-5 bg-card px-1 text-xs">Тариф
-                                            <?= strtoupper(htmlspecialchars($value['name'])) ?>
-                                        </label>
-                                        <input type="number" name="<?= htmlspecialchars($value['name']) ?>"
-                                            placeholder="от 1 рубля"
-                                            class="w-full px-3 py-2 rounded-lg bg-muted border border-border placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
-                                            min="0">
+                        <!-- Мобильная версия (карточки тарифов) -->
+                        <div class="md:hidden flex flex-col gap-3 p-3">
+                            <?php foreach ($tariffConfig as $tariffName => $tariff): ?>
+                                <?php
+                                $accents = $tariffAccents[$tariffName] ?? $defaultAccent;
+                                $devices = (int) $tariff['devices'];
+                                $devWord = $devices === 1 ? 'устройство' : ($devices < 5 ? 'устройства' : 'устройств');
+                                ?>
+                                <div class="border border-border rounded-2xl overflow-hidden <?= $accents['accent'] ?> border-l-4">
+                                    <div class="px-4 py-2.5 bg-gray-50 flex items-center justify-between gap-2">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg font-bold uppercase tracking-wide text-xs <?= $accents['badge'] ?>">
+                                            <?= htmlspecialchars($tariffName) ?>
+                                        </span>
+                                        <span class="text-xs text-gray-500 truncate">
+                                            <span class="text-gray-700 font-medium"><?= htmlspecialchars($tariff['label']) ?></span>
+                                            · <?= $devices ?> <?= $devWord ?>
+                                        </span>
                                     </div>
-                                <?php endforeach; ?>
+                                    <div class="divide-y divide-border">
+                                        <?php foreach ($tariff['periods'] as $months => $period): ?>
+                                            <div data-cell="<?= htmlspecialchars($tariffName) ?>-<?= $months ?>"
+                                                class="px-4 py-2.5 flex items-center justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <div class="font-semibold text-gray-800 text-sm"><?= $months ?> мес</div>
+                                                    <div class="text-xs text-gray-400">
+                                                        <?= $period['days'] ?> дней · сейчас <s><?= $period['price'] ?> ₽</s>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <div class="relative w-28">
+                                                        <input type="number"
+                                                            name="price_m[<?= htmlspecialchars($tariffName) ?>][<?= $months ?>]"
+                                                            placeholder="<?= $period['price'] ?>"
+                                                            data-input="<?= htmlspecialchars($tariffName) ?>-<?= $months ?>"
+                                                            data-current="<?= $period['price'] ?>"
+                                                            class="w-full px-3 py-1.5 pr-7 rounded-lg bg-muted border border-border text-gray-800 placeholder-gray-400 focus:ring-accent focus:outline-none text-sm"
+                                                            min="0">
+                                                        <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">₽</span>
+                                                    </div>
+                                                    <span data-visual class="hidden text-xs font-semibold text-green-600 whitespace-nowrap"></span>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
 
+                        <!-- Нижняя панель -->
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3.5 bg-gray-50 border-t border-border">
+                            <div class="text-sm text-gray-500 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-info text-primary-400"></i>
+                                Изменения применяются сразу · изменено:
+                                <span id="changes-count" class="font-bold text-primary-400">0</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button type="reset"
+                                    class="px-4 py-2 rounded-lg border-dashed border-gray-400/60 border-2 text-gray-600 hover:bg-gray-200 transition-colors font-semibold text-sm focus:outline-none">
+                                    <i class="fa-solid fa-rotate-left mr-1.5"></i>Сбросить
+                                </button>
+                                <button type="submit"
+                                    class="px-5 py-2 rounded-lg bg-primary border-dashed border-green-500/60 border-2 hover:bg-green-500/60 transition-colors font-semibold text-sm focus:outline-none">
+                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i>Сохранить цены
+                                </button>
                             </div>
                         </div>
-                        <button
-                            class="p-2 rounded-lg bg-primary border-dashed border-green-500/60 border-2 hover:bg-green-500/60 transition-colors font-semibold text-base focus:outline-none"
-                            type="submit">
-                            <i class="far fa-money-bill-alt mr-2 text-sm"></i>
-                            Изменить
-                        </button>
-                        <script defer>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                $('[data-visual]').hide();
-                                <?php foreach (AdminDatabase::getData('qwees_price') as $key => $value): ?>
-                                    $("[name='<?= htmlspecialchars($value['name']) ?>']").on('input', (event) => {
-                                        $('[data-visual="<?= htmlspecialchars($value['name']) ?>"]').show();
-                                        $('[data-visual="<?= htmlspecialchars($value['name']) ?>"]').find('li').eq(2).text(event.target.value + ' ₽');
-                                    });
-                                <?php endforeach; ?>
-                            });
-                        </script>
                     </form>
                 </div>
+                <script defer>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        function updateCount() {
+                            var n = 0;
+                            var seen = {};
+                            $('[data-input]').each(function () {
+                                var key = $(this).attr('data-input');
+                                var val = $(this).val().trim();
+                                var changed = val !== '' && parseInt(val) !== parseInt($(this).attr('data-current'));
+                                if (changed && !seen[key]) {
+                                    seen[key] = true;
+                                    n++;
+                                }
+                            });
+                            $('#changes-count').text(n);
+                        }
+
+                        $('[data-input]').on('input', function () {
+                            var $cell = $('[data-cell="' + $(this).attr('data-input') + '"]');
+                            var val = $(this).val().trim();
+                            var current = $(this).attr('data-current');
+                            var changed = val !== '' && parseInt(val) !== parseInt(current);
+
+                            $cell.toggleClass('ring-2 ring-green-400/60 bg-green-50/40', changed);
+                            $cell.find('[data-changed]').toggleClass('hidden', !changed);
+
+                            var $vis = $cell.find('[data-visual]');
+                            if (val === '') {
+                                $vis.addClass('hidden').text('');
+                            } else {
+                                $vis.removeClass('hidden').text('→ ' + val + ' ₽');
+                            }
+                            updateCount();
+                        });
+
+                        $('form').on('reset', function () {
+                            $('[data-cell]').removeClass('ring-2 ring-green-400/60 bg-green-50/40');
+                            $('[data-changed]').addClass('hidden');
+                            $('[data-visual]').addClass('hidden').text('');
+                            updateCount();
+                        });
+
+                        updateCount();
+                    });
+                </script>
             </section>
 
             <!-- Секция: Логи -->
@@ -664,12 +822,12 @@ $colors = [
 
                                     if ($current_date && $last_date && $current_date !== $last_date) {
                                         ob_start();
-                            ?>
+                                        ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
                                             <?= date('d M Y', strtotime($matches[1])) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
-                            <?php
+                                        <?php
                                         ob_end_flush();
                                     }
 
@@ -700,11 +858,16 @@ $colors = [
                 <!-- Выдача -->
                 <div class="flex flex-col gap-4">
 
-                    <!-- Добавить клиента -->
+                    <!-- Добавить клиента в днях -->
                     <div class="bg-white border border-border rounded-2xl p-4 sm:p-6 w-full">
-                        <h2 class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight">
-                            Выдать подписку</h2>
-                        <form class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4" action="/admin/addClient"
+                        <h2
+                            class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight flex items-center gap-2">
+                            Выдать подписку
+                            <span
+                                class="flex items-center py-0 px-1.5 bg-rose-200/50 rounded-md font-medium text-rose-500 text-sm shrink-0">в
+                                днях</span>
+                        </h2>
+                        <form class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4" action="/admin/addClientDays"
                             method="POST">
                             <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
 
@@ -788,6 +951,196 @@ $colors = [
                             </div>
                         </div>
                     </div>
+
+                    <!-- Добавить клиента в часах -->
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6 w-full">
+                        <h2
+                            class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight flex gap-2 items-center">
+                            Выдать подписку
+                            <span
+                                class="flex items-center py-0 px-1.5 bg-[#00bfff63] rounded-md font-medium text-[#007197] text-sm shrink-0">в
+                                часах</span>
+                        </h2>
+                        <form class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4" action="/admin/addClientHours"
+                            method="POST">
+                            <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+
+                            <!-- uniID -->
+                            <div class="relative">
+                                <label for="client_id"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">ID
+                                    клиента</label>
+                                <input type="text" name="uniIDhours" list="list_uniID"
+                                    class="w-full px-3 py-2 text-[15px] rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    placeholder="uniID" required>
+                                <datalist id="list_uniID">
+                                    <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                        <option value="<?= htmlspecialchars($user['uniID']) ?>">
+                                            <?= htmlspecialchars($user['uniID']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </datalist>
+                            </div>
+
+                            <!-- count hours -->
+                            <div class="relative">
+                                <label for="give_days"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">Количество
+                                    часов</label>
+                                <input type="number" name="hours" placeholder="от 1 до ∞"
+                                    class="w-full px-3 py-2 rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    required>
+                            </div>
+
+                            <!-- limit divese -->
+                            <div class="relative">
+                                <label for="give_divece_limit"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">Количество
+                                    устройств</label>
+                                <input type="number" name="devices" placeholder="от 1 до ∞ (0 безлимит)"
+                                    class="w-full px-3 py-2 rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    required>
+                            </div>
+
+                            <button
+                                class="rounded-lg bg-primary border-dashed border-2 border-green-500/60 hover:bg-green-500/60 transition-colors text-black font-semibold text-base focus:outline-none"
+                                type="submit">
+                                <i class="fas fa-user-plus mr-2 text-sm"></i>
+                                Выдать
+                            </button>
+
+                        </form>
+                        <div data-user-find-hours class="mt-6">
+                            <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
+                                Информация об клиенте</h2>
+                            <div class="flex gap-6 mt-6">
+                                <!-- Contact info -->
+                                <div class="flex flex-col gap-4">
+                                    <p class="text-gray-500"><span
+                                            class="text-black uppercase border-solid border-r-2 border-black px-2"
+                                            data-fuser-id-hours></span> Ф.И: <span class="text-black uppercase"
+                                            data-fuser-name-hours></span></p>
+                                    <p class="text-gray-500">UniID: <span
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg"
+                                            data-fuser-uniID-hours></span>
+                                    </p>
+                                </div>
+                                <!-- Subscription info -->
+                                <div class="flex flex-col gap-3">
+                                    <p class="text-gray-500">Статус подписки: <span
+                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status-hours></span></p>
+                                    <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
+                                            data-fuser-expires-hours></span></p>
+                                </div>
+                                <!-- Subscription link info -->
+                                <div class="flex flex-col gap-3">
+                                    <p class="text-gray-500">Количество дней: <span
+                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays-hours></span>
+                                    </p>
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                            data-fuser-subscription-hours></span>
+                                        <button
+                                            onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
+                                                class="fa-solid fa-copy"></i></button>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Добавить клиента в минутах -->
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6 w-full">
+                        <h2 class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight flex gap-2 items-center">
+                            Выдать подписку
+                            <span class="flex items-center py-0 px-1.5 bg-green-400/20 rounded-md font-medium text-green-600 text-sm shrink-0">в
+                                минутах</span>
+                        </h2>
+                        <form class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-4" action="/admin/addClientMinutes"
+                            method="POST">
+                            <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+
+                            <!-- uniID -->
+                            <div class="relative">
+                                <label for="client_id"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">ID клиента</label>
+                                <input type="text" name="uniIDMinutes" list="list_uniID"
+                                    class="w-full px-3 py-2 text-[15px] rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    placeholder="uniID" required>
+                                <datalist id="list_uniID">
+                                    <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                        <option value="<?= htmlspecialchars($user['uniID']) ?>">
+                                            <?= htmlspecialchars($user['uniID']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </datalist>
+                            </div>
+
+                            <!-- count minutes -->
+                            <div class="relative">
+                                <label for="give_days"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">Количество
+                                    минут</label>
+                                <input type="number" name="minutes" placeholder="от 1 до ∞"
+                                    class="w-full px-3 py-2 rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    required>
+                            </div>
+
+                            <!-- limit divese -->
+                            <div class="relative">
+                                <label for="give_divece_limit"
+                                    class="absolute left-2 border rounded-md -top-1 bg-card px-1 text-black text-xs">Количество
+                                    устройств</label>
+                                <input type="number" name="devices" placeholder="от 1 до ∞ (0 безлимит)"
+                                    class="w-full px-3 py-2 rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
+                                    required>
+                            </div>
+
+                            <button
+                                class="rounded-lg bg-primary border-dashed border-2 border-green-500/60 hover:bg-green-500/60 transition-colors text-black font-semibold text-base focus:outline-none"
+                                type="submit">
+                                <i class="fas fa-user-plus mr-2 text-sm"></i>
+                                Выдать
+                            </button>
+
+                        </form>
+                        <div data-user-find-minutes class="mt-6">
+                            <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
+                                Информация об клиенте</h2>
+                            <div class="flex gap-6 mt-6">
+                                <!-- Contact info -->
+                                <div class="flex flex-col gap-4">
+                                    <p class="text-gray-500"><span
+                                            class="text-black uppercase border-solid border-r-2 border-black px-2"
+                                            data-fuser-id-minutes></span> Ф.И: <span class="text-black uppercase"
+                                            data-fuser-name-minutes></span></p>
+                                    <p class="text-gray-500">UniID: <span
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg"
+                                            data-fuser-uniID-minutes></span>
+                                    </p>
+                                </div>
+                                <!-- Subscription info -->
+                                <div class="flex flex-col gap-3">
+                                    <p class="text-gray-500">Статус подписки: <span
+                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status-minutes></span></p>
+                                    <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
+                                            data-fuser-expires-minutes></span></p>
+                                </div>
+                                <!-- Subscription link info -->
+                                <div class="flex flex-col gap-3">
+                                    <p class="text-gray-500">Количество дней: <span
+                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays-minutes></span>
+                                    </p>
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                            data-fuser-subscription-minutes></span>
+                                        <button
+                                            onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
+                                                class="fa-solid fa-copy"></i></button>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -894,7 +1247,7 @@ $colors = [
                         <h2 class="text-lg sm:text-2xl font-semibold text-primary-400 tracking-tight">
                             Панель создания пользователя</h2>
                         <form id="form_admin_add_user" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4"
-                            action="/admin/addClient" method="POST">
+                            action="/admin/addClientDays" method="POST">
                             <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
 
                             <!-- Основная информация -->
@@ -944,11 +1297,11 @@ $colors = [
                                         class="w-full px-3 py-2 rounded-lg bg-muted border border-border placeholder-gray-400 focus:ring-accent focus:outline-none">
                                         <option value="">Без подписки</option>
                                         <?php
-                                        $plans = AdminDatabase::getData('qwees_price');
-                                        foreach ($plans as $plan): ?>
-                                            <option value="<?= htmlspecialchars($plan['name']) ?>">
-                                                <?= htmlspecialchars(ucfirst($plan['name'])) ?> -
-                                                <?= htmlspecialchars($plan['price']) ?> ₽
+                                        $plans = $tariffConfig;
+                                        foreach ($plans as $planName => $plan): ?>
+                                            <option value="<?= htmlspecialchars($planName) ?>">
+                                                <?= htmlspecialchars(ucfirst($planName)) ?> -
+                                                <?= htmlspecialchars((string) ($plan['periods'][1]['price'] ?? 0)) ?> ₽
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -1009,9 +1362,11 @@ $colors = [
                     });
                 }
             </script>
-            <script>
-                $(document).ready(function() {
-                    $('[data-user-find]').hide();
+            <script defer>
+                $(document).ready(function () {
+                    $('[data-user-find]').hide();//скрываем информационные поля
+                    $('[data-user-find-hours]').hide();//скрываем информационные поля
+                    $('[data-user-find-minutes]').hide();//скрываем информационные поля
                     $('[data-delete-button]').hide();
                     $('[name="uniID"]').on('input', (event) => {
                         event.preventDefault();
@@ -1021,7 +1376,7 @@ $colors = [
                             data: {
                                 uniID: event.target.value
                             },
-                            success: function(response) {
+                            success: function (response) {
                                 if (response.status) {
                                     $('[data-user-find]').show(250);
                                     //id
@@ -1036,7 +1391,7 @@ $colors = [
                                     $('[data-fuser-status]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
                                     $('[data-fuser-subscription]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
                                     $('[data-fuser-subscription]').text(response.data.subscription == '' ? '-' : response.data.subscription);
-                                    $('[data-fuser-expires]').text(response.data.date_end ? new Date(response.data.date_end).toLocaleDateString('ru-RU', {
+                                    $('[data-fuser-expires]').text(response.data.expiry ? new Date(response.data.expiry).toLocaleDateString('ru-RU', {
                                         day: 'numeric',
                                         month: 'long',
                                         year: 'numeric'
@@ -1054,6 +1409,81 @@ $colors = [
                             }
                         });
                     });
+
+                    // hours
+                    $('[name="uniIDhours"]').on('input', (event) => {
+                        event.preventDefault();
+                        $.ajax({
+                            url: '/admin/getUser',
+                            method: 'POST',
+                            data: {
+                                uniID: event.target.value
+                            },
+                            success: function (response) {
+                                if (response.status) {
+                                    $('[data-user-find-hours]').show(250);
+                                    //id
+                                    $('[data-fuser-id-hours]').text(response.data.id);
+                                    $('[data-fuser-id-hours]').addClass('bg-green-300');
+                                    //--
+                                    $('[data-fuser-name-hours]').text(response.data.first_name + ' ' + response.data.last_name);
+                                    $('[data-fuser-uniID-hours]').text(response.data.uniID);
+                                    $('[data-fuser-countdays-hours]').text(response.data.count_days == '' ? '-' : response.data.count_days);
+                                    // status
+                                    $('[data-fuser-status-hours]').text(response.data.status);
+                                    $('[data-fuser-status-hours]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
+                                    $('[data-fuser-subscription-hours]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
+                                    $('[data-fuser-subscription-hours]').text(response.data.subscription == '' ? '-' : response.data.subscription);
+                                    $('[data-fuser-expires-hours]').text(response.data.expiry ? new Date(response.data.expiry).toLocaleDateString('ru-RU', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    }) : '-');
+                                    $('[data-fuser-expires-hours]').addClass(response.data.status === 'on' ? 'bg-green-100' : '');
+                                } else {
+                                    $('[data-user-find-hours]').hide(250);
+                                }
+                            }
+                        });
+                    });
+
+                    // minutes
+                    $('[name="uniIDMinutes"]').on('input', (event) => {
+                        event.preventDefault();
+                        $.ajax({
+                            url: '/admin/getUser',
+                            method: 'POST',
+                            data: {
+                                uniID: event.target.value
+                            },
+                            success: function (response) {
+                                if (response.status) {
+                                    $('[data-user-find-minutes]').show(250);
+                                    //id
+                                    $('[data-fuser-id-minutes]').text(response.data.id);
+                                    $('[data-fuser-id-minutes]').addClass('bg-green-300');
+                                    //--
+                                    $('[data-fuser-name-minutes]').text(response.data.first_name + ' ' + response.data.last_name);
+                                    $('[data-fuser-uniID-minutes]').text(response.data.uniID);
+                                    $('[data-fuser-countdays-minutes]').text(response.data.count_days == '' ? '-' : response.data.count_days);
+                                    // status
+                                    $('[data-fuser-status-minutes]').text(response.data.status);
+                                    $('[data-fuser-status-minutes]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
+                                    $('[data-fuser-subscription-minutes]').addClass(response.data.status === 'on' ? 'bg-green-100' : 'bg-red-100');
+                                    $('[data-fuser-subscription-minutes]').text(response.data.subscription == '' ? '-' : response.data.subscription);
+                                    $('[data-fuser-expires-minutes]').text(response.data.expiry ? new Date(response.data.expiry).toLocaleDateString('ru-RU', {
+                                        day: 'numeric',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    }) : '-');
+                                    $('[data-fuser-expires-minutes]').addClass(response.data.status === 'on' ? 'bg-green-100' : '');
+                                } else {
+                                    $('[data-user-find-minutes]').hide(250);
+                                }
+                            }
+                        });
+                    });
+                    
                 });
             </script>
             <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>

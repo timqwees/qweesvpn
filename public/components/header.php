@@ -16,3 +16,5 @@
         <?= $site['versionApp'] ?>
     </span>
 </header>
+
+<?php include_once "public/components/loader.php" ?>

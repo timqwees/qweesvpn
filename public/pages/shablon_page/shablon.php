@@ -1,16 +1,20 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Functions;
 Auth::auth();
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 ?>
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="<?= $currentLanguage ?>" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Оплата</title>
+    <title><?= $t('pay_title') ?></title>
 
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style">

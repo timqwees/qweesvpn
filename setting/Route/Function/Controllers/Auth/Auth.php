@@ -10,6 +10,8 @@ use App\Controllers\MailController;
 use App\Models\Network\Network;
 use App\Models\User\User;
 use Setting\Route\Function\Controllers\Refer\Refer;
+use Setting\Route\Function\Controllers\Kassa\PriceConfig;
+use DateTime, DateTimeZone;
 
 class Auth extends Network
 {
@@ -17,7 +19,7 @@ class Auth extends Network
     public static function auth(): void
     {
         if (!isset(Session::init('user')['uniID']))
-            Network::onRedirect('/auth/login');
+            self::onRedirect('/auth/login');
     }
 
     // ======= GLOBAL FUNCTION AUTH =============
@@ -100,9 +102,9 @@ class Auth extends Network
         try {
             $user = Database::send('SELECT uniID FROM qwees_users WHERE email = ?', [$email]);
             Session::init(null);
-            Session::init('user', $user[0]);
+            Session::init('user', $user[0]);// user => ['uniID' => ....]
             Session::init('lang', 'ru');
-            Network::onRedirect('/');
+            self::onRedirect('/');
         } catch (\Exception $e) {
             return;
         }
@@ -142,17 +144,16 @@ class Auth extends Network
 
             // Подписка (если указана)
             if (!empty($userData['subscription']) && !empty($userData['duration_days'])) {
-                $plan = Database::send("SELECT price FROM qwees_price WHERE name = ? LIMIT 1", [$userData['subscription']]);
-                $planPrice = $plan[0]['price'] ?? 0;
-                $endDate = date('Y-m-d H:i:s', strtotime('+' . $userData['duration_days'] . ' days'));
+                $planPrice = PriceConfig::getPrices()[1][$userData['subscription']] ?? 0;
+                $expiry = (new DateTime('now', new DateTimeZone('Europe/Moscow')))->modify('+' . (int) $userData['duration_days'] . ' days')->getTimestamp() * 1000;
 
-                Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, date_end) VALUES (?, ?, ?, ?, ?, ?)", [
+                Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, expiry) VALUES (?, ?, ?, ?, ?, ?)", [
                     $uniID,
                     'on',
                     $userData['subscription'],
                     $planPrice,
                     $userData['duration_days'],
-                    $endDate
+                    $expiry
                 ]);
             }
 
@@ -195,10 +196,13 @@ class Auth extends Network
             'email' => trim($_POST['email'] ?? '')
         ];
 
-        $result = self::registerUser($userData);
+        $result = (array) self::registerUser($userData);
 
         if ($result['success']) {
-            self::onRedirect($_ENV['REDIRECT_LOG_UNSIGN_USER']);
+            Session::init(null);//очищяем сессии для обходов и иньекций
+            Session::init('user', ['uniID' => strval($result['uniID'])]);
+            Session::init('lang', 'ru');
+            self::onRedirect($_ENV['REDIRECT_SIGN_USER']);
         } else {
             self::onRedirect($_ENV['REDIRECT_REG_UNSIGN_USER']);
         }

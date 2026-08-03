@@ -1,9 +1,13 @@
 <?php
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Functions;
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 ?>
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="<?= $currentLanguage ?>">
 
 <head>
     <meta charset="UTF-8" />
@@ -53,7 +57,7 @@ $site = Functions::site();
             <h2 class="text-white text-3xl font-[qwees-urbanist-medium] tracking-wider">
                 Qwees<span class="text-green-400">VPN</span>
             </h2>
-            <p class="text-white text-sm font-sans letter-specing">Добро пожаловать!</p>
+            <p class="text-white text-sm font-sans letter-specing"><?= $t('welcome') ?></p>
         </div>
 
         <!-- FORM CONTENT -->
@@ -65,7 +69,7 @@ $site = Functions::site();
                 <!-- part 1 -->
                 <div class="flex flex-col gap-4 w-full" id="part1">
                     <!-- INPUT = email -->
-                    <label for="email" class="text-white/70 text-2xl font-sans">Почта</label>
+                    <label for="email" class="text-white/70 text-2xl font-sans"><?= $t('email') ?></label>
                     <div class="relative flex">
                         <i class="fa fas fa-envelope text-white absolute left-5 top-[35%]"></i>
                         <input type="email" id="email" name="email" placeholder="your@example.com" required
@@ -74,24 +78,24 @@ $site = Functions::site();
                     <p class="font-sans text-white hidden p-2" id="message_status"></p>
                     <!-- BUTTON -->
                     <button data-button="email" onclick="return false"
-                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans" disabled>Продолжить</button>
+                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans" disabled><?= $t('continue') ?></button>
 
                     <!-- OTHER -->
                     <div class="flex justify-center items-center gap-6">
                         <div class="flex flex-1 bg-white/50 h-[1px]"></div>
-                        <p class="text-white text-xl font-sans uppercase">или</p>
+                        <p class="text-white text-xl font-sans uppercase"><?= $t('or') ?></p>
                         <div class="flex flex-1 bg-white/50 h-[1px]"></div>
                     </div>
                     <a href="/auth/regist"
                         class="flex gap-4 justify-center items-center w-full text-white rounded-2xl p-3 border border-solid border-[#6BFF5B]/20 bg-transparent text-lg font-sans">
-                        <i class="fa fa-plus text-[#6BFF5B]"></i> Зарегестрироваться</a>
+                        <i class="fa fa-plus text-[#6BFF5B]"></i> <?= $t('register') ?></a>
                 </div>
 
                 <!-- part 2 -->
                 <div class="hidden" id="part2">
                     <div class="flex flex-col gap-4 w-full">
                         <!-- INPUT -->
-                        <label for="verefy" class="text-white/70 text-2xl font-sans">Отправили код на почту</label>
+                        <label for="verefy" class="text-white/70 text-2xl font-sans"><?= $t('code_sent') ?></label>
                         <div class="flex flex-col md:flex-row justify-center items-center gap-4">
                             <div class="flex-1 relative">
                                 <input type="text" id="verefy" placeholder="****" maxlength="4" required
@@ -100,7 +104,7 @@ $site = Functions::site();
                             <!-- BUTTON -->
                             <button data-button="verefy" type="submit"
                                 class="w-full flex-1 bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans"
-                                disabled>Войти</button>
+                                disabled><?= $t('login') ?></button>
                         </div>
                         <p class="font-sans text-white hidden p-2" id="verefy_status"></p>
                     </div>

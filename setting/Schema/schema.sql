@@ -19,16 +19,6 @@ CREATE TABLE IF NOT EXISTS qwees_users (
     KEY idx_users_email (email)
 );
 
--- Таблица цен
-CREATE TABLE IF NOT EXISTS qwees_price (
-    id INT NOT NULL AUTO_INCREMENT,
-    name VARCHAR(255) DEFAULT NULL,
-    price INT DEFAULT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY unique_name (name),
-    KEY idx_price_name (name)
-);
-
 -- Таблица рефералов
 CREATE TABLE IF NOT EXISTS qwees_refer (
     id INT NOT NULL AUTO_INCREMENT,
@@ -50,7 +40,7 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
     amount VARCHAR(255) DEFAULT NULL,
     count_days INT DEFAULT NULL,
     count_devices INT DEFAULT NULL,
-    date_end VARCHAR(255) NOT NULL DEFAULT '',
+    expiry INT NOT NULL DEFAULT 0,
     payment_method_id VARCHAR(255) DEFAULT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -58,6 +48,5 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
     UNIQUE KEY unique_uniID (uniID),
     KEY idx_subscriptions_uniID (uniID),
     KEY idx_subscriptions_status (status),
-    KEY idx_subscriptions_date_end (date_end),
-    KEY idx_subscriptions_status_date (status, date_end)
+    KEY idx_subscriptions_expiry (expiry)
 );

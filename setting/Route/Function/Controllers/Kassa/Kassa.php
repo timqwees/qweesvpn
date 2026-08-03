@@ -11,6 +11,7 @@ use YooKassa\Model\Receipt\Receipt;
 use YooKassa\Model\Receipt\ReceiptItem;
 use App\Config\Database;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
+use DateTime, DateTimeZone;
 
 class Kassa
 {
@@ -33,13 +34,13 @@ class Kassa
         mixed $amount,
         int $countDays,
         int $countDevices,
-        string $endDate
+        int $expiryMs
     ): void {
-        $params = [$uniID, $status, $subscription, $amount, $countDays, $countDevices, $endDate];
+        $params = [$uniID, $status, $subscription, $amount, $countDays, $countDevices, $expiryMs];
 
         if (Database::isMysql()) {
             Database::send(
-                'INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                'INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, expiry, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                  ON DUPLICATE KEY UPDATE
                    status = VALUES(status),
@@ -47,17 +48,28 @@ class Kassa
                    amount = VALUES(amount),
                    count_days = VALUES(count_days),
                    count_devices = VALUES(count_devices),
-                   date_end = VALUES(date_end),
+                   expiry = VALUES(expiry),
                    updated_at = CURRENT_TIMESTAMP',
                 $params
             );
         } else {
             Database::send(
-                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, date_end, updated_at)
+                'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, expiry, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                 $params
             );
         }
+    }
+
+    /**
+     * Расчёт expiry (мс) при отсутствии ответа панели: max(текущий expiry, сейчас) + days календарных дней.
+     */
+    private static function computeExpiryMs(string $uniID, int $days): int
+    {
+        $subData = Database::send("SELECT expiry FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+        $currentExpiry = (int) ($subData[0]['expiry'] ?? 0);
+        $nowMs = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() * 1000;
+        return max($nowMs, $currentExpiry) + $days * 86400000;
     }
 
     public function __construct()
@@ -190,7 +202,7 @@ class Kassa
      *               - subscription_issued: bool - выдана ли подписка (при успешной оплате)
      *               - subscription_days: int - количество дней подписки (при успешной оплате)
      *               - subscription_devices: int - количество устройств (при успешной оплате)
-     *               - subscription_end_date: string - дата окончания подписки (при успешной оплате)
+     *               - subscription_end_date: int - expiry подписки в мс (при успешной оплате)
      *               - vpn_data: array - данные VPN клиента (при успешной оплате)
      *               - subscription_error: string - ошибка создания VPN (если произошла)
      *               - error: string - текст ошибки выполнения функции
@@ -252,29 +264,15 @@ class Kassa
                 $tariff = $metadata['tariff'] ?? null;
 
                 if ($uniID && $tariff) {
-                    // Конфигурация тарифов
-                    $tariffConfig = [
-                        // 1 месяц
-                        '1month_1' => ['days' => 30, 'devices' => 1],
-                        '1month_4' => ['days' => 30, 'devices' => 4],
-                        '1month_10' => ['days' => 30, 'devices' => 10],
-                        // 6 месяцев
-                        '6months_1' => ['days' => 180, 'devices' => 1],
-                        '6months_4' => ['days' => 180, 'devices' => 4],
-                        '6months_10' => ['days' => 180, 'devices' => 10],
-                        // 12 месяцев
-                        '12months_1' => ['days' => 365, 'devices' => 1],
-                        '12months_4' => ['days' => 365, 'devices' => 4],
-                        '12months_10' => ['days' => 365, 'devices' => 10]
-                    ];
-
-                    $config = $tariffConfig[$tariff] ?? ['days' => 30, 'devices' => 1];
+                    // Конфигурация тарифов (сроки и устройства берутся из PriceConfig)
+                    $config = PriceConfig::getTariffConfig()[$tariff] ?? ['days' => 30, 'devices' => 1];
 
                     // Проверяем, не была ли уже выдана подписка для этого платежа
-                    $existingUserData = Database::send("SELECT status, date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
-                    $existingUser = $existingUserData[0] ?? null;
+                    $existingUserData = Database::send("SELECT status, expiry FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+                    $existingUser = $existingUserData[0] ?? null;//получение данных
+                    $current_time_MSK = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp();//текущее время MSK
 
-                    if ($existingUser && $existingUser['status'] === 'on' && strtotime($existingUser['date_end']) > time()) {
+                    if ($existingUser && $existingUser['status'] === 'on' && (int) $existingUser['expiry'] > $current_time_MSK * 1000) {
                         // Подписка уже активна, не создаем новую
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
@@ -282,7 +280,7 @@ class Kassa
                                 "[%s] [ПОДПИСКА] %s: Подписка уже активна до %s, пропуск создания\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
-                                $existingUser['date_end']
+                                date('Y-m-d H:i:s', (int) $existingUser['expiry'] / 1000)
                             ),
                             FILE_APPEND
                         );
@@ -290,7 +288,7 @@ class Kassa
                         $result['subscription_issued'] = true;
                         $result['subscription_days'] = $config['days'];
                         $result['subscription_devices'] = $config['devices'];
-                        $result['subscription_end_date'] = $existingUser['date_end'];
+                        $result['subscription_end_date'] = (int) $existingUser['expiry'];
                         $result['vpn_data'] = ['subscription_url' => self::subscriptionUrl($uniID)];
 
                         return $result;
@@ -303,32 +301,27 @@ class Kassa
                     $vpnTime = round(microtime(true) - $vpnStart, 3);
 
                     if ($vpnResult && $vpnResult['success']) {
-                        // Проверяем текущую дату окончания (учитываем бонусные дни от рефералки)
-                        $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
-                        $currentEnd = $userData[0]['date_end'] ?? null;
-
-                        // Если подписка активна (включая бонусные дни) - прибавляем, иначе отсчёт от сегодня
-                        if ($currentEnd && strtotime($currentEnd) > time()) {
-                            $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
-                        } else {
-                            $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+                        // Источник истины — expiryTime (мс), который панель установила клиенту
+                        $expiryMs = (int) ($vpnResult['client_data']['expiryTime'] ?? 0);
+                        if ($expiryMs <= 0) {
+                            $expiryMs = self::computeExpiryMs($uniID, $config['days']);
                         }
 
-                        // Обновляем все необходимые поля в базе данных с реальными данными VPN
+                        // Сохраняем данные подписки в Базу
                         self::saveSubscriptionToDatabase(
                             $uniID,
-                            'on',
-                            self::subscriptionUrl($uniID),
-                            $payment->getAmount()?->getValue(),
-                            $config['days'],
-                            $config['devices'],
-                            $endDate
+                            'on',//status
+                            self::subscriptionUrl($uniID),//subscription
+                            $payment->getAmount()?->getValue(),//amount
+                            $config['days'],//days
+                            $config['devices'],//count diveces
+                            $expiryMs//expiry (мс)
                         );
 
                         $result['subscription_issued'] = true;
                         $result['subscription_days'] = $config['days'];
                         $result['subscription_devices'] = $config['devices'];
-                        $result['subscription_end_date'] = $endDate;
+                        $result['subscription_end_date'] = $expiryMs;
                         $result['vpn_data'] = $vpnResult['client_data'];
 
                         // Логирование с временем
@@ -372,14 +365,10 @@ class Kassa
                         $vpnRetryTime = round(microtime(true) - $vpnRetryStart, 3);
 
                         if ($vpnResult && $vpnResult['success']) {
-                            // Вторая попытка успешна! Учитываем бонусные дни
-                            $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
-                            $currentEnd = $userData[0]['date_end'] ?? null;
-
-                            if ($currentEnd && strtotime($currentEnd) > time()) {
-                                $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
-                            } else {
-                                $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
+                            // Вторая попытка успешна! Источник истины — expiryTime (мс) из панели
+                            $expiryMs = (int) ($vpnResult['client_data']['expiryTime'] ?? 0);
+                            if ($expiryMs <= 0) {
+                                $expiryMs = self::computeExpiryMs($uniID, $config['days']);
                             }
 
                             self::saveSubscriptionToDatabase(
@@ -389,13 +378,13 @@ class Kassa
                                 $payment->getAmount()?->getValue(),
                                 $config['days'],
                                 $config['devices'],
-                                $endDate
+                                $expiryMs
                             );
 
                             $result['subscription_issued'] = true;
                             $result['subscription_days'] = $config['days'];
                             $result['subscription_devices'] = $config['devices'];
-                            $result['subscription_end_date'] = $endDate;
+                            $result['subscription_end_date'] = $expiryMs;
                             $result['vpn_data'] = $vpnResult['client_data'];
 
                             $totalTime = round(microtime(true) - $startTime, 3);
@@ -432,14 +421,7 @@ class Kassa
                             // Still update the database with payment info but mark subscription as pending
                             try {
                                 // Даже при pending статусе учитываем бонусные дни
-                                $userData = Database::send("SELECT date_end FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
-                                $currentEnd = $userData[0]['date_end'] ?? null;
-
-                                if ($currentEnd && strtotime($currentEnd) > time()) {
-                                    $endDate = date('Y-m-d', strtotime($currentEnd . " +{$config['days']} days"));
-                                } else {
-                                    $endDate = date('Y-m-d', strtotime("+{$config['days']} days"));
-                                }
+                                $expiryMs = self::computeExpiryMs($uniID, $config['days']);
 
                                 self::saveSubscriptionToDatabase(
                                     $uniID,
@@ -448,7 +430,7 @@ class Kassa
                                     $payment->getAmount()?->getValue(),
                                     $config['days'],
                                     $config['devices'],
-                                    $endDate
+                                    $expiryMs
                                 );
 
                                 file_put_contents(

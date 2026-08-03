@@ -40,7 +40,18 @@
     src: url('/public/assets/fonts/Poppins/Poppins-SemiBold.ttf') format('truetype');
 }
 
+/* setting */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 /* scroll */
+html {
+    scroll-behavior: smooth;
+}
+
 ::-webkit-scrollbar {
     width: 0;
 }
@@ -168,29 +179,6 @@
 .buy>.bg_active {
     backdrop-filter: blur(4px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 1px -1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* monoblock animation - simplified, no infinite animation */
-
-.animation_monoblock_off {
-    transform: translateY(30%);
-}
-
-.animation_monoblock_on {
-    animation: monoblock_animation 3s ease-in-out infinite;
-    will-change: transform;
-}
-
-@keyframes monoblock_animation {
-
-    0%,
-    100% {
-        transform: translate3d(0, 30%, 0);
-    }
-
-    50% {
-        transform: translate3d(0, 35%, 0);
-    }
 }
 
 /* word_hidden */
@@ -1105,3 +1093,19 @@
         opacity: 0.7;
     }
 }
+
+/*.ani {
+  animation: du 3s ease-out infinite;
+}
+
+@keyframes du {
+  0% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(2);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}*/

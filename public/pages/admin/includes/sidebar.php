@@ -2,7 +2,8 @@
 $site = Setting\Route\Function\Functions::site();
 ?>
 
-<aside class="flex flex-col shadow-xl bg-white rounded-xl shrink-0">
+<aside id="admin-sidebar"
+    class="fixed inset-y-0 left-0 z-50 w-[260px] -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 flex flex-col shadow-xl bg-white shrink-0">
     <!-- main -->
     <div class="flex flex-col p-4 gap-4 min-w-[260px]">
         <div class="flex flex-1 justify-between gap-2">

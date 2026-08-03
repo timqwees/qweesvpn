@@ -1,16 +1,20 @@
 <?php
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Language\Language;
 use Setting\Route\Function\Functions;
 // Auth::auth();
 $site = Functions::site();
+$currentLanguage = Language::getCurrent();
+$translations = Language::getTranslations($currentLanguage);
+$t = fn(string $key): string => $translations[$key] ?? $key;
 ?>
 <!DOCTYPE html>
-<html lang="ru" class="dark">
+<html lang="<?= $currentLanguage ?>" class="dark">
 
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>О компании</title>
+    <title><?= $t('about_title') ?></title>
 
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css" as="style">
@@ -43,12 +47,13 @@ $site = Functions::site();
     <noscript>
         <link rel="stylesheet" href="/public/assets/styles/noscript.css">
     </noscript>
+  
 </head>
 
 <body class="bg-black bg-no-repeat flex item-center w-full overflow-x-hidden">
     <div class="min-h-screen flex flex-col w-full">
 
-    <?php include_once 'public/components/header.php' ?>
+        <?php include_once 'public/components/header.php' ?>
 
         <main class="flex sm:my-2 w-full h-full">
             <!-- ################# CONTENT DESCKTOP ####################-->
@@ -67,16 +72,16 @@ $site = Functions::site();
                                 <i class="fa-solid fa-building text-2xl text-green-400"></i>
                             </div>
                             <div>
-                                <h1 class="text-3xl font-bold text-white tracking-wide">О компании</h1>
+                                <h1 class="text-3xl font-bold text-white tracking-wide"><?= $t('about_title') ?></h1>
                                 <p class="text-gray-400 text-sm">
-                                    <?= htmlspecialchars($site['ООО']) ?> — надежный сервис VPN
+                                    <?= htmlspecialchars($site['ООО']) ?> <?= $t('about_desc') ?>
                                 </p>
                             </div>
                         </div>
                         <a href="/export/pdf?type=about"
                             class="elite-btn glow-card group relative flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105">
                             <i class="fa-solid fa-file-pdf text-green-300 group-hover:text-white transition-colors"></i>
-                            <span class="text-[white] font-medium">Экспорт PDF</span>
+                            <span class="text-[white] font-medium"><?= $t('export_pdf') ?></span>
                         </a>
                     </div>
 
@@ -93,15 +98,10 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                         <i class="fa-solid fa-rocket text-green-400"></i>
                                     </div>
-                                    <h2 class="text-xl font-semibold text-white">Наша миссия</h2>
+                                    <h2 class="text-xl font-semibold text-white"><?= $t('mission') ?></h2>
                                 </div>
                                 <p class="text-gray-400 leading-relaxed text-sm">
-                                    <?= htmlspecialchars($site['ООО']) ?> — это надежный и безопасный сервис для защиты
-                                    вашей приватности в
-                                    интернете.
-                                    Мы предоставляем высокоскоростные VPN-соединения с современными протоколами
-                                    шифрования,
-                                    гарантируя полную анонимность и безопасность ваших данных.
+                                    <?= htmlspecialchars($site['ООО']) ?> <?= $t('mission_desc') ?>
                                 </p>
                             </div>
                         </div>
@@ -117,13 +117,10 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-600/20 flex items-center justify-center ring-1 ring-emerald-400/30">
                                         <i class="fa-solid fa-shield-halved text-emerald-400"></i>
                                     </div>
-                                    <h2 class="text-xl font-semibold text-white">Безопасность</h2>
+                                    <h2 class="text-xl font-semibold text-white"><?= $t('security') ?></h2>
                                 </div>
                                 <p class="text-gray-400 leading-relaxed text-sm">
-                                    Мы используем передовые технологии шифрования AES-256 и протоколы OpenVPN,
-                                    WireGuard,
-                                    и Shadowsocks. Все наши серверы расположены в юрисдикциях с строгими законами
-                                    о защите персональных данных.
+                                    <?= $t('security_desc') ?>
                                 </p>
                             </div>
                         </div>
@@ -139,13 +136,10 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-teal-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                         <i class="fa-solid fa-globe text-green-400"></i>
                                     </div>
-                                    <h2 class="text-xl font-semibold text-white">Глобальная сеть</h2>
+                                    <h2 class="text-xl font-semibold text-white"><?= $t('global_network') ?></h2>
                                 </div>
                                 <p class="text-gray-400 leading-relaxed text-sm">
-                                    Наш сервер расположен в Нидерландах, Амстердам — одном из лучших дата-центров
-                                    Европы.
-                                    Мы постоянно расширяем нашу инфраструктуру, чтобы обеспечить максимальную скорость
-                                    и стабильность соединения для наших клиентов.
+                                    <?= $t('global_network_desc') ?>
                                 </p>
                             </div>
                         </div>
@@ -161,11 +155,10 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500/20 to-green-600/20 flex items-center justify-center ring-1 ring-teal-400/30">
                                         <i class="fa-solid fa-headset text-teal-400"></i>
                                     </div>
-                                    <h2 class="text-xl font-semibold text-white">Поддержка 24/7</h2>
+                                    <h2 class="text-xl font-semibold text-white"><?= $t('support_24_7') ?></h2>
                                 </div>
                                 <p class="text-gray-400 leading-relaxed text-sm">
-                                    Наша команда технической поддержки готова помочь вам в любое время суток.
-                                    Мы предлагаем быструю и профессиональную помощь на русском и английском языках.
+                                    <?= $t('support_desc') ?>
                                 </p>
                             </div>
                         </div>
@@ -190,14 +183,11 @@ $site = Functions::site();
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold text-white mb-3 flex items-center gap-2">
                                         <span
-                                            class="bg-gradient-to-r from-amber-400 to-red-400 bg-clip-text text-transparent">Ваш
-                                            личный Орел в мире VPN</span>
+                                            class="bg-gradient-to-r from-amber-400 to-red-400 bg-clip-text text-transparent"><?= $t('your_personal_eagle') ?></span>
                                         <i class="fa-solid fa-feather text-amber-400 text-lg"></i>
                                     </h2>
                                     <p class="text-gray-400 leading-relaxed mb-4 text-lg">
-                                        <span class="text-amber-400 font-semibold">Представьте:</span> интернет без
-                                        границ, без ограничений, без страха.
-                                        Где бы вы ни были — вы свободны. Это не мечта. Это <span
+                                        <span class="text-amber-400 font-semibold"><?= $t('imagine') ?></span> <?= $t('story_1') ?> <span
                                             class="text-white font-bold">
                                             <?= htmlspecialchars($site['ООО']) ?>
                                         </span>.
@@ -206,23 +196,22 @@ $site = Functions::site();
                                         <div class="flex items-center gap-2 bg-white/[0.05] p-3 rounded-xl">
                                             <i class="fa-solid fa-bolt text-amber-400 text-xl"></i>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Скорость
-                                                    света</span>
-                                                <span class="text-gray-400 text-xs">Никаких лагов</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('speed_light') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('no_lags') ?></span>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2 bg-white/[0.05] p-3 rounded-xl">
                                             <i class="fa-solid fa-shield-halved text-amber-400 text-xl"></i>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Армия защиты</span>
-                                                <span class="text-gray-400 text-xs">AES-256 шифрование</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('protection_army') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('aes256_encryption') ?></span>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2 bg-white/[0.05] p-3 rounded-xl">
                                             <i class="fa-solid fa-globe text-amber-400 text-xl"></i>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Нидерланды</span>
-                                                <span class="text-gray-400 text-xs">Амстердам, NL</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('netherlands') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('amsterdam_nl') ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -248,14 +237,11 @@ $site = Functions::site();
                                 <div class="flex-1">
                                     <h2 class="text-2xl font-bold text-white mb-3 flex items-center gap-2">
                                         <span
-                                            class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Почему
-                                            миллионы выбирают нас</span>
+                                            class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"><?= $t('why_millions') ?></span>
                                     </h2>
                                     <p class="text-gray-400 leading-relaxed mb-4 text-lg">
-                                        <span class="text-blue-400 font-semibold">2026 год.</span> Санкции, блокировки,
-                                        ограничения.
-                                        Обычные VPN не справляются. Мы создали <span class="text-white font-bold">QWEES
-                                            VPN</span>, который работает всегда.
+                                        <span class="text-blue-400 font-semibold"><?= $t('year_2026') ?></span> <?= $t('story_2') ?> <span class="text-white font-bold">QWEES
+                                            VPN</span><?= $t('works_always') ?>
                                     </p>
                                     <div class="grid grid-cols-2 gap-4">
                                         <div
@@ -265,9 +251,8 @@ $site = Functions::site();
                                                 <i class="fa-solid fa-bolt text-yellow-400"></i>
                                             </div>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Мгновенный
-                                                    старт</span>
-                                                <span class="text-gray-400 text-xs">Подключение за 2 секунды</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('instant_start') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('connect_2sec') ?></span>
                                             </div>
                                         </div>
                                         <div
@@ -277,10 +262,8 @@ $site = Functions::site();
                                                 <i class="fa-solid fa-infinity text-green-400"></i>
                                             </div>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Безлимитный
-                                                    трафик</span>
-                                                <span class="text-gray-400 text-xs">Качайте и смотрите сколько
-                                                    хотите</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('unlimited_traffic') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('download_watch') ?></span>
                                             </div>
                                         </div>
                                         <div
@@ -290,10 +273,8 @@ $site = Functions::site();
                                                 <i class="fa-solid fa-shield-halved text-blue-400"></i>
                                             </div>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Военная
-                                                    защита</span>
-                                                <span class="text-gray-400 text-xs">АES-256 + протоколы нового
-                                                    поколения</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('military_protection') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('aes256_new_gen') ?></span>
                                             </div>
                                         </div>
                                         <div
@@ -303,9 +284,8 @@ $site = Functions::site();
                                                 <i class="fa-solid fa-headset text-purple-400"></i>
                                             </div>
                                             <div>
-                                                <span class="text-white font-semibold text-sm block">Поддержка
-                                                    24/7</span>
-                                                <span class="text-gray-400 text-xs">Всегда на связи</span>
+                                                <span class="text-white font-semibold text-sm block"><?= $t('support_24_7') ?></span>
+                                                <span class="text-gray-400 text-xs"><?= $t('always_in_touch') ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -332,29 +312,26 @@ $site = Functions::site();
                                             class="w-8 h-8 object-contain">
                                     </div>
                                     <div>
-                                        <h2 class="text-lg font-bold text-white">Гений за продуктом</h2>
+                                        <h2 class="text-lg font-bold text-white"><?= $t('genius_behind') ?></h2>
                                         <p class="text-purple-400 text-xs">Founder & Tech Visionary</p>
                                     </div>
                                 </div>
                                 <p class="text-gray-400 text-sm leading-relaxed mb-3">
                                     <span class="text-purple-400 font-bold">
                                         <?= htmlspecialchars($site['контакты']['Директор']) ?>
-                                    </span> — разработчик, который
-                                    разочаровался в существующих VPN
-                                    и создал идеальный. <span class="text-pink-400 font-semibold">Его миссия</span> —
-                                    дать каждому свободный интернет.
+                                    </span> <?= $t('dev_disappointed') ?> <span class="text-pink-400 font-semibold"><?= $t('his_mission') ?></span> <?= $t('give_free_internet') ?>
                                 </p>
                                 <div
                                     class="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-3 rounded-xl border-l-4 border-purple-400">
                                     <p class="text-gray-400 text-sm italic">
-                                        "Я хотел VPN, который просто работает. Без лагов, без страха, без ограничений."
+                                        <?= $t('quote_director') ?>
                                     </p>
                                 </div>
                                 <div class="flex items-center gap-4 pt-3 border-t border-white/10">
                                     <div
                                         class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
                                         T</div>
-                                    <span class="text-gray-400 text-xs">Архитектор свободы</span>
+                                    <span class="text-gray-400 text-xs"><?= $t('architect_freedom') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -384,15 +361,15 @@ $site = Functions::site();
                                     </div>
                                 </div>
                                 <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                                    Элитная лаборатория, где рождаются <span
-                                        class="text-cyan-400 font-semibold">технологии будущего</span>.
-                                    Мы не следуем трендам — мы их создаем.
+                                    <?= $t('elite_lab') ?> <span
+                                        class="text-cyan-400 font-semibold"><?= $t('future_tech') ?></span>.
+                                    <?= $t('follow_no_trends') ?>
                                 </p>
                                 <div class="grid grid-cols-2 gap-2 mb-3">
                                     <div class="text-center p-2 bg-white/[0.05] rounded-lg">
                                         <span class="text-cyan-400 font-bold text-lg">1</span>
-                                        <span class="text-gray-400 text-xs block">Сервер</span>
-                                        <span class="text-cyan-400/70 text-[10px] block">Нидерланды</span>
+                                        <span class="text-gray-400 text-xs block"><?= $t('server') ?></span>
+                                        <span class="text-cyan-400/70 text-[10px] block"><?= $t('netherlands') ?></span>
                                     </div>
                                     <div class="text-center p-2 bg-white/[0.05] rounded-lg">
                                         <span class="text-blue-400 font-bold text-lg">99.9%</span>
@@ -401,11 +378,9 @@ $site = Functions::site();
                                 </div>
                                 <div class="flex flex-wrap gap-2 pt-3 border-t border-white/10">
                                     <span
-                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 text-xs border border-red-500/30">Премиум
-                                        VPN</span>
+                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 text-xs border border-red-500/30"><?= $t('premium_vpn') ?></span>
                                     <span
-                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 text-xs border border-cyan-500/30">Топ-1
-                                        в 2026</span>
+                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 text-xs border border-cyan-500/30"><?= $t('top_2026') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -424,13 +399,11 @@ $site = Functions::site();
                                     alt="<?= htmlspecialchars($site['ООО']) ?>" class="w-full h-full object-contain ">
                             </div>
                             <p class="text-2xl text-white font-light italic mb-2 leading-relaxed">
-                                "Не позволяйте границам ограничивать <span class="text-amber-400 font-medium">вашу
-                                    свободу</span>.
-                                <br>С
-                                <?= htmlspecialchars($site['ООО']) ?> <span class="text-white font-bold">весь мир</span>
-                                у вас в кармане"
+                                <?= $t('quote_cat') ?> <span class="text-amber-400 font-medium"><?= $t('your_freedom') ?></span>.
+                                <br><?= $t('with') ?>
+                                <?= htmlspecialchars($site['ООО']) ?> <span class="text-white font-bold"><?= $t('world_in_pocket') ?></span>"
                             </p>
-                            <span class="text-amber-400/60 text-sm">— Присоединяйтесь к революции
+                            <span class="text-amber-400/60 text-sm"><?= $t('join_revolution') ?>
                                 <?= htmlspecialchars($site['контакты']['Директор']) ?>
                             </span>
                         </div>
@@ -441,17 +414,17 @@ $site = Functions::site();
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
                             <span class="text-3xl font-bold text-green-400">NL</span>
-                            <span class="text-gray-400 text-xs mt-1">Нидерланды</span>
+                            <span class="text-gray-400 text-xs mt-1"><?= $t('netherlands') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
                             <span class="text-3xl font-bold text-emerald-400">AES-256</span>
-                            <span class="text-gray-400 text-xs mt-1">Шифрование</span>
+                            <span class="text-gray-400 text-xs mt-1"><?= $t('encryption_short') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
                             <span class="text-3xl font-bold text-teal-400">24/7</span>
-                            <span class="text-gray-400 text-xs mt-1">Поддержка</span>
+                            <span class="text-gray-400 text-xs mt-1"><?= $t('support_short') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
@@ -473,7 +446,7 @@ $site = Functions::site();
                                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                 <i class="fa-solid fa-building text-lg text-green-400"></i>
                             </div>
-                            <h1 class="text-xl font-bold text-white">О компании</h1>
+                            <h1 class="text-xl font-bold text-white"><?= $t('about_title') ?></h1>
                         </div>
                         <a href="/export/pdf?type=about"
                             class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500/80 to-green-600/80 text-[white] text-sm font-medium rounded-lg">
@@ -491,10 +464,10 @@ $site = Functions::site();
                                     class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                     <i class="fa-solid fa-rocket text-sm text-green-400"></i>
                                 </div>
-                                <h2 class="text-lg font-semibold text-white">Наша миссия</h2>
+                                <h2 class="text-lg font-semibold text-white"><?= $t('mission') ?></h2>
                             </div>
                             <p class="text-gray-400 text-sm leading-relaxed">
-                                Надежный сервис для защиты приватности с современными протоколами шифрования.
+                                <?= $t('reliable_service') ?>
                             </p>
                         </div>
 
@@ -505,10 +478,10 @@ $site = Functions::site();
                                     class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-green-600/20 flex items-center justify-center ring-1 ring-emerald-400/30">
                                     <i class="fa-solid fa-shield-halved text-sm text-emerald-400"></i>
                                 </div>
-                                <h2 class="text-lg font-semibold text-white">Безопасность</h2>
+                                <h2 class="text-lg font-semibold text-white"><?= $t('security') ?></h2>
                             </div>
                             <p class="text-gray-400 text-sm leading-relaxed">
-                                AES-256, OpenVPN, WireGuard, Shadowsocks. Серверы в юрисдикциях с защитой данных.
+                                <?= $t('security_mobile') ?>
                             </p>
                         </div>
 
@@ -519,10 +492,10 @@ $site = Functions::site();
                                     class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500/20 to-teal-600/20 flex items-center justify-center ring-1 ring-green-400/30">
                                     <i class="fa-solid fa-globe text-sm text-green-400"></i>
                                 </div>
-                                <h2 class="text-lg font-semibold text-white">Глобальная сеть</h2>
+                                <h2 class="text-lg font-semibold text-white"><?= $t('global_network') ?></h2>
                             </div>
                             <p class="text-gray-400 text-sm leading-relaxed">
-                                Сервер в Нидерландах, Амстердам. Высокая скорость и стабильность соединения.
+                                <?= $t('network_mobile') ?>
                             </p>
                         </div>
 
@@ -533,10 +506,10 @@ $site = Functions::site();
                                     class="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500/20 to-green-600/20 flex items-center justify-center ring-1 ring-teal-400/30">
                                     <i class="fa-solid fa-headset text-sm text-teal-400"></i>
                                 </div>
-                                <h2 class="text-lg font-semibold text-white">Поддержка</h2>
+                                <h2 class="text-lg font-semibold text-white"><?= $t('support_short') ?></h2>
                             </div>
                             <p class="text-gray-400 text-sm leading-relaxed">
-                                Техподдержка 24/7 на русском и английском языках.
+                                <?= $t('support_mobile') ?>
                             </p>
                         </div>
 
@@ -551,25 +524,24 @@ $site = Functions::site();
                                         class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/30 to-orange-600/30 flex items-center justify-center ring-1 ring-amber-400/40">
                                         <i class="fa-solid fa-cat text-xl text-amber-400"></i>
                                     </div>
-                                    <h2 class="text-lg font-bold text-white">Мы — коты</h2>
+                                    <h2 class="text-lg font-bold text-white"><?= $t('we_are_cats') ?></h2>
                                 </div>
                                 <p class="text-gray-400 text-sm leading-relaxed mb-3">
-                                    <span class="text-amber-400 font-medium">Независимы, гибки и всегда на
-                                        высоте</span>.
-                                    Ценим свободу и защищаем ваше личное пространство с кошачьей грацией.
+                                    <span class="text-amber-400 font-medium"><?= $t('cats_desc_1') ?></span>.
+                                    <?= $t('cats_desc_2') ?>
                                 </p>
                                 <div class="flex flex-col gap-2 text-xs">
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-eye text-amber-400 w-4"></i>
-                                        <span class="text-gray-400">Всё видим, никому не говорим</span>
+                                        <span class="text-gray-400"><?= $t('see_all') ?></span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-shoe-prints text-amber-400 w-4"></i>
-                                        <span class="text-gray-400">Бесшумный след в сети</span>
+                                        <span class="text-gray-400"><?= $t('silent_trace') ?></span>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <i class="fa-solid fa-moon text-amber-400 w-4"></i>
-                                        <span class="text-gray-400">Работаем ночью</span>
+                                        <span class="text-gray-400"><?= $t('work_at_night') ?></span>
                                     </div>
                                 </div>
                             </div>
@@ -587,14 +559,13 @@ $site = Functions::site();
                                         <i class="fa-solid fa-user-astronaut text-xl text-purple-400"></i>
                                     </div>
                                     <div>
-                                        <h2 class="text-lg font-bold text-white">Автор</h2>
-                                        <p class="text-purple-400 text-xs">Видение & Разработка</p>
+                                        <h2 class="text-lg font-bold text-white"><?= $t('author') ?></h2>
+                                        <p class="text-purple-400 text-xs"><?= $t('vision_dev') ?></p>
                                     </div>
                                 </div>
                                 <p class="text-gray-400 text-sm leading-relaxed">
-                                    Идея родилась из потребности в <span class="text-purple-400 font-medium">надежном и
-                                        красивом</span> VPN.
-                                    Мы не верим в компромиссы.
+                                    <?= $t('idea_born') ?> <span class="text-purple-400 font-medium"><?= $t('reliable_beautiful') ?></span> VPN.
+                                    <?= $t('no_compromises') ?>
                                 </p>
                             </div>
                         </div>
@@ -617,8 +588,7 @@ $site = Functions::site();
                                     </div>
                                 </div>
                                 <p class="text-gray-400 text-sm leading-relaxed mb-3">
-                                    <span class="text-cyan-400 font-medium">Команда энтузиастов</span>, создающих
-                                    цифровые продукты с душой.
+                                    <span class="text-cyan-400 font-medium"><?= $t('team_enthusiasts') ?></span><?= $t('digital_products') ?>
                                 </p>
                                 <div class="flex flex-wrap gap-1">
                                     <span
@@ -640,7 +610,7 @@ $site = Functions::site();
                             <div class="relative z-10 text-center">
                                 <i class="fa-solid fa-quote-left text-xl text-green-400/30 mb-2"></i>
                                 <p class="text-sm text-white font-light italic mb-1">
-                                    "Будь как кот — незаметный, независимый и свободный"
+                                    <?= $t('cat_quote') ?>
                                 </p>
                                 <span class="text-green-400/60 text-xs">—
                                     <?= htmlspecialchars($site['ООО']) ?>
@@ -653,18 +623,18 @@ $site = Functions::site();
                     <div class="grid grid-cols-2 gap-3 mt-2">
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">
-                            <span class="text-2xl font-bold text-green-400">NL</span>
-                            <span class="text-gray-400 text-xs">Нидерланды</span>
+                            <span id="1" class="text-2xl font-bold text-green-400">NL</span>
+                            <span class="text-gray-400 text-xs"><?= $t('netherlands') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">
                             <span class="text-2xl font-bold text-emerald-400">AES-256</span>
-                            <span class="text-gray-400 text-xs">Шифрование</span>
+                            <span class="text-gray-400 text-xs"><?= $t('encryption_short') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">
                             <span class="text-2xl font-bold text-teal-400">24/7</span>
-                            <span class="text-gray-400 text-xs">Поддержка</span>
+                            <span class="text-gray-400 text-xs"><?= $t('support_short') ?></span>
                         </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">

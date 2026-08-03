@@ -38,8 +38,8 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
     </noscript>
 
     <!-- Deferred scripts -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
 
     <!-- Noscript fallback -->
     <noscript>
@@ -92,7 +92,7 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
 
     </div>
 
-    <script>
+    <script defer>
         <?php
         $message = $_GET['error'] ?? null;
         if (isset($message))
