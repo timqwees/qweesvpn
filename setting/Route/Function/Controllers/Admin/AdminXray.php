@@ -57,11 +57,26 @@ class AdminXray
             );
         }
 
-        file_put_contents(
-            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            sprintf("[%s] [АДМИН-ВЫДАЧА] %s: %d дней, %d уст., до %s\n", date('Y-m-d H:i:s'), $uniID, $days, $devices, date('Y-m-d H:i:s', (int) ($expiryMs / 1000))),
-            FILE_APPEND
-        );
+        if ($result === false) {
+            // Подписка/VPN-ключ уже выданы, но запись в БД не удалась
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                sprintf(
+                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось\n",
+                    date('Y-m-d H:i:s'),
+                    $uniID,
+                    $days,
+                    $devices
+                ),
+                FILE_APPEND
+            );
+        } else {
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                sprintf("[%s] [АДМИН-ВЫДАЧА] %s: %d дней, %d уст., до %s\n", date('Y-m-d H:i:s'), $uniID, $days, $devices, date('Y-m-d H:i:s', (int) ($expiryMs / 1000))),
+                FILE_APPEND
+            );
+        }
 
         return $result !== false;
     }

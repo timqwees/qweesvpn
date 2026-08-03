@@ -35,11 +35,11 @@ class Kassa
         int $countDays,
         int $countDevices,
         int $expiryMs
-    ): void {
+    ): bool {
         $params = [$uniID, $status, $subscription, $amount, $countDays, $countDevices, $expiryMs];
 
         if (Database::isMysql()) {
-            Database::send(
+            $result = Database::send(
                 'INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, expiry, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                  ON DUPLICATE KEY UPDATE
@@ -53,12 +53,29 @@ class Kassa
                 $params
             );
         } else {
-            Database::send(
+            $result = Database::send(
                 'INSERT OR REPLACE INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, count_devices, expiry, updated_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
                 $params
             );
         }
+
+        if ($result === false) {
+            // Подписка/VPN-ключ уже выданы, но запись в БД не удалась
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                sprintf(
+                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось\n",
+                    date('Y-m-d H:i:s'),
+                    $uniID,
+                    $countDays,
+                    $countDevices
+                ),
+                FILE_APPEND
+            );
+        }
+
+        return $result !== false;
     }
 
     /**
