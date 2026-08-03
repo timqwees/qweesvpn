@@ -246,25 +246,25 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 class="glow-card relative min-h-[600px] flex flex-1 flex-col items-center justify-center rounded-2xl overflow-hidden">
                                 <!-- backgound -->
                                 <img decoding="async" loading="lazy"
-                                    src="<?= $site['baseUrl'] ?>/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>"
+                                    src="/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>"
                                     alt="background" class="absolute w-full h-full opacity-20" loading="lazy">
 
                                 <!-- Monoblock decorative elements -->
                                 <div class="relative flex justify-center items-center flex-col w-1/3">
                                   <!-- bg -->
-                                    <img decoding="async"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
-                                        alt="monoblock_top" title="monoblock_top" loading="lazy"
+                                    <img decoding="async" loading="lazy"
+                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
+                                        alt="monoblock_bg" title="monoblock_bg"
                                         class="z-20 w-full absolute z-10">
                                   <!-- spin -->
-                                    <img decoding="async"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
-                                        alt="monoblock_down" title="monoblock_down" loading="lazy"
+                                    <img decoding="async" loading="lazy"
+                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
+                                        alt="monoblock_spin" title="monoblock_spin"
                                         class="z-10 w-[70%] absolute z-20 animate-spin [animation-duration:10s]">
                                   <!-- center -->
-                                    <img decoding="async"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
-                                        alt="monoblock_down" title="monoblock_down" loading="lazy"
+                                    <img decoding="async" loading="lazy"
+                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
+                                        alt="monoblock_center" title="monoblock_center"
                                         class="z-10 w-[35%] absolute z-30">
                                 </div>
 
@@ -876,18 +876,18 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                     <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
                       <!-- bg -->
                         <img decoding="async" loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
-                            alt="monoblock_top" title="monoblock_top" loading="lazy"
+                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
+                            alt="monoblock_bg" title="monoblock_bg" loading="lazy"
                             class="z-20 w-[70%] absolute z-10">
                       <!-- spin -->
                         <img decoding="async" loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
-                            alt="monoblock_down" title="monoblock_down"
+                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
+                            alt="monoblock_spin" title="monoblock_spin"
                             class="z-10 w-[50%] absolute z-20 animate-spin [animation-duration:10s]">
                       <!-- center -->
                         <img decoding="async" loading="lazy"
-                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
-                            alt="monoblock_down" title="monoblock_down"
+                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
+                            alt="monoblock_center" title="monoblock_center"
                             class="z-10 w-[22%] absolute z-30">
                     </div>
 
