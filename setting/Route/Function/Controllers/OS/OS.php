@@ -42,7 +42,7 @@ class OS
             return [
                 'os' => 'Windows',
                 'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/incy-windows-setup.exe',
-                'api' => 'incy://routing/add/',
+                'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
         }
@@ -52,7 +52,7 @@ class OS
             return [
                 'os' => 'Linux',
                 'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/incy-linux-arm64.deb',
-                'api' => 'incy://routing/add/',
+                'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
         }
@@ -64,7 +64,7 @@ class OS
             return [
                 'os' => 'Huawei',
                 'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
-                'api' => 'incy://routing/add/',
+                'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
         }
@@ -76,7 +76,7 @@ class OS
             return [
                 'os' => 'Android',
                 'url' => 'https://play.google.com/store/apps/details?id=llc.itdev.incy&pli=1',
-                'api' => 'incy://routing/add/',
+                'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
         }
@@ -86,7 +86,7 @@ class OS
             return [
                 'os' => 'Android',
                 'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
-                'api' => 'incy://routing/add/',
+                'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
         }
@@ -95,7 +95,7 @@ class OS
         return [
             'os' => 'Other',
             'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
-            'api' => 'incy://routing/add/',
+            'api' => 'incy://add/',
             'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
         ];
     }
