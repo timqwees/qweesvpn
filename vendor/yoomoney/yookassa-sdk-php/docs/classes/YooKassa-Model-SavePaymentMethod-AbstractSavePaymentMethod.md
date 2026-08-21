@@ -22,6 +22,7 @@
 | public | [$confirmation](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_confirmation) |  | Выбранный сценарий подтверждения привязки. Присутствует, когда привязка ожидает подтверждения от пользователя. |
 | public | [$holder](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_holder) |  | Данные магазина, для которого сохраняется способ оплаты. |
 | public | [$id](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_id) |  | Идентификатор сохраненного способа оплаты. |
+| public | [$metadata](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_metadata) |  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8. |
 | public | [$saved](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_saved) |  | Признак сохранения способа оплаты для [автоплатежей](https://yookassa.ru/developers/payment-acceptance/scenario-extensions/recurring-payments/pay-with-saved).  Возможные значения:   * ~`true` — способ оплаты сохранен для автоплатежей и выплат; * ~`false` — способ оплаты не сохранен. |
 | public | [$status](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_status) |  | Статус проверки и сохранения способа оплаты. |
 | public | [$title](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property_title) |  | Название способа оплаты. |
@@ -29,6 +30,7 @@
 | protected | [$_confirmation](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__confirmation) |  |  |
 | protected | [$_holder](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__holder) |  | Данные магазина, для которого сохраняется способ оплаты. |
 | protected | [$_id](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__id) |  | Идентификатор сохраненного способа оплаты. |
+| protected | [$_metadata](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__metadata) |  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. |
 | protected | [$_saved](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__saved) |  | Признак сохранения способа оплаты для [автоплатежей](https://yookassa.ru/developers/payment-acceptance/scenario-extensions/recurring-payments/pay-with-saved).  Возможные значения:   * ~`true` — способ оплаты сохранен для автоплатежей и выплат; * ~`false` — способ оплаты не сохранен. |
 | protected | [$_status](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__status) |  | Статус проверки и сохранения способа оплаты. |
 | protected | [$_title](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#property__title) |  | Название способа оплаты. |
@@ -47,6 +49,7 @@
 | public | [getConfirmation()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getConfirmation) |  | Возвращает confirmation. |
 | public | [getHolder()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getHolder) |  | Возвращает holder. |
 | public | [getId()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getId) |  | Возвращает id. |
+| public | [getMetadata()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getMetadata) |  | Возвращает metadata. |
 | public | [getSaved()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getSaved) |  | Возвращает saved. |
 | public | [getStatus()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getStatus) |  | Возвращает status. |
 | public | [getTitle()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_getTitle) |  | Возвращает title. |
@@ -60,6 +63,7 @@
 | public | [setConfirmation()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setConfirmation) |  | Устанавливает confirmation. |
 | public | [setHolder()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setHolder) |  | Устанавливает holder. |
 | public | [setId()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setId) |  | Устанавливает id. |
+| public | [setMetadata()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setMetadata) |  | Устанавливает metadata. |
 | public | [setSaved()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setSaved) |  | Устанавливает saved. |
 | public | [setStatus()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setStatus) |  | Устанавливает status. |
 | public | [setTitle()](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md#method_setTitle) |  | Устанавливает title. |
@@ -122,6 +126,18 @@
 Идентификатор сохраненного способа оплаты.
 
 **Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_metadata"></a>
+#### public $metadata : \YooKassa\Model\Metadata
+---
+***Description***
+
+Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
+
+**Type:** <a href="../classes/YooKassa-Model-Metadata.html"><abbr title="\YooKassa\Model\Metadata">Metadata</abbr></a>
 
 **Details:**
 
@@ -202,6 +218,18 @@
 Идентификатор сохраненного способа оплаты.
 
 **Type:** <a href="../?string"><abbr title="?string">?string</abbr></a>
+
+**Details:**
+
+
+<a name="property__metadata"></a>
+#### protected $_metadata : ?\YooKassa\Model\Metadata
+---
+**Summary**
+
+Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+
+**Type:** <a href="../?\YooKassa\Model\Metadata"><abbr title="?\YooKassa\Model\Metadata">Metadata</abbr></a>
 
 **Details:**
 
@@ -444,6 +472,23 @@ public getId() : string|null
 * Inherited From: [\YooKassa\Model\SavePaymentMethod\AbstractSavePaymentMethod](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md)
 
 **Returns:** string|null - 
+
+
+<a name="method_getMetadata" class="anchor"></a>
+#### public getMetadata() : \YooKassa\Model\Metadata|null
+
+```php
+public getMetadata() : \YooKassa\Model\Metadata|null
+```
+
+**Summary**
+
+Возвращает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Model\SavePaymentMethod\AbstractSavePaymentMethod](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md)
+
+**Returns:** \YooKassa\Model\Metadata|null - 
 
 
 <a name="method_getSaved" class="anchor"></a>
@@ -699,6 +744,28 @@ public setId(string|null $id = null) : self
 **Returns:** self - 
 
 
+<a name="method_setMetadata" class="anchor"></a>
+#### public setMetadata() : self
+
+```php
+public setMetadata(\YooKassa\Model\Metadata|array|null $metadata = null) : self
+```
+
+**Summary**
+
+Устанавливает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Model\SavePaymentMethod\AbstractSavePaymentMethod](../classes/YooKassa-Model-SavePaymentMethod-AbstractSavePaymentMethod.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\Metadata OR array OR null</code> | metadata  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. |
+
+**Returns:** self - 
+
+
 <a name="method_setSaved" class="anchor"></a>
 #### public setSaved() : self
 
@@ -857,6 +924,6 @@ protected validatePropertyValue(string $propertyName, mixed $propertyValue) : mi
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

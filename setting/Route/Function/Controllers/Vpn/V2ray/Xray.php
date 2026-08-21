@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Vpn\V2ray;
 
 use Setting\Route\Function\Controllers\Client\GetUser;
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use App\Config\Database;
 use Setting\Route\Function\Functions;
 use DateTime, DateTimeZone;
@@ -36,34 +37,49 @@ class Xray
         );
     }
 
-    /** Базовый URL панели 3x-ui из .env (например https://host:port), без суффикса /panel/api. */
+    /**
+     * Настройка текущего сервера из реестра Network (Server/Network.php).
+     * Текущий сервер выбирается через Network::selectServer() перед операцией.
+     */
+    private static function serverSetting(string $key): string
+    {
+        return (string) (ServerNetwork::getServer()[$key] ?? '');
+    }
+
+    /** Базовый URL панели 3x-ui текущего сервера, без суффикса /panel/api. */
     private static function panelBase(): string
     {
-        return rtrim($_ENV['XUI_URL_PANEL'] ?? '', '/');
+        return rtrim(self::serverSetting('XUI_URL_PANEL'), '/');
     }
 
     /** Имя cookie сессии после POST /login (если не используется XUI_API_TOKEN). */
     private static function cookieName(): string
     {
-        return $_ENV['XUI_LOGIN_NAME_COOKIE'] ?? 'x-ui';
+        return self::serverSetting('XUI_LOGIN_NAME_COOKIE') ?: 'x-ui';
     }
 
     /** Логин администратора панели (POST /login без Bearer). */
     private static function xuiLogin(): string
     {
-        return $_ENV['XUI_LOGIN'] ?? '';
+        return self::serverSetting('XUI_LOGIN');
     }
 
     /** Пароль администратора панели. */
     private static function xuiPassword(): string
     {
-        return $_ENV['XUI_PASSWORD'] ?? '';
+        return self::serverSetting('XUI_PASSWORD');
     }
 
     /** VLESS сервер хост (для client_data). */
     private static function vlessHost(): string
     {
-        return $_ENV['VLESS_SERVER'] ?? '';
+        return self::serverSetting('VLESS_SERVER');
+    }
+
+    /** Номер inbound'а в списке list. */
+    private static function inboundNumber(): int
+    {
+        return (int) self::serverSetting('XUI_INBOUND_NUMBER');
     }
 
     /** Имя файла для логирования. */
@@ -75,15 +91,15 @@ class Xray
     /** API Token панели (Settings → Security). Пусто — POST /login и cookie + CSRF. */
     private static function xuiApiToken(): string
     {
-        return trim((string) ($_ENV['XUI_API_TOKEN'] ?? ''), " \t\n\r\0\x0B\"'");
+        return trim(self::serverSetting('XUI_API_TOKEN'), " \t\n\r\0\x0B\"'");
     }
 
-    /** Одна сессия cookie (+ CSRF) на HTTP-запрос PHP при работе без Bearer. */
+    /** Одна сессия cookie (+ CSRF) на HTTP-запрос PHP; сбрасывается при смене сервера. */
     private static ?string $threeXuiCookieCache = null;
 
     private static ?string $threeXuiCsrfCache = null;
 
-    private static bool $threeXuiAuthResolved = false;
+    private static string $threeXuiCacheServer = '';
 
     /** Базовые SSL/UA опции (int 0/1 — совместимость с curl_setopt_array в PHP 8+). */
     private static function curlSslUserAgentOpts(): array
@@ -219,16 +235,15 @@ class Xray
      */
     private static function threeXuiCookieAuthSession(): array|false
     {
-        if (self::$threeXuiAuthResolved) {
-            return self::$threeXuiCookieCache !== null
-                ? [self::$threeXuiCookieCache, self::$threeXuiCsrfCache]
-                : false;
+        // Кэш действителен только для того сервера, на котором получен
+        if (self::$threeXuiCacheServer === self::vlessHost() && self::$threeXuiCookieCache !== null) {
+            return [self::$threeXuiCookieCache, self::$threeXuiCsrfCache];
         }
-        self::$threeXuiAuthResolved = true;
         $cookie = self::threeXuiLoginCookie();
         if ($cookie === null) {
             return false;
         }
+        self::$threeXuiCacheServer = self::vlessHost();
         self::$threeXuiCookieCache = $cookie;
         self::$threeXuiCsrfCache = self::threeXuiFetchCsrfToken($cookie);
         if (self::$threeXuiCsrfCache === null) {
@@ -367,9 +382,12 @@ class Xray
      * - Поиск существующего: по subId === uniID (надёжнее имени)
      * - email в URL при update/delete — реальный email из записи панели (= getFirstName())
      */
-    private function addClientPanelApi(int $days, string $uniID, int $device_limit, string $switch = ''): array|false
+    private function addClientPanelApi(int $days, string $uniID, int $device_limit, string $switch = '', ?int $fixedExpiryMs = null): array|false
     {
         $user = new GetUser($uniID);
+
+        // Выбираем сервер клиента (субдомен его подписки, без подписки — дефолтный)
+        ServerNetwork::selectServer($uniID);
 
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj']) || !is_array($data['obj'])) {
@@ -381,7 +399,7 @@ class Xray
             return false;
         }
 
-        $inboundIdx = (int) ($_ENV['XUI_INBOUND_NUMBER'] ?? 0);
+        $inboundIdx = self::inboundNumber();
         if (empty($data['obj'][$inboundIdx])) {
             file_put_contents(
                 self::logFile(),
@@ -432,7 +450,10 @@ class Xray
         $base = new DateTime('@' . (max($now->getTimestamp() * 1000, $currentExpiryMs) / 1000));
         $base->setTimezone(new DateTimeZone('Europe/Moscow'));
 
-        if ($switch === 'hours') {
+        if ($fixedExpiryMs !== null && $fixedExpiryMs > 0) {
+            // Фиксированный срок (перенос клиента на другой сервер — остаток дней сохраняется)
+            $expiry = $fixedExpiryMs;
+        } elseif ($switch === 'hours') {
             $expiry = $base->modify('+' . (int) $days . ' hours')->getTimestamp() * 1000;
         } elseif($switch === 'minutes') {
             $expiry = $base->modify('+' . (int) $days . ' minutes')->getTimestamp() * 1000;
@@ -509,6 +530,8 @@ class Xray
                 'port' => $inbound['port'] ?? 443,
                 'security' => $ss['security'] ?? 'tls',
                 'network' => $ss['network'] ?? 'ws',
+                'server' => ServerNetwork::getServerCode(), // код сервера из реестра Network
+                'subscription_url' => ServerNetwork::getSubscriptionUrl($uniID),
             ],
         ];
     }
@@ -516,10 +539,13 @@ class Xray
     /**
      * Создаёт или обновляет клиента VPN через REST API панели 3x-ui (`/panel/api/clients/*`).
      * Bearer `XUI_API_TOKEN` или сессия POST `/login` + CSRF. Inbound — индекс `XUI_INBOUND_NUMBER` в списке list.
+     * Сервер выбирается автоматически по подписке пользователя (субдомен), см. Server/Network.php.
      *
      * @param int|string $days         Количество дней действия подписки
      * @param string     $uniID        Уникальный идентификатор пользователя
      * @param int|null   $device_limit Лимит устройств (опционально, по умолчанию из XUI_DEVICE_LIMIT)
+     * @param string     $switch       Переключатель срока: '' | 'hours' | 'minutes'
+     * @param int|null   $expiryMs     Фиксированный expiry в мс (перенос между серверами — срок сохраняется)
      *
      * @return array|false              Возвращает массив с данными клиента при успехе:
      *                                 [
@@ -537,14 +563,16 @@ class Xray
      *                                     'host' => string,         // Хост сервера
      *                                     'port' => int,            // Порт подключения
      *                                     'security' => string,     // Тип безопасности (tls)
-     *                                     'network' => string       // Тип сети (ws)
+     *                                     'network' => string,      // Тип сети (ws)
+     *                                     'server' => string,       // Код сервера (nl, fi, ...)
+     *                                     'subscription_url' => string // URL подписки на этом сервере
      *                                   ]
      *                                 ]
      *                                 При ошибке возвращает false и записывает лог
      */
-    public function addClient(int $days, string $uniID, int $device_limit, string $switch = ''): array|false
+    public function addClient(int $days, string $uniID, int $device_limit, string $switch = '', ?int $expiryMs = null): array|false
     {
-        return $this->addClientPanelApi($days, $uniID, $device_limit, $switch);
+        return $this->addClientPanelApi($days, $uniID, $device_limit, $switch, $expiryMs);
     }
 
     /**
@@ -554,11 +582,12 @@ class Xray
      */
     private function xuiUpdate3xUi(string $uniID, int $bonusDays): array
     {
+        ServerNetwork::selectServer($uniID); // сервер клиента по его подписке
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj'])) {
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
-        $inboundIdx = (int) ($_ENV['XUI_INBOUND_NUMBER'] ?? 0);
+        $inboundIdx = self::inboundNumber();
         $inbound = $data['obj'][$inboundIdx] ?? null;
         if (!$inbound || empty($inbound['id'])) {
             return ['status' => 'error', 'message' => 'Inbound не найден'];
@@ -650,21 +679,24 @@ class Xray
     }
 
     /**
-     * Удаление ключа через API 3x-ui.
+     * Удаление клиента только из панели 3x-ui (запись в БД не трогается).
+     * Используется DeleteKey (плюс очистка БД) и Network::switchServer (перенос на другой сервер).
      *
      * 3.1.0: POST /panel/api/clients/del/:email
      * :email = реальный email клиента из панели (= getFirstName(), установленный при создании).
      * Ищем клиента по subId (= uniID), берём его email и подставляем в URL.
      *
-     * @return array<string, string>
+     * @return array{status: string, message: string}
      */
-    private function deleteKey3xUi(string $uniID): array
+    public static function deleteClientFromPanel(string $uniID): array
     {
+        ServerNetwork::selectServer($uniID); // сервер клиента по его подписке
+
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj'])) {
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
-        $inboundIdx = (int) ($_ENV['XUI_INBOUND_NUMBER'] ?? 0);
+        $inboundIdx = self::inboundNumber();
         if (empty($data['obj'][$inboundIdx])) {
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
@@ -693,7 +725,7 @@ class Xray
         }
 
         if (!$found) {
-            return ['status' => 'partial', 'message' => 'Клиент не найден в панели, данные подписки очищены'];
+            return ['status' => 'partial', 'message' => 'Клиент не найден в панели'];
         }
 
         // 3.1.0: POST /panel/api/clients/del/:email (убран inboundId из пути)
@@ -715,14 +747,30 @@ class Xray
                     }
                 }
             }
-            Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
-            return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
+            return ['status' => 'ok', 'message' => 'Клиент удалён с сервера'];
         }
         return [
             'status' => 'partial',
             'message' => 'Успешно удалено из хранилища, но ошибка при удалении из сервера: '
                 . json_encode($delResult, JSON_UNESCAPED_UNICODE),
         ];
+    }
+
+    /**
+     * Удаление ключа через API 3x-ui + очистка подписки в БД.
+     *
+     * @return array<string, string>
+     */
+    private function deleteKey3xUi(string $uniID): array
+    {
+        $result = self::deleteClientFromPanel($uniID);
+
+        if (($result['status'] ?? '') === 'ok') {
+            Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
+            return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
+        }
+
+        return $result;
     }
 
     /**
@@ -762,62 +810,5 @@ class Xray
         }
 
         return $result;
-    }
-
-    /**
-     * Очистка истёкших клиентов на панели 3x-ui.
-     *
-     * 3.1.0: POST /panel/api/clients/delDepleted — глобальный эндпоинт без inboundId.
-     * Старый /inbounds/delDepletedClients/:id удалён из API.
-     * Ответ содержит obj.deleted (количество удалённых клиентов).
-     */
-    private static function cleanUp3xUi(): void
-    {
-        // 3.1.0: глобальный вызов — GET inbounds/list перед этим не нужен
-        $result = self::threeXuiHttp('POST', '/panel/api/clients/delDepleted', null);
-
-        if ($result !== false && ($result['success'] ?? false) === true) {
-            $deleted = (int) ($result['obj']['deleted'] ?? 0);
-            file_put_contents(
-                self::logFile(),
-                sprintf(
-                    "[%s] [УСПЕШНО - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui: delDepleted удалил %d клиентов\n",
-                    date('Y-m-d H:i:s'),
-                    $deleted
-                ),
-                FILE_APPEND
-            );
-        } else {
-            file_put_contents(
-                self::logFile(),
-                sprintf(
-                    "[%s] [ОШИБКА - ГЛОБАЛЬНАЯ ОЧИСТКА] 3x-ui delDepleted: %s\n",
-                    date('Y-m-d H:i:s'),
-                    json_encode($result, JSON_UNESCAPED_UNICODE)
-                ),
-                FILE_APPEND
-            );
-            return;
-        }
-
-        Database::send(
-            'DELETE FROM qwees_subscriptions WHERE status != ? AND expiry < ?',
-            [strval('off'), (string) (time() * 1000)]
-        );
-        file_put_contents(
-            self::logFile(),
-            sprintf("[%s] [УСПЕШНО - ГЛОБАЛЬНАЯ ОЧИСТКА] Cleanup: обновлена БД\n", date('Y-m-d H:i:s')),
-            FILE_APPEND
-        );
-    }
-
-    /**
-     * Очистка истёкших клиентов: `POST /panel/api/clients/delDepleted` и синхронизация БД.
-     *
-     * @return void
-     */
-    public static function CleanUP()
-    {
-        self::cleanUp3xUi();
     }
 }

@@ -27,6 +27,7 @@
 | public | [SELF_EMPLOYED_PATH](../classes/YooKassa-Client-BaseClient.md#constant_SELF_EMPLOYED_PATH) |  | Точка входа для запросов к API по самозанятым |
 | public | [INVOICES_PATH](../classes/YooKassa-Client-BaseClient.md#constant_INVOICES_PATH) |  | Точка входа для запросов к API по счетам |
 | public | [PAYMENT_METHODS_PATH](../classes/YooKassa-Client-BaseClient.md#constant_PAYMENT_METHODS_PATH) |  | Точка входа для запросов к API по способам оплаты |
+| public | [POS_LINKS_PATH](../classes/YooKassa-Client-BaseClient.md#constant_POS_LINKS_PATH) |  | Точка входа для запросов к API по кассовым ссылкам |
 | public | [IDEMPOTENCE_KEY_HEADER](../classes/YooKassa-Client-BaseClient.md#constant_IDEMPOTENCE_KEY_HEADER) |  | Имя HTTP заголовка, используемого для передачи idempotence key |
 | public | [DEFAULT_DELAY](../classes/YooKassa-Client-BaseClient.md#constant_DEFAULT_DELAY) |  | Значение по умолчанию времени ожидания между запросами при отправке повторного запроса в случае получения ответа с HTTP статусом 202. |
 | public | [DEFAULT_TRIES_COUNT](../classes/YooKassa-Client-BaseClient.md#constant_DEFAULT_TRIES_COUNT) |  | Значение по умолчанию количества попыток получения информации от API если пришёл ответ с HTTP статусом 202 |
@@ -189,6 +190,15 @@ INVOICES_PATH = '/invoices'
 
 ```php
 PAYMENT_METHODS_PATH = '/payment_methods'
+```
+
+
+<a name="constant_POS_LINKS_PATH" class="anchor"></a>
+###### POS_LINKS_PATH
+Точка входа для запросов к API по кассовым ссылкам
+
+```php
+POS_LINKS_PATH = '/pos_links'
 ```
 
 
@@ -746,6 +756,6 @@ protected handleError(\YooKassa\Common\ResponseObject $response) : void
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

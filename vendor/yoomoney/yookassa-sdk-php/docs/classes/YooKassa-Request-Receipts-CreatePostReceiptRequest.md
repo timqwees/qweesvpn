@@ -32,6 +32,12 @@ try {
                 'vat_code' => 2,
                 'payment_mode' => 'full_payment',
                 'payment_subject' => 'commodity',
+                'agent_type' => 'banking_payment_agent',
+                'supplier' => [
+                    'name' => 'ООО Поставщик',
+                    'phone' => '79000000000',
+                    'inn' => '6321341814',
+                ],
             ],
         ])
         ->addSettlement([
@@ -61,6 +67,12 @@ try {
         'vat_code' => 2,
         'payment_mode' => 'full_payment',
         'payment_subject' => 'commodity',
+        'agent_type' => 'banking_payment_agent',
+        'supplier' => [
+            'name' => 'ООО Поставщик',
+            'phone' => '79000000000',
+            'inn' => '6321341814',
+        ],
     ]));
 
     $idempotenceKey = uniqid('', true);
@@ -1444,6 +1456,6 @@ protected validatePropertyValue(string $propertyName, mixed $propertyValue) : mi
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

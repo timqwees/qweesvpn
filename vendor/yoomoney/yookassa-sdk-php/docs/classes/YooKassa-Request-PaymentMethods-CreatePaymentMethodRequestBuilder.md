@@ -62,6 +62,7 @@ var_dump($response);
 | public | [setClientIp()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_setClientIp) |  | Устанавливает client_ip. |
 | public | [setConfirmation()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_setConfirmation) |  | Устанавливает confirmation. |
 | public | [setHolder()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_setHolder) |  | Устанавливает holder. |
+| public | [setMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_setMetadata) |  | Устанавливает metadata. |
 | public | [setOptions()](../classes/YooKassa-Common-AbstractRequestBuilder.md#method_setOptions) |  | Устанавливает свойства запроса из массива. |
 | public | [setType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_setType) |  | Устанавливает type. |
 | protected | [initCurrentObject()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md#method_initCurrentObject) |  | Инициализирует объект запроса, который в дальнейшем будет собираться билдером |
@@ -228,6 +229,28 @@ public setHolder(\YooKassa\Request\PaymentMethods\PaymentMethodHolder|array|null
 **Returns:** self - 
 
 
+<a name="method_setMetadata" class="anchor"></a>
+#### public setMetadata() : self
+
+```php
+public setMetadata(\YooKassa\Model\Metadata|array|null $value = null) : self
+```
+
+**Summary**
+
+Устанавливает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequestBuilder](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestBuilder.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\Metadata OR array OR null</code> | value  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. |
+
+**Returns:** self - 
+
+
 <a name="method_setOptions" class="anchor"></a>
 #### public setOptions() : \YooKassa\Common\AbstractRequestBuilder
 
@@ -311,6 +334,6 @@ protected initCurrentObject() : \YooKassa\Request\PaymentMethods\CreatePaymentMe
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

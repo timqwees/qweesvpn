@@ -1006,6 +1006,7 @@ class CreatePaymentRequestBuilderTest extends AbstractTestCase
                     'receiver' => null,
                     'paymentOrder' => null,
                     'statements' => null,
+                    'posLink' => null,
                 ],
             ],
             [
@@ -1057,6 +1058,10 @@ class CreatePaymentRequestBuilderTest extends AbstractTestCase
                     'receiver' => null,
                     'paymentOrder' => null,
                     'statements' => null,
+                    'posLink' => [
+                        'id' => Random::str(36, 36, '0123456789abcdef'),
+                        'expires_at' => date('Y-m-d\TH:i:s.v\Z'),
+                    ],
                 ],
             ],
         ];
@@ -1189,6 +1194,10 @@ class CreatePaymentRequestBuilderTest extends AbstractTestCase
                 'receiver' => Random::value($receivers),
                 'paymentOrder' => Random::value($paymentOrders),
                 'statements' => Random::value($statementsArray),
+                'posLink' => $i % 2 === 0 ? [
+                    'id' => Random::str(36, 36, '0123456789abcdef'),
+                    'expires_at' => date(YOOKASSA_DATE),
+                ] : null,
             ];
             $result[] = [$request];
         }
@@ -1400,6 +1409,55 @@ class CreatePaymentRequestBuilderTest extends AbstractTestCase
      * @throws Exception
      */
     public static function invalidPaymentOrderDataProvider(): array
+    {
+        return [
+            [true],
+            [false],
+            [new stdClass()],
+            [0],
+            [7],
+            [Random::int(-100, -1)],
+            [Random::int(7, 100)],
+        ];
+    }
+
+    /**
+     * @dataProvider validDataProvider
+     *
+     * @param mixed $options
+     *
+     * @throws Exception
+     */
+    public function testSetPosLink(mixed $options): void
+    {
+        $builder = new CreatePaymentRequestBuilder();
+        $builder->setPosLink($options['posLink']);
+        $instance = $builder->build($this->getRequiredData());
+
+        if (empty($options['posLink'])) {
+            self::assertNull($instance->getPosLink());
+        } else {
+            self::assertNotNull($instance->getPosLink());
+            self::assertEquals($options['posLink'], is_array($options['posLink']) ? $instance->getPosLink()->toArray() : $instance->getPosLink());
+        }
+    }
+
+    /**
+     * @dataProvider invalidPosLinkDataProvider
+     *
+     * @param mixed $value
+     */
+    public function testSetInvalidPosLink(mixed $value): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $builder = new CreatePaymentRequestBuilder();
+        $builder->setPosLink($value);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function invalidPosLinkDataProvider(): array
     {
         return [
             [true],

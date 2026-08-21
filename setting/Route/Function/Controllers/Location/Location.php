@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Setting\Route\Function\Controllers\Location;
 
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
+
 class Location
 {
 
@@ -12,47 +14,21 @@ class Location
 
   public function __construct()
   {
-    $this->HOST = $_ENV['XUI_URL_SUBSCRIPTION'] ?? '';
+    // HOST — URL подписки текущего пользователя (субдомен = его сервер),
+    // без подписки — сервер по умолчанию из реестра Network
+    $this->HOST = ServerNetwork::getSubscriptionUrl();
     $this->BASIC_PATH = '/public/assets/images/icons/services/default/flags/';
   }
 
   public function getLocation()
   {
-
-    if (strpos($this->HOST, '/fi.') !== false) {// не логическое 0 == false
+    // Сервер определяется по субдомену HOST через реестр Network
+    $code = ServerNetwork::getServerCodeFromUrl($this->HOST);
+    if ($code !== '') {
+      $server = ServerNetwork::selectServer(null, $code);
       return [
-        'location' => 'Финляндия',
-        'url' => $this->BASIC_PATH . 'finland.svg'
-      ];
-    } elseif (strpos($this->HOST, '/nl.') !== false) {
-      return [
-        'location' => 'Нидерланды',
-        'url' => $this->BASIC_PATH . 'netherlands.svg'
-      ];
-    } elseif (strpos($this->HOST, '/de.') !== false || strpos($this->HOST, '/vpn.') !== false) {
-      return [
-        'location' => 'Германия',
-        'url' => $this->BASIC_PATH . 'germany.svg'
-      ];
-    } elseif (strpos($this->HOST, '/ro.') !== false) {
-      return [
-        'location' => 'Румыния',
-        'url' => $this->BASIC_PATH . 'romania.svg'
-      ];
-    } elseif (strpos($this->HOST, '/us.') !== false) {
-      return [
-        'location' => 'США',
-        'url' => $this->BASIC_PATH . 'usa.svg'
-      ];
-    } elseif (strpos($this->HOST, '/gb.') !== false) {
-      return [
-        'location' => 'Лондон',
-        'url' => $this->BASIC_PATH . 'london.svg'
-      ];
-    } elseif (strpos($this->HOST, '/cz.') !== false) {
-      return [
-        'location' => 'Чехия',
-        'url' => $this->BASIC_PATH . 'czech.svg'
+        'location' => $server['country'],
+        'url' => $this->BASIC_PATH . $server['flag']
       ];
     }
 

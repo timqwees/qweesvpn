@@ -33,6 +33,7 @@ use YooKassa\Model\Deal\PaymentDealInfo;
 use YooKassa\Model\Metadata;
 use YooKassa\Model\Payment\RecipientInterface;
 use YooKassa\Model\Payment\TransferInterface;
+use YooKassa\Model\PosLink\PosLinkPayment;
 use YooKassa\Model\Receipt\ReceiptInterface;
 use YooKassa\Request\Payments\ConfirmationAttributes\AbstractConfirmationAttributes;
 use YooKassa\Request\Payments\PaymentData\AbstractPaymentData;
@@ -68,6 +69,8 @@ use YooKassa\Request\Payments\ReceiverData\AbstractReceiver;
  * @property string $merchantCustomerId Идентификатор покупателя в вашей системе, например электронная почта или номер телефона
  * @property string $merchant_customer_id Идентификатор покупателя в вашей системе, например электронная почта или номер телефона
  * @property AbstractReceiver|null $receiver Реквизиты получателя оплаты при пополнении электронного кошелька, банковского счета или баланса телефона
+ * @property PosLinkPayment $posLink Данные о кассовой ссылке для проведения платежа в офлайне
+ * @property PosLinkPayment $pos_link Данные о кассовой ссылке для проведения платежа в офлайне
  */
 interface CreatePaymentRequestInterface
 {
@@ -427,4 +430,18 @@ interface CreatePaymentRequestInterface
      * @param null|array|AbstractReceiver $receiver Реквизиты получателя оплаты при пополнении электронного кошелька, банковского счета или баланса телефона.
      */
     public function setReceiver(mixed $receiver): self;
+
+    /**
+     * Возвращает данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @return PosLinkPayment|null Данные о кассовой ссылке
+     */
+    public function getPosLink(): ?PosLinkPayment;
+
+    /**
+     * Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @param PosLinkPayment|array|null $pos_link Данные о кассовой ссылке
+     */
+    public function setPosLink(mixed $pos_link = null): self;
 }

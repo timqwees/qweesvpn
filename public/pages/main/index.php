@@ -1,6 +1,7 @@
 <?php
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo};
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use Setting\Route\Function\Functions;
 
 Auth::auth();//проверка авторизации
@@ -24,6 +25,11 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 $vpnStatusObj = new VpnStatus();
 $profileObj = new Profile();
 $usageStats = $vpnStatusObj->getUsageStats();
+
+// Серверы для выбора в профиле (реестр Network) + текущий сервер пользователя
+$availableServers = ServerNetwork::getAvailableServers();
+ServerNetwork::selectServer($user->getUniID());
+$currentServerCode = ServerNetwork::getServerCode();
 
 // Оптимизированное формирование данных без лишних вызовов
 $vpnStatus = $vpnStatusObj->getStatus();
@@ -516,6 +522,33 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                             class="p-3 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors group cursor-pointer">
                                             <i class="fa fa-trash text-red-400 group-hover:text-red-300"></i>
                                         </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
+                        <!-- Server Select (radio scroll list) -->
+                        <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
+                            <div class="flex flex-col gap-4 mt-4">
+                                <h3 class="text-xl font-semibold text-gray-300"><?= $t('server_select') ?></h3>
+                                <div class="glow-card p-3 rounded-xl">
+                                    <div class="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+                                        <?php foreach ($availableServers as $srv): ?>
+                                            <label
+                                                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/[0.06] transition-colors <?= $srv['code'] === $currentServerCode ? 'bg-white/[0.08] ring-1 ring-green-400/30' : '' ?>">
+                                                <input type="radio" name="vpn-server" value="<?= $srv['code'] ?>"
+                                                    <?= $srv['code'] === $currentServerCode ? 'checked' : '' ?>
+                                                    onchange="changeServer('<?= $srv['code'] ?>')"
+                                                    class="accent-green-400 w-4 h-4 cursor-pointer">
+                                                <img decoding="async" loading="lazy"
+                                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/flags/<?= $srv['flag'] ?>"
+                                                    alt="<?= $srv['code'] ?>" class="w-7 h-5 rounded object-cover">
+                                                <span class="text-[white] text-sm font-medium flex-1"><?= htmlspecialchars($srv['country']) ?></span>
+                                                <?php if ($srv['code'] === $currentServerCode): ?>
+                                                    <span class="text-xs text-green-400"><?= $t('server_current') ?></span>
+                                                <?php endif; ?>
+                                            </label>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                             </div>
@@ -1114,6 +1147,33 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                             </div>
                         <?php endif; ?>
 
+                        <!-- Server Select (radio scroll list) -->
+                        <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
+                            <div class="mt-4 flex flex-col gap-3 mb-2">
+                                <h4 class="text-white text-xl font-semibold"><?= $t('server_select') ?></h4>
+                                <div class="glow-card_mobile p-3 rounded-xl">
+                                    <div class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
+                                        <?php foreach ($availableServers as $srv): ?>
+                                            <label
+                                                class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-white/[0.06] transition-colors <?= $srv['code'] === $currentServerCode ? 'bg-white/[0.08] ring-1 ring-green-400/30' : '' ?>">
+                                                <input type="radio" name="vpn-server-mobile" value="<?= $srv['code'] ?>"
+                                                    <?= $srv['code'] === $currentServerCode ? 'checked' : '' ?>
+                                                    onchange="changeServer('<?= $srv['code'] ?>')"
+                                                    class="accent-green-400 w-4 h-4 cursor-pointer">
+                                                <img decoding="async" loading="lazy"
+                                                    src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/flags/<?= $srv['flag'] ?>"
+                                                    alt="<?= $srv['code'] ?>" class="w-7 h-5 rounded object-cover">
+                                                <span class="text-white text-sm font-medium flex-1"><?= htmlspecialchars($srv['country']) ?></span>
+                                                <?php if ($srv['code'] === $currentServerCode): ?>
+                                                    <span class="text-xs text-green-400"><?= $t('server_current') ?></span>
+                                                <?php endif; ?>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+
                         <!-- Company Links & Logout -->
                         <div class="mt-6 flex flex-col gap-4">
                             <h4 class="text-white text-xl font-semibold"><?= $t('company') ?></h4>
@@ -1620,6 +1680,44 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                     }
                 } catch (e) {
                     showNotification(<?= json_encode($t('network_error')) ?>, 'error');
+                }
+            }
+
+            // Смена сервера (radio список в профиле)
+            const currentServerCode = <?= json_encode($currentServerCode) ?>;
+
+            function resetServerRadios() {
+                document.querySelectorAll('input[name="vpn-server"], input[name="vpn-server-mobile"]').forEach(radio => {
+                    radio.checked = radio.value === currentServerCode;
+                });
+            }
+
+            async function changeServer(code) {
+                if (code === currentServerCode) return;
+                if (!confirm(<?= json_encode($t('server_change_confirm')) ?>)) {
+                    resetServerRadios();
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/server/switch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ server: code })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.status === 'ok') {
+                        showNotification(data.message || <?= json_encode($t('server_changed')) ?>, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(data.message || data.error || <?= json_encode($t('network_error')) ?>, 'error');
+                        resetServerRadios();
+                    }
+                } catch (e) {
+                    showNotification(<?= json_encode($t('network_error')) ?>, 'error');
+                    resetServerRadios();
                 }
             }
 

@@ -42,7 +42,7 @@ use YooKassa\Request\Refunds\RefundMethodData\AbstractRefundMethodData;
  *
  * Класс билдера запросов к API на создание возврата средств.
  *
- * @example 02-builder.php 147 33 Пример использования билдера
+ * @example 02-builder.php 159 39 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

@@ -34,6 +34,7 @@ use YooKassa\Common\Exceptions\InvalidPropertyValueTypeException;
 use YooKassa\Common\ListObject;
 use YooKassa\Model\Deal\PaymentDealInfo;
 use YooKassa\Model\Metadata;
+use YooKassa\Model\PosLink\PosLinkPayment;
 use YooKassa\Model\Receipt\IndustryDetails;
 use YooKassa\Request\Payments\ConfirmationAttributes\AbstractConfirmationAttributes;
 use YooKassa\Request\Payments\ConfirmationAttributes\ConfirmationAttributesFactory;
@@ -420,6 +421,20 @@ class CreatePaymentRequestBuilder extends AbstractPaymentRequestBuilder
     public function addStatement(mixed $value): CreatePaymentRequestBuilder
     {
         $this->currentObject->getStatements()->add($value);
+
+        return $this;
+    }
+
+    /**
+     * Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @param PosLinkPayment|array|null $value Данные о кассовой ссылке
+     *
+     * @return CreatePaymentRequestBuilder Инстанс текущего билдера
+     */
+    public function setPosLink(mixed $value): CreatePaymentRequestBuilder
+    {
+        $this->currentObject->setPosLink($value);
 
         return $this;
     }

@@ -87,7 +87,8 @@ class CreatePaymentMethodRequestSerializerTest extends TestCase
                     'enforce' => Random::bool(),
                     'return_url' => Random::str(1,2048),
                     'locale' => Random::value(['ru_RU', 'en_US']),
-                ]
+                ],
+                'metadata' => ['test' => 'test'],
             ]
         ]];
 //        $metadata = new Metadata();

@@ -50,7 +50,7 @@ use YooKassa\Validator\Constraints as Assert;
  * @author   cms@yoomoney.ru
  * @link     https://yookassa.ru/developers/api
  *
- * @example 02-builder.php 88 57 Пример использования билдера
+ * @example 02-builder.php 88 69 Пример использования билдера
  *
  * @property ReceiptCustomer $customer Информация о плательщике
  * @property string $type Тип чека в онлайн-кассе: приход "payment" или возврат "refund".

@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Models\Router\Routes;
 use Setting\Route\Function\Controllers\Admin\{AdminDatabase, AdminXray, PdfController, AdminAuth};
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Client\GetUser;
 use Setting\Route\Function\Controllers\Language\LanguageSwitch;
 use Setting\Route\Function\Controllers\Kassa\PaymentController;
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 use Setting\Route\Function\Controllers\Refer\Refer;
 
@@ -22,27 +24,18 @@ Routes::get('/pay/status', 'on_PayStatus');
 Routes::post('/api/payment/create', [PaymentController::class, 'createPayment']);
 //=============================================//DELETE
 Routes::post('/api/subscription/delete', [Xray::class, 'DeleteKey']);
-Routes::post('/api/cron/xray-cleanup', static function (): void {
-    $secret = trim((string) ($_ENV['XUI_CRON_SECRET'] ?? ''), " \t\n\r\0\x0B\"'");
-    if ($secret === '') {
-        http_response_code(503);
-        header('Content-Type: application/json; charset=UTF-8');
-        echo json_encode(['ok' => false, 'error' => 'XUI_CRON_SECRET is not set in .env'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    $got = trim(
-        (string) ($_POST['secret'] ?? $_SERVER['HTTP_X_CRON_SECRET'] ?? ''),
-        " \t\n\r\0\x0B\"'"
-    );
-    if (!hash_equals($secret, $got)) {
-        http_response_code(403);
-        header('Content-Type: application/json; charset=UTF-8');
-        echo json_encode(['ok' => false, 'error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    Xray::CleanUP();
+//=============================================//SERVER SELECT (выбор сервера в профиле)
+Routes::post('/api/server/switch', function () {
     header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE);
+    $uniID = (new GetUser())->getUniID();
+    if ($uniID === '') {
+        echo json_encode(['status' => 'error', 'message' => 'Пользователь не найден'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    echo json_encode(
+        ServerNetwork::switchServer($uniID, (string) ($_POST['server'] ?? '')),
+        JSON_UNESCAPED_UNICODE
+    );
     exit;
 });
 //=============================================//REFERRAL

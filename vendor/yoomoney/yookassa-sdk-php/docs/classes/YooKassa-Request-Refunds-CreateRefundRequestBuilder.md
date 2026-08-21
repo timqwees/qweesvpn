@@ -31,6 +31,12 @@ try {
                 ->setPrice(new \YooKassa\Model\Receipt\ReceiptItemAmount(3500.00))
                 ->setPaymentSubject(\YooKassa\Model\Receipt\PaymentSubject::COMMODITY)
                 ->setPaymentMode(\YooKassa\Model\Receipt\PaymentMode::FULL_PAYMENT)
+                ->setAgentType(\YooKassa\Model\Receipt\AgentType::BANKING_PAYMENT_AGENT)
+                ->setSupplier([
+                    'name' => 'ООО Поставщик',
+                    'phone' => '79000000000',
+                    'inn' => '6321341814',
+                ])
         ])
         ->setReceiptEmail('john.doe@merchant.com')
         ->setTaxSystemCode(1)
@@ -701,6 +707,6 @@ protected initCurrentObject() : \YooKassa\Request\Refunds\CreateRefundRequest
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

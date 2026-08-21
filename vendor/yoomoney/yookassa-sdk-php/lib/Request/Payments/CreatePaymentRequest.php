@@ -35,6 +35,7 @@ use YooKassa\Model\AmountInterface;
 use YooKassa\Model\Deal\PaymentDealInfo;
 use YooKassa\Model\Metadata;
 use YooKassa\Model\Payment\Payment;
+use YooKassa\Model\PosLink\PosLinkPayment;
 use YooKassa\Model\Receipt\ReceiptInterface;
 use YooKassa\Request\Payments\ConfirmationAttributes\AbstractConfirmationAttributes;
 use YooKassa\Request\Payments\ConfirmationAttributes\ConfirmationAttributesFactory;
@@ -84,6 +85,8 @@ use YooKassa\Validator\Exceptions\ValidatorParameterException;
  * @property AbstractPaymentOrder $payment_order Платежное поручение — распоряжение на перевод банку для оплаты жилищно-коммунальных услуг (ЖКУ), сведения о платеже для регистрации в ГИС ЖКХ. Необходимо передавать при [оплате ЖКУ](/developers/payment-acceptance/scenario-extensions/utility-payments).
  * @property AbstractReceiver|null $receiver Реквизиты получателя оплаты при пополнении электронного кошелька, банковского счета или баланса телефона
  * @property AbstractStatement[]|ListObjectInterface $statements Данные для отправки справки. Необходимо передавать, если вы хотите, чтобы после оплаты пользователь получил справку.  Сейчас доступен один тип справок — квитанция по платежу. Это информация об успешном платеже, которую ЮKassa отправляет на электронную почту пользователя.  Квитанцию можно отправить, если оплата прошла с банковской карты, через SberPay или СБП. Отправка квитанции доступна во всех сценариях интеграции.
+ * @property PosLinkPayment $posLink Данные о кассовой ссылке для проведения платежа в офлайне
+ * @property PosLinkPayment $pos_link Данные о кассовой ссылке для проведения платежа в офлайне
  */
 class CreatePaymentRequest extends AbstractPaymentRequest implements CreatePaymentRequestInterface
 {
@@ -210,6 +213,15 @@ class CreatePaymentRequest extends AbstractPaymentRequest implements CreatePayme
     #[Assert\AllType(AbstractStatement::class)]
     #[Assert\Type(ListObject::class)]
     private ?ListObject $_statements = null;
+
+    /**
+     * Данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @var PosLinkPayment|null
+     */
+    #[Assert\Valid]
+    #[Assert\Type(PosLinkPayment::class)]
+    private ?PosLinkPayment $_pos_link = null;
 
     /**
      * Возвращает описание транзакции
@@ -769,6 +781,29 @@ class CreatePaymentRequest extends AbstractPaymentRequest implements CreatePayme
             }
         }
         $this->_statements = $this->validatePropertyValue('_statements', $_statements);
+        return $this;
+    }
+
+    /**
+     * Возвращает данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @return PosLinkPayment|null Данные о кассовой ссылке
+     */
+    public function getPosLink(): ?PosLinkPayment
+    {
+        return $this->_pos_link;
+    }
+
+    /**
+     * Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+     *
+     * @param PosLinkPayment|array|null $pos_link Данные о кассовой ссылке
+     *
+     * @return self
+     */
+    public function setPosLink(mixed $pos_link = null): self
+    {
+        $this->_pos_link = $this->validatePropertyValue('_pos_link', $pos_link);
         return $this;
     }
 

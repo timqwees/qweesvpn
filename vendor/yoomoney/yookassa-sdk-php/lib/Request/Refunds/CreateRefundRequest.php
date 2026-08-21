@@ -46,7 +46,7 @@ use YooKassa\Validator\Constraints as Assert;
  *
  * Класс объекта запроса для создания возврата.
  *
- * @example 02-builder.php 147 33 Пример использования билдера
+ * @example 02-builder.php 159 39 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

@@ -97,6 +97,15 @@ use YooKassa\Request\Payouts\PayoutsRequestInterface;
 use YooKassa\Request\Payouts\PayoutsRequestSerializer;
 use YooKassa\Request\Payouts\PayoutsResponse;
 use YooKassa\Request\Payouts\SbpBanksResponse;
+use YooKassa\Model\PosLink\PosLinkInfo;
+use YooKassa\Request\PosLink\CreatePosLinkRequest;
+use YooKassa\Request\PosLink\CreatePosLinkRequestInterface;
+use YooKassa\Request\PosLink\CreatePosLinkRequestSerializer;
+use YooKassa\Request\PosLink\CreatePosLinkResponse;
+use YooKassa\Request\PosLink\PosLinkResponse;
+use YooKassa\Request\PosLink\RecipientPosLinkRequest;
+use YooKassa\Request\PosLink\RecipientPosLinkRequestInterface;
+use YooKassa\Request\PosLink\RecipientPosLinkRequestSerializer;
 use YooKassa\Request\PersonalData\PersonalDataResponse;
 use YooKassa\Request\PersonalData\PersonalDataType\AbstractPersonalDataRequest;
 use YooKassa\Request\PersonalData\PersonalDataType\RecipientPersonalDataRequestFactory;
@@ -135,7 +144,7 @@ class Client extends BaseClient
     /**
      * Текущая версия библиотеки.
      */
-    public const SDK_VERSION = '3.14.0';
+    public const SDK_VERSION = '3.15.1';
 
     /**
      * Получить список платежей магазина.
@@ -146,7 +155,7 @@ class Client extends BaseClient
      * Если результатов больше, чем задано в `limit`, список будет выводиться фрагментами. В этом случае в ответе
      * на запрос вернется фрагмент списка и параметр `next_cursor` с указателем на следующий фрагмент.
      *
-     * @example 01-client.php 240 24 Получить список платежей магазина с фильтрацией
+     * @example 01-client.php 246 24 Получить список платежей магазина с фильтрацией
      *
      * @param array|PaymentsRequestInterface|null $filter Параметры фильтрации
      *
@@ -259,7 +268,7 @@ class Client extends BaseClient
      * Запрос позволяет получить информацию о текущем состоянии платежа по его уникальному идентификатору.
      * Выдает объект платежа {@link PaymentInterface} в актуальном статусе.
      *
-     * @example 01-client.php 173 7 Получить информацию о платеже
+     * @example 01-client.php 179 7 Получить информацию о платеже
      *
      * @param string $paymentId Идентификатор платежа
      *
@@ -417,7 +426,7 @@ class Client extends BaseClient
      * Если результатов больше, чем задано в `limit`, список будет выводиться фрагментами. В этом случае в ответе
      * на запрос вернется фрагмент списка и параметр `next_cursor` с указателем на следующий фрагмент.
      *
-     * @example 01-client.php 290 24 Получить список возвратов платежей магазина с фильтрацией
+     * @example 01-client.php 296 24 Получить список возвратов платежей магазина с фильтрацией
      *
      * @param null|array|RefundsRequestInterface $filter Параметры фильтрации
      *
@@ -466,7 +475,7 @@ class Client extends BaseClient
      * этого платежа. Создание возврата возможно только для платежей в статусе `succeeded`. Комиссии за проведение
      * возврата нет. Комиссия, которую ЮKassa берёт за проведение исходного платежа, не возвращается.
      *
-     * @example 01-client.php 145 25 Запрос на создание возврата
+     * @example 01-client.php 151 25 Запрос на создание возврата
      *
      * @param array|CreateRefundRequestInterface $refundData Запрос на создание возврата
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -516,7 +525,7 @@ class Client extends BaseClient
      * Запрос позволяет получить информацию о текущем состоянии возврата по его уникальному идентификатору.
      * В ответ на запрос придет объект возврата {@link RefundResponse} в актуальном статусе.
      *
-     * @example 01-client.php 183 7 Получить информацию о возврате
+     * @example 01-client.php 199 7 Получить информацию о возврате
      *
      * @param string $refundId Идентификатор возврата
      *
@@ -559,7 +568,7 @@ class Client extends BaseClient
      *
      * Запрос позволяет подписаться на уведомления о событии (например, на переход платежа в статус successed).
      *
-     * @example 01-client.php 202 36 Создание Webhook
+     * @example 01-client.php 208 36 Создание Webhook
      *
      * @param array|Webhook $webhookData Запрос на создание вебхука
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -607,6 +616,8 @@ class Client extends BaseClient
      * Запрос позволяет отписаться от уведомлений о событии для переданного OAuth-токена.
      * Чтобы удалить webhook, вам нужно передать в запросе его идентификатор.
      *
+     * @example 01-client.php 208 36 Удаление Webhook
+     *
      * @param string $webhookId Идентификатор Webhook
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
      *
@@ -620,8 +631,6 @@ class Client extends BaseClient
      * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
      * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
      * @throws Exception
-     *@example 01-client.php 202 36 Удаление Webhook
-     *
      */
     public function removeWebhook(string $webhookId, ?string $idempotenceKey = null): ?Webhook
     {
@@ -646,7 +655,7 @@ class Client extends BaseClient
      *
      * Запрос позволяет узнать, какие webhook есть для переданного OAuth-токена.
      *
-     * @example 01-client.php 202 36 Список созданных Webhook
+     * @example 01-client.php 208 36 Список созданных Webhook
      *
      * @throws ApiException Неожиданный код ошибки
      * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API.
@@ -686,7 +695,7 @@ class Client extends BaseClient
      * Если результатов больше, чем задано в `limit`, список будет выводиться фрагментами.
      * В этом случае в ответе на запрос вернется фрагмент списка и параметр `next_cursor` с указателем на следующий фрагмент.
      *
-     * @example 01-client.php 240 24 Получить список чеков магазина с фильтрацией
+     * @example 01-client.php 272 22 Получить список чеков магазина с фильтрацией
      *
      * @param null|array|ReceiptsRequestInterface $filter Параметры фильтрации
      *
@@ -734,7 +743,7 @@ class Client extends BaseClient
      * Создает объект чека — `Receipt`. Возвращает успешно созданный чек по уникальному идентификатору
      * платежа или возврата.
      *
-     * @example 01-client.php 100 42 Запрос на создание чека
+     * @example 01-client.php 100 48 Запрос на создание чека
      *
      * @param array|CreatePostReceiptRequestInterface $receiptData Запрос на создание чека
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -782,7 +791,7 @@ class Client extends BaseClient
      * Запрос позволяет получить информацию о текущем состоянии чека по его уникальному идентификатору.
      * Выдает объект чека {@link ReceiptResponseInterface} в актуальном статусе.
      *
-     * @example 01-client.php 173 7 Получить информацию о чеке
+     * @example 01-client.php 189 7 Получить информацию о чеке
      *
      * @param string $receiptId Идентификатор чека
      *
@@ -839,7 +848,7 @@ class Client extends BaseClient
      * <li>description — Описание сделки (не более 128 символов). Используется для фильтрации при получении списка сделок.</li>
      * </ul>
      *
-     * @example 01-client.php 316 17 Запрос на создание сделки
+     * @example 01-client.php 322 17 Запрос на создание сделки
      *
      * @param array|CreateDealRequestInterface $dealData Запрос на создание сделки
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -884,7 +893,7 @@ class Client extends BaseClient
      * Запрос позволяет получить информацию о текущем состоянии сделки по её уникальному идентификатору.
      * Выдает объект чека {@link DealInteface} в актуальном статусе.
      *
-     * @example 01-client.php 336 7 Получить информацию о сделке
+     * @example 01-client.php 342 7 Получить информацию о сделке
      *
      * @param string $dealId Идентификатор сделки
      *
@@ -931,7 +940,7 @@ class Client extends BaseClient
      * Если результатов больше, чем задано в `limit`, список будет выводиться фрагментами.
      * В этом случае в ответе на запрос вернется фрагмент списка и параметр `next_cursor` с указателем на следующий фрагмент.
      *
-     * @example 01-client.php 346 28 Получить список сделок с фильтрацией
+     * @example 01-client.php 352 28 Получить список сделок с фильтрацией
      *
      * @param null|array|DealsRequestInterface $filter Параметры фильтрации
      *
@@ -974,6 +983,245 @@ class Client extends BaseClient
     }
 
     /**
+     * Создание кассовой ссылки.
+     *
+     * Запрос позволяет создать кассовую ссылку для проведения платежа в офлайне.
+     *
+     * @param array|CreatePosLinkRequestInterface $posLinkData Данные для создания кассовой ссылки
+     * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
+     *
+     * @return null|PosLinkInfo Объект ответа от API
+     *
+     * @throws ApiException Неожиданный код ошибки
+     * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
+     * @throws ForbiddenException Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции
+     * @throws InternalServerError Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности
+     * @throws NotFoundException Ресурс не найден
+     * @throws ResponseProcessingException Запрос был принят на обработку, но она не завершена
+     * @throws TooManyRequestsException Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов
+     * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
+     * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
+     *@example 01-client.php 650 18 Запрос на создание кассовой ссылки
+     *
+     */
+    public function createPosLink(CreatePosLinkRequestInterface|array $posLinkData, ?string $idempotenceKey = null): ?PosLinkInfo
+    {
+        $path = self::POS_LINKS_PATH;
+
+        $headers = [self::IDEMPOTENCE_KEY_HEADER => $idempotenceKey ?: UUID::v4()];
+        $request = is_array($posLinkData) ? CreatePosLinkRequest::builder()->build($posLinkData) : $posLinkData;
+
+        $serializer = new CreatePosLinkRequestSerializer();
+        $serializedData = $serializer->serialize($request);
+        $httpBody = $this->encodeData($serializedData);
+
+        $response = $this->execute($path, HttpVerb::POST, [], $httpBody, $headers);
+
+        $posLinkResponse = null;
+        if (200 === $response->getCode()) {
+            $resultArray = $this->decodeData($response);
+            $posLinkResponse = new CreatePosLinkResponse($resultArray);
+        } else {
+            $this->handleError($response);
+        }
+
+        return $posLinkResponse;
+    }
+
+    /**
+     * Получить информацию о кассовой ссылке.
+     *
+     * Запрос позволяет получить информацию о кассовой ссылке по её уникальному идентификатору.
+     *
+     * @example 01-client.php 670 7 Получить информацию о кассовой ссылке
+     *
+     * @param string $posLinkId Идентификатор кассовой ссылки
+     *
+     * @return null|PosLinkInfo Объект ответа от API
+     *
+     * @throws ApiException Неожиданный код ошибки
+     * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
+     * @throws ForbiddenException Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции
+     * @throws InternalServerError Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности
+     * @throws NotFoundException Ресурс не найден
+     * @throws ResponseProcessingException Запрос был принят на обработку, но она не завершена
+     * @throws TooManyRequestsException Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов
+     * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
+     * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
+     */
+    public function getPosLinkInfo(string $posLinkId): ?PosLinkInfo
+    {
+        if (!TypeCast::canCastToString($posLinkId)) {
+            throw new InvalidArgumentException('Invalid posLinkId value: string required');
+        }
+        if (mb_strlen($posLinkId) < 36 || mb_strlen($posLinkId) > 50) {
+            throw new InvalidArgumentException('Invalid posLinkId value');
+        }
+
+        $path = self::POS_LINKS_PATH . '/' . $posLinkId;
+
+        $response = $this->execute($path, HttpVerb::GET, []);
+
+        $result = null;
+        if (200 === $response->getCode()) {
+            $resultArray = $this->decodeData($response);
+            $result = new PosLinkResponse($resultArray);
+        } else {
+            $this->handleError($response);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Активировать кассовую ссылку.
+     *
+     * Запрос позволяет активировать кассовую ссылку, чтобы она стала доступна для приема платежей.
+     *
+     * @example 01-client.php 679 10 Активировать кассовую ссылку
+     *
+     * @param string $posLinkId Идентификатор кассовой ссылки
+     * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
+     *
+     * @return null|PosLinkInfo Объект ответа от API
+     *
+     * @throws ApiException Неожиданный код ошибки
+     * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
+     * @throws ForbiddenException Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции
+     * @throws InternalServerError Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности
+     * @throws NotFoundException Ресурс не найден
+     * @throws ResponseProcessingException Запрос был принят на обработку, но она не завершена
+     * @throws TooManyRequestsException Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов
+     * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
+     * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
+     */
+    public function activatePosLink(string $posLinkId, ?string $idempotenceKey = null): ?PosLinkInfo
+    {
+        if (!TypeCast::canCastToString($posLinkId)) {
+            throw new InvalidArgumentException('Invalid posLinkId value: string required');
+        }
+        if (mb_strlen($posLinkId) < 36 || mb_strlen($posLinkId) > 50) {
+            throw new InvalidArgumentException('Invalid posLinkId value');
+        }
+
+        $path = self::POS_LINKS_PATH . '/' . $posLinkId . '/activate';
+        $headers = [self::IDEMPOTENCE_KEY_HEADER => $idempotenceKey ?: UUID::v4()];
+
+        $response = $this->execute($path, HttpVerb::POST, [], null, $headers);
+
+        $result = null;
+        if (200 === $response->getCode()) {
+            $resultArray = $this->decodeData($response);
+            $result = new PosLinkResponse($resultArray);
+        } else {
+            $this->handleError($response);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Деактивировать кассовую ссылку.
+     *
+     * Запрос позволяет деактивировать кассовую ссылку, прием платежей по ней будет недоступен.
+     *
+     * @example 01-client.php 691 10 Деактивировать кассовую ссылку
+     *
+     * @param string $posLinkId Идентификатор кассовой ссылки
+     * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
+     *
+     * @return null|PosLinkInfo Объект ответа от API
+     *
+     * @throws ApiException Неожиданный код ошибки
+     * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
+     * @throws ForbiddenException Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции
+     * @throws InternalServerError Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности
+     * @throws NotFoundException Ресурс не найден
+     * @throws ResponseProcessingException Запрос был принят на обработку, но она не завершена
+     * @throws TooManyRequestsException Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов
+     * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
+     * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
+     */
+    public function deactivatePosLink(string $posLinkId, ?string $idempotenceKey = null): ?PosLinkInfo
+    {
+        if (!TypeCast::canCastToString($posLinkId)) {
+            throw new InvalidArgumentException('Invalid posLinkId value: string required');
+        }
+        if (mb_strlen($posLinkId) < 36 || mb_strlen($posLinkId) > 50) {
+            throw new InvalidArgumentException('Invalid posLinkId value');
+        }
+
+        $path = self::POS_LINKS_PATH . '/' . $posLinkId . '/deactivate';
+        $headers = [self::IDEMPOTENCE_KEY_HEADER => $idempotenceKey ?: UUID::v4()];
+
+        $response = $this->execute($path, HttpVerb::POST, [], null, $headers);
+
+        $result = null;
+        if (200 === $response->getCode()) {
+            $resultArray = $this->decodeData($response);
+            $result = new PosLinkResponse($resultArray);
+        } else {
+            $this->handleError($response);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Изменение торговой точки, привязанной к кассовой ссылке.
+     *
+     * Запрос позволяет привязать к кассовой ссылке другую торговую точку.
+     *
+     * @example 01-client.php 703 12 Привязать торговую точку к кассовой ссылке
+     *
+     * @param string $posLinkId Идентификатор кассовой ссылки
+     * @param array|RecipientPosLinkRequestInterface $recipientData Идентификатор торговой точки, которую вы хотите привязать к кассовой ссылке.
+     * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
+     *
+     * @return null|PosLinkInfo Объект ответа от API
+     *
+     * @throws ApiException Неожиданный код ошибки
+     * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
+     * @throws ForbiddenException Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции
+     * @throws InternalServerError Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности
+     * @throws NotFoundException Ресурс не найден
+     * @throws ResponseProcessingException Запрос был принят на обработку, но она не завершена
+     * @throws TooManyRequestsException Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов
+     * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
+     * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
+     */
+    public function recipientPosLink(string $posLinkId, array|RecipientPosLinkRequestInterface $recipientData, ?string $idempotenceKey = null): ?PosLinkInfo
+    {
+        if (!TypeCast::canCastToString($posLinkId)) {
+            throw new InvalidArgumentException('Invalid posLinkId value: string required');
+        }
+        if (mb_strlen($posLinkId) < 36 || mb_strlen($posLinkId) > 50) {
+            throw new InvalidArgumentException('Invalid posLinkId value');
+        }
+
+        $path = self::POS_LINKS_PATH . '/' . $posLinkId . '/recipient';
+
+        $headers = [self::IDEMPOTENCE_KEY_HEADER => $idempotenceKey ?: UUID::v4()];
+        $request = is_array($recipientData) ? RecipientPosLinkRequest::builder()->build($recipientData) : $recipientData;
+
+        $serializer = new RecipientPosLinkRequestSerializer();
+        $serializedData = $serializer->serialize($request);
+        $httpBody = $this->encodeData($serializedData);
+
+        $response = $this->execute($path, HttpVerb::POST, [], $httpBody, $headers);
+
+        $result = null;
+        if (200 === $response->getCode()) {
+            $resultArray = $this->decodeData($response);
+            $result = new PosLinkResponse($resultArray);
+        } else {
+            $this->handleError($response);
+        }
+
+        return $result;
+    }
+
+    /**
      * Создание выплаты.
      *
      * Запрос позволяет перечислить продавцу оплату за выполненную услугу или проданный товар в рамках Безопасной сделки.
@@ -997,7 +1245,7 @@ class Client extends BaseClient
      * <li>metadata — любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа).</li>
      * </ul>
      *
-     * @example 01-client.php 376 25 Запрос на создание выплаты
+     * @example 01-client.php 382 25 Запрос на создание выплаты
      *
      * @param array|CreatePayoutRequestInterface $payoutData Запрос на создание выплаты
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -1056,7 +1304,7 @@ class Client extends BaseClient
      * @throws UnauthorizedException Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации
      * @throws ExtensionNotFoundException Требуемое PHP расширение не установлено
      *
-     * @example 01-client.php 405 8 Получить информацию о выплате
+     * @example 01-client.php 411 8 Получить информацию о выплате
      */
     public function getPayoutInfo(string $payoutId): ?PayoutInterface
     {
@@ -1093,7 +1341,7 @@ class Client extends BaseClient
      * Если результатов больше, чем задано в `limit`, список будет выводиться фрагментами. В этом случае в ответе
      * на запрос вернется фрагмент списка и параметр `next_cursor` с указателем на следующий фрагмент.
      *
-     * @example 01-client.php 617 25 Получить список выплат магазина с фильтрацией
+     * @example 01-client.php 623 25 Получить список выплат магазина с фильтрацией
      *
      * @param array|PayoutsRequestInterface|null $filter Параметры фильтрации
      *
@@ -1189,7 +1437,7 @@ class Client extends BaseClient
      * Идентификатор созданного объекта персональных данных необходимо использовать в запросе на проведение выплаты через СБП с проверкой получателя.
      * [Подробнее о выплатах с проверкой получателя](/developers/payouts/scenario-extensions/recipient-check)
      *
-     * @example 01-client.php 416 16 Запрос на создание персональных данных
+     * @example 01-client.php 422 16 Запрос на создание персональных данных
      *
      * @param array|AbstractPersonalDataRequest $personalData Запрос на создание персональных данных
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -1237,7 +1485,7 @@ class Client extends BaseClient
      * Запрос позволяет получить информацию о текущем состоянии персональных данных по их уникальному идентификатору.
      * Выдает объект платежа {@link PersonalDataInterface} в актуальном статусе.
      *
-     * @example 01-client.php 435 8 Получить информацию о персональных данных
+     * @example 01-client.php 441 8 Получить информацию о персональных данных
      *
      * @param string $personalDataId Идентификатор персональных данных
      *
@@ -1284,7 +1532,7 @@ class Client extends BaseClient
      * Список нужно вывести получателю выплаты, идентификатор выбранного участника СБП необходимо использовать
      * в запросе на создание выплаты.
      *
-     * @example 01-client.php 474 6 Получить список участников СБП
+     * @example 01-client.php 480 6 Получить список участников СБП
      *
      * @throws ApiException Неожиданный код ошибки
      * @throws BadApiRequestException Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API
@@ -1323,7 +1571,7 @@ class Client extends BaseClient
      *
      * Идентификатор созданного объекта самозанятого необходимо использовать в запросе на проведение выплаты.
      *
-     * @example 01-client.php 446 14 Запрос на создание самозанятого
+     * @example 01-client.php 452 14 Запрос на создание самозанятого
      *
      * @param array|SelfEmployedRequestInterface $selfEmployed Запрос на создание самозанятого
      * @param null|string $idempotenceKey [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence)
@@ -1367,7 +1615,7 @@ class Client extends BaseClient
      *
      * С помощью этого запроса вы можете получить информацию о текущем статусе самозанятого по его уникальному идентификатору.
      *
-     * @example 01-client.php 463 8 Получить информацию о самозанятом
+     * @example 01-client.php 469 8 Получить информацию о самозанятом
      *
      * @param string $selfEmployedId Идентификатор самозанятого
      *
@@ -1410,7 +1658,7 @@ class Client extends BaseClient
      *
      * Используйте этот запрос, чтобы создать в ЮKassa [объект счета](https://yookassa.ru/developers/api?codeLang=bash#create_invoice).
      *
-     * @example 01-client.php 483 68 Запрос на создание счёта
+     * @example 01-client.php 489 68 Запрос на создание счёта
      *
      * @param array|CreateInvoiceRequestInterface $invoice
      * @param string|null $idempotenceKey
@@ -1458,7 +1706,7 @@ class Client extends BaseClient
      *
      * С помощью этого запроса вы можете получить информацию о текущем статусе счета по его уникальному идентификатору.
      *
-     * @example 01-client.php 554 13 Получить информацию о счете
+     * @example 01-client.php 560 13 Получить информацию о счете
      *
      * @param string $invoiceId Идентификатор счета
      *
@@ -1508,7 +1756,7 @@ class Client extends BaseClient
      *
      * Идентификатор созданного способа оплаты вы можете использовать при проведении [автоплатежей](/developers/payment-acceptance/scenario-extensions/recurring-payments/create-recurring) или [выплат](/developers/payouts/scenario-extensions/multipurpose-token).
      *
-     * @example 01-client.php 569 34 Запрос на создание способа оплаты
+     * @example 01-client.php 575 34 Запрос на создание способа оплаты
      *
      * @param array|CreatePaymentMethodRequestInterface $paymentMethod
      * @param string|null $idempotenceKey
@@ -1559,7 +1807,7 @@ class Client extends BaseClient
      *
      * @param string $paymentMethodId Идентификатор способа оплаты
      *
-     * @example 01-client.php 605 10 Получить информацию о способе оплаты
+     * @example 01-client.php 611 10 Получить информацию о способе оплаты
      *
      * @return SavePaymentMethodInterface|null
      * @throws ApiConnectionException

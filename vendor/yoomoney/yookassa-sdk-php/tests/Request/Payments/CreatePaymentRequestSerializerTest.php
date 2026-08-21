@@ -265,6 +265,10 @@ class CreatePaymentRequestSerializerTest extends TestCase
             $expected['deal'] = $options['deal'];
         }
 
+        if (!empty($options['pos_link'])) {
+            $expected['pos_link'] = $options['pos_link'];
+        }
+
         if (!empty($options['merchant_customer_id'])) {
             $expected['merchant_customer_id'] = $options['merchant_customer_id'];
         }
@@ -377,6 +381,10 @@ class CreatePaymentRequestSerializerTest extends TestCase
                         ],
                     ],
                     'merchant_customer_id' => Random::str(36, Payment::MAX_LENGTH_MERCHANT_CUSTOMER_ID),
+                    'pos_link' => [
+                        'id' => Random::str(36, 36, '0123456789abcdef'),
+                        'expires_at' => date(YOOKASSA_DATE),
+                    ],
                 ],
             ],
         ];
@@ -469,6 +477,10 @@ class CreatePaymentRequestSerializerTest extends TestCase
                     ],
                 ],
                 'merchant_customer_id' => Random::str(36, Payment::MAX_LENGTH_MERCHANT_CUSTOMER_ID),
+                'pos_link' => [
+                    'id' => Random::str(36, 36, '0123456789abcdef'),
+                    'expires_at' => date(YOOKASSA_DATE),
+                ],
             ];
             $result[] = [$request];
         }

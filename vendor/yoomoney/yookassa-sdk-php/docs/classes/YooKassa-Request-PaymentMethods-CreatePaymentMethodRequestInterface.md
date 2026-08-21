@@ -25,11 +25,14 @@
 | public | [getConfirmation()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_getConfirmation) |  | Возвращает confirmation. |
 | public | [getHolder()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_getHolder) |  | Возвращает holder. |
 | public | [getLastValidationError()](../classes/YooKassa-Common-AbstractRequestInterface.md#method_getLastValidationError) |  | Возвращает последнюю ошибку валидации. |
+| public | [getMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_getMetadata) |  | Возвращает metadata. |
 | public | [getType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_getType) |  | Возвращает type. |
+| public | [hasMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_hasMetadata) |  | Проверяет, были ли установлены метаданные. |
 | public | [setCard()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setCard) |  | Устанавливает card. |
 | public | [setClientIp()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setClientIp) |  | Устанавливает client_ip. |
 | public | [setConfirmation()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setConfirmation) |  | Устанавливает confirmation. |
 | public | [setHolder()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setHolder) |  | Устанавливает holder. |
+| public | [setMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setMetadata) |  | Устанавливает metadata. |
 | public | [setType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md#method_setType) |  | Устанавливает type. |
 | public | [validate()](../classes/YooKassa-Common-AbstractRequestInterface.md#method_validate) |  | Валидирует текущий запрос, проверяет все ли нужные свойства установлены. |
 
@@ -54,6 +57,7 @@
 | property |  | IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения. |
 | property |  | IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения. |
 | property |  | Данные, необходимые для инициирования сценария подтверждения привязки. |
+| property |  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8. |
 
 ---
 ## Methods
@@ -303,6 +307,62 @@ public setConfirmation(\YooKassa\Request\PaymentMethods\ConfirmationData\Abstrac
 **Returns:** \YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest - 
 
 
+<a name="method_getMetadata" class="anchor"></a>
+#### public getMetadata() : \YooKassa\Model\Metadata|null
+
+```php
+public getMetadata() : \YooKassa\Model\Metadata|null
+```
+
+**Summary**
+
+Возвращает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequestInterface](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md)
+
+**Returns:** \YooKassa\Model\Metadata|null - 
+
+
+<a name="method_hasMetadata" class="anchor"></a>
+#### public hasMetadata() : bool
+
+```php
+public hasMetadata() : bool
+```
+
+**Summary**
+
+Проверяет, были ли установлены метаданные.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequestInterface](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md)
+
+**Returns:** bool - True если метаданные были установлены, false если нет
+
+
+<a name="method_setMetadata" class="anchor"></a>
+#### public setMetadata() : \YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest
+
+```php
+public setMetadata(\YooKassa\Model\Metadata|array|null $metadata) : \YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest
+```
+
+**Summary**
+
+Устанавливает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequestInterface](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequestInterface.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\Metadata OR array OR null</code> | metadata  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. |
+
+**Returns:** \YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest - 
+
+
 
 
 ---
@@ -320,6 +380,6 @@ public setConfirmation(\YooKassa\Request\PaymentMethods\ConfirmationData\Abstrac
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

@@ -117,9 +117,9 @@ class PaymentOrderUtilities extends AbstractPaymentOrder
      * @var string|null
      */
     #[Assert\Type('string')]
-    #[Assert\Length(max: 8)]
+    #[Assert\Length(max: 11)]
     #[Assert\Length(min: 1)]
-    #[Assert\Regex("/^(\d{8})|(0)$/")]
+    #[Assert\Regex("/^(\d{11})|(\d{8})|(0)$/")]
     private ?string $_oktmo = null;
 
     /**

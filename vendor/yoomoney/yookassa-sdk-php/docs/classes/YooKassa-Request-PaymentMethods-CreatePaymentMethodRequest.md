@@ -24,6 +24,7 @@
 | public | [$clientIp](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#property_clientIp) |  | IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения. |
 | public | [$confirmation](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#property_confirmation) |  | Данные, необходимые для инициирования сценария подтверждения привязки. |
 | public | [$holder](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#property_holder) |  | Данные магазина, для которого сохраняется способ оплаты. |
+| public | [$metadata](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#property_metadata) |  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8. |
 | public | [$type](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#property_type) |  | Код способа оплаты. Возможное значение: ~`bank_card` — банковская карта, ~`sbp` - СБП (Система быстрых платежей) |
 
 ---
@@ -43,8 +44,10 @@
 | public | [getConfirmation()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_getConfirmation) |  | Возвращает confirmation. |
 | public | [getHolder()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_getHolder) |  | Возвращает holder. |
 | public | [getLastValidationError()](../classes/YooKassa-Common-AbstractRequest.md#method_getLastValidationError) |  | Возвращает последнюю ошибку валидации. |
+| public | [getMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_getMetadata) |  | Возвращает metadata. |
 | public | [getType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_getType) |  | Возвращает type. |
 | public | [getValidator()](../classes/YooKassa-Common-AbstractObject.md#method_getValidator) |  |  |
+| public | [hasMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_hasMetadata) |  | Проверяет, были ли установлены метаданные. |
 | public | [hasType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_hasType) |  | Проверяет, были ли установлен код способа оплаты. |
 | public | [jsonSerialize()](../classes/YooKassa-Common-AbstractObject.md#method_jsonSerialize) |  | Возвращает ассоциативный массив со свойствами текущего объекта для его дальнейшей JSON сериализации. |
 | public | [offsetExists()](../classes/YooKassa-Common-AbstractObject.md#method_offsetExists) |  | Проверяет наличие свойства. |
@@ -55,6 +58,7 @@
 | public | [setClientIp()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_setClientIp) |  | Устанавливает client_ip. |
 | public | [setConfirmation()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_setConfirmation) |  | Устанавливает confirmation. |
 | public | [setHolder()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_setHolder) |  | Устанавливает holder. |
+| public | [setMetadata()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_setMetadata) |  | Устанавливает metadata. |
 | public | [setType()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_setType) |  | Устанавливает type. |
 | public | [toArray()](../classes/YooKassa-Common-AbstractObject.md#method_toArray) |  | Возвращает ассоциативный массив со свойствами текущего объекта для его дальнейшей JSON сериализации Является алиасом метода AbstractObject::jsonSerialize(). |
 | public | [validate()](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md#method_validate) |  | Валидирует текущий запрос, проверяет все ли нужные свойства установлены. |
@@ -141,6 +145,18 @@ IPv4 или IPv6-адрес пользователя. Если не указан
 Данные магазина, для которого сохраняется способ оплаты.
 
 **Type:** <a href="../classes/YooKassa-Request-PaymentMethods-PaymentMethodHolder.html"><abbr title="\YooKassa\Request\PaymentMethods\PaymentMethodHolder">PaymentMethodHolder</abbr></a>
+
+**Details:**
+
+
+<a name="property_metadata"></a>
+#### public $metadata : \YooKassa\Model\Metadata
+---
+***Description***
+
+Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
+
+**Type:** <a href="../classes/YooKassa-Model-Metadata.html"><abbr title="\YooKassa\Model\Metadata">Metadata</abbr></a>
 
 **Details:**
 
@@ -412,6 +428,23 @@ public getLastValidationError() : string|null
 **Returns:** string|null - Последняя произошедшая ошибка валидации
 
 
+<a name="method_getMetadata" class="anchor"></a>
+#### public getMetadata() : \YooKassa\Model\Metadata|null
+
+```php
+public getMetadata() : \YooKassa\Model\Metadata|null
+```
+
+**Summary**
+
+Возвращает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md)
+
+**Returns:** \YooKassa\Model\Metadata|null - 
+
+
 <a name="method_getType" class="anchor"></a>
 #### public getType() : string|null
 
@@ -440,6 +473,23 @@ public getValidator() : \YooKassa\Validator\Validator
 * Inherited From: [\YooKassa\Common\AbstractObject](../classes/YooKassa-Common-AbstractObject.md)
 
 **Returns:** \YooKassa\Validator\Validator - 
+
+
+<a name="method_hasMetadata" class="anchor"></a>
+#### public hasMetadata() : bool
+
+```php
+public hasMetadata() : bool
+```
+
+**Summary**
+
+Проверяет, были ли установлены метаданные.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md)
+
+**Returns:** bool - True если метаданные были установлены, false если нет
 
 
 <a name="method_hasType" class="anchor"></a>
@@ -653,6 +703,28 @@ public setHolder(\YooKassa\Request\PaymentMethods\PaymentMethodHolder|array|null
 **Returns:** self - 
 
 
+<a name="method_setMetadata" class="anchor"></a>
+#### public setMetadata() : self
+
+```php
+public setMetadata(\YooKassa\Model\Metadata|array|null $metadata) : self
+```
+
+**Summary**
+
+Устанавливает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest](../classes/YooKassa-Request-PaymentMethods-CreatePaymentMethodRequest.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\Metadata OR array OR null</code> | metadata  | Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. |
+
+**Returns:** self - 
+
+
 <a name="method_setType" class="anchor"></a>
 #### public setType() : self
 
@@ -784,6 +856,6 @@ protected validatePropertyValue(string $propertyName, mixed $propertyValue) : mi
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

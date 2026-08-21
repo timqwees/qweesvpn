@@ -12,6 +12,7 @@
 * [\YooKassa\Model\Payment](../namespaces/yookassa-model-payment.md)
 * [\YooKassa\Model\Payout](../namespaces/yookassa-model-payout.md)
 * [\YooKassa\Model\PersonalData](../namespaces/yookassa-model-personaldata.md)
+* [\YooKassa\Model\PosLink](../namespaces/yookassa-model-poslink.md)
 * [\YooKassa\Model\Receipt](../namespaces/yookassa-model-receipt.md)
 * [\YooKassa\Model\Refund](../namespaces/yookassa-model-refund.md)
 * [\YooKassa\Model\SavePaymentMethod](../namespaces/yookassa-model-savepaymentmethod.md)
@@ -49,6 +50,6 @@
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

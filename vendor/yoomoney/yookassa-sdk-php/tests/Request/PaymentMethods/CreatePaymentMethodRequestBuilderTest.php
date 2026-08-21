@@ -387,6 +387,67 @@ class CreatePaymentMethodRequestBuilderTest extends AbstractTestCase
     }
 
     /**
+     * Test property "metadata"
+     * @dataProvider validMetadataDataProvider
+     * @param mixed $value
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testMetadata(mixed $value): void
+    {
+        $builder = CreatePaymentMethodRequest::builder();
+        $builder->setOptions($this->getRequiredData('metadata'));
+        $builder->setMetadata($value);
+
+        $instance = $builder->build();
+
+        if (!empty($value)) {
+            self::assertNotNull($instance->getMetadata());
+            self::assertNotNull($instance->metadata);
+        }
+        self::assertEquals($value, is_array($value) ? $instance->getMetadata()->toArray() : $instance->getMetadata());
+        self::assertEquals($value, is_array($value) ? $instance->metadata->toArray() : $instance->metadata);
+    }
+
+    /**
+     * Test invalid property "metadata"
+     * @dataProvider invalidMetadataDataProvider
+     * @param mixed $value
+     * @param string $exceptionClass
+     *
+     * @return void
+     */
+    public function testInvalidMetadata(mixed $value, string $exceptionClass): void
+    {
+        $builder = CreatePaymentMethodRequest::builder();
+        $builder->setOptions($this->getRequiredData('metadata'));
+
+        $this->expectException($exceptionClass);
+        $builder->setMetadata($value);
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function validMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getValidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function invalidMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
+    }
+
+    /**
      * @param string|null $testingProperty
      *
      * @return array

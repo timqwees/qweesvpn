@@ -28,6 +28,7 @@ Interface CreatePaymentRequestInterface.
 | public | [getPaymentMethodId()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getPaymentMethodId) |  | Устанавливает идентификатор записи платёжных данных покупателя. |
 | public | [getPaymentOrder()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getPaymentOrder) |  | Возвращает платежное поручение. |
 | public | [getPaymentToken()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getPaymentToken) |  | Возвращает одноразовый токен для проведения оплаты. |
+| public | [getPosLink()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getPosLink) |  | Возвращает данные о кассовой ссылке для проведения платежа в офлайне. |
 | public | [getReceipt()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getReceipt) |  | Возвращает чек, если он есть. |
 | public | [getReceiver()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getReceiver) |  | Возвращает реквизиты получателя оплаты. |
 | public | [getRecipient()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_getRecipient) |  | Возвращает объект получателя платежа. |
@@ -62,6 +63,7 @@ Interface CreatePaymentRequestInterface.
 | public | [setPaymentMethodId()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setPaymentMethodId) |  | Устанавливает идентификатор записи о сохранённых данных покупателя. |
 | public | [setPaymentOrder()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setPaymentOrder) |  | Устанавливает платежное поручение. |
 | public | [setPaymentToken()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setPaymentToken) |  | Устанавливает одноразовый токен для проведения оплаты, сформированный YooKassa JS widget. |
+| public | [setPosLink()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setPosLink) |  | Устанавливает данные о кассовой ссылке для проведения платежа в офлайне. |
 | public | [setReceiver()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setReceiver) |  | Устанавливает реквизиты получателя оплаты. |
 | public | [setRecipient()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setRecipient) |  | Устанавливает объект с информацией о получателе платежа. |
 | public | [setSavePaymentMethod()](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md#method_setSavePaymentMethod) |  | Устанавливает флаг сохранения платёжных данных. Значение true инициирует создание многоразового payment_method. |
@@ -101,6 +103,8 @@ Interface CreatePaymentRequestInterface.
 | property |  | Идентификатор покупателя в вашей системе, например электронная почта или номер телефона |
 | property |  | Идентификатор покупателя в вашей системе, например электронная почта или номер телефона |
 | property |  | Реквизиты получателя оплаты при пополнении электронного кошелька, банковского счета или баланса телефона |
+| property |  | Данные о кассовой ссылке для проведения платежа в офлайне |
+| property |  | Данные о кассовой ссылке для проведения платежа в офлайне |
 
 ---
 ## Methods
@@ -1061,6 +1065,45 @@ public setReceiver(null|array|\YooKassa\Request\Payments\ReceiverData\AbstractRe
 **Returns:** self - 
 
 
+<a name="method_getPosLink" class="anchor"></a>
+#### public getPosLink() : \YooKassa\Model\PosLink\PosLinkPayment|null
+
+```php
+public getPosLink() : \YooKassa\Model\PosLink\PosLinkPayment|null
+```
+
+**Summary**
+
+Возвращает данные о кассовой ссылке для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequestInterface](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md)
+
+**Returns:** \YooKassa\Model\PosLink\PosLinkPayment|null - Данные о кассовой ссылке
+
+
+<a name="method_setPosLink" class="anchor"></a>
+#### public setPosLink() : self
+
+```php
+public setPosLink(\YooKassa\Model\PosLink\PosLinkPayment|array|null $pos_link = null) : self
+```
+
+**Summary**
+
+Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequestInterface](../classes/YooKassa-Request-Payments-CreatePaymentRequestInterface.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\PosLink\PosLinkPayment OR array OR null</code> | pos_link  | Данные о кассовой ссылке |
+
+**Returns:** self - 
+
+
 
 
 ---
@@ -1078,6 +1121,6 @@ public setReceiver(null|array|\YooKassa\Request\Payments\ReceiverData\AbstractRe
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

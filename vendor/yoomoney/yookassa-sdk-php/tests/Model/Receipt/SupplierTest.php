@@ -136,8 +136,8 @@ class SupplierTest extends AbstractTestCase
         self::assertEquals($value, is_array($value) ? $instance->getPhone()->toArray() : $instance->getPhone());
         self::assertEquals($value, is_array($value) ? $instance->phone->toArray() : $instance->phone);
         if (!empty($value)) {
-            self::assertMatchesRegularExpression("/[0-9]{4,15}/", $instance->getPhone());
-            self::assertMatchesRegularExpression("/[0-9]{4,15}/", $instance->phone);
+            self::assertMatchesRegularExpression("/[0-9]{4,19}/", $instance->getPhone());
+            self::assertMatchesRegularExpression("/[0-9]{4,19}/", $instance->phone);
         }
     }
 

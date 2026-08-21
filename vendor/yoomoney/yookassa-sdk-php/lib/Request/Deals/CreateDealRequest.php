@@ -38,7 +38,7 @@ use YooKassa\Validator\Constraints as Assert;
  *
  * Класс объекта запроса к API на проведение новой сделки.
  *
- * @example 02-builder.php 252 19 Пример использования билдера
+ * @example 02-builder.php 270 19 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

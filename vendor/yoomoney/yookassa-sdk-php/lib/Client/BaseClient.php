@@ -95,6 +95,9 @@ class BaseClient
     /** Точка входа для запросов к API по способам оплаты */
     public const PAYMENT_METHODS_PATH = '/payment_methods';
 
+    /** Точка входа для запросов к API по кассовым ссылкам */
+    public const POS_LINKS_PATH = '/pos_links';
+
     /** Имя HTTP заголовка, используемого для передачи idempotence key */
     public const IDEMPOTENCE_KEY_HEADER = 'Idempotence-Key';
 

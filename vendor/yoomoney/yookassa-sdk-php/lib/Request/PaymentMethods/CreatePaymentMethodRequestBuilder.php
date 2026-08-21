@@ -28,6 +28,7 @@ namespace YooKassa\Request\PaymentMethods;
 
 use YooKassa\Common\AbstractRequestBuilder;
 use YooKassa\Common\AbstractRequestInterface;
+use YooKassa\Model\Metadata;
 use YooKassa\Request\PaymentMethods\ConfirmationData\AbstractConfirmation;
 
 /**
@@ -40,7 +41,7 @@ use YooKassa\Request\PaymentMethods\ConfirmationData\AbstractConfirmation;
  * @author   cms@yoomoney.ru
  * @link     https://yookassa.ru/developers/api
  *
- * @example 02-builder.php 273 23 Пример использования билдера
+ * @example 02-builder.php 291 23 Пример использования билдера
  */
 class CreatePaymentMethodRequestBuilder extends AbstractRequestBuilder
 {
@@ -117,6 +118,20 @@ class CreatePaymentMethodRequestBuilder extends AbstractRequestBuilder
     public function setConfirmation(mixed $value = null): CreatePaymentMethodRequestBuilder
     {
         $this->currentObject->setConfirmation($value);
+
+        return $this;
+    }
+
+    /**
+     * Устанавливает metadata.
+     *
+     * @param Metadata|array|null $value Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @return self
+     */
+    public function setMetadata(mixed $value = null): CreatePaymentMethodRequestBuilder
+    {
+        $this->currentObject->setMetadata($value);
 
         return $this;
     }

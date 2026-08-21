@@ -40,7 +40,7 @@ use YooKassa\Model\Receipt\SettlementInterface;
 /**
  * Класс билдера объектов запросов к API на создание чека.
  *
- * @example 02-builder.php 88 57 Пример использования билдера
+ * @example 02-builder.php 88 69 Пример использования билдера
  */
 class CreatePostReceiptRequestBuilder extends AbstractRequestBuilder
 {

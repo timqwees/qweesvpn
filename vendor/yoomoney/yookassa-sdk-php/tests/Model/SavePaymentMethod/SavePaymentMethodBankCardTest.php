@@ -28,6 +28,7 @@ namespace Tests\YooKassa\Model\SavePaymentMethod;
 
 use Exception;
 use Tests\YooKassa\AbstractTestCase;
+use YooKassa\Model\Metadata;
 use YooKassa\Model\SavePaymentMethod\SavePaymentMethodBankCard;
 
 /**
@@ -503,5 +504,73 @@ class SavePaymentMethodBankCardTest extends AbstractTestCase
     {
         $instance = $this->getTestInstance();
         return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_card'));
+    }
+
+    /**
+    * Test property "metadata"
+    * @dataProvider validMetadataDataProvider
+    * @param mixed $value
+    *
+    * @return void
+    * @throws Exception
+    */
+    public function testMetadata(mixed $value): void
+    {
+        $instance = $this->getTestInstance();
+        self::assertEmpty($instance->getMetadata());
+        self::assertEmpty($instance->metadata);
+        $instance->setMetadata($value);
+        if (!empty($value)) {
+            self::assertNotNull($instance->getMetadata());
+            self::assertNotNull($instance->metadata);
+            foreach ($value as $key => $element) {
+                if (!empty($element)) {
+                    self::assertEquals($element, $instance->getMetadata()[$key]);
+                    self::assertEquals($element, $instance->metadata[$key]);
+                }
+            }
+            self::assertCount(count($value), $instance->getMetadata());
+            self::assertCount(count($value), $instance->metadata);
+            if ($instance->getMetadata() instanceof Metadata) {
+                self::assertEquals($value, $instance->getMetadata()->toArray());
+                self::assertEquals($value, $instance->metadata->toArray());
+            }
+        }
+    }
+
+    /**
+    * Test invalid property "metadata"
+    * @dataProvider invalidMetadataDataProvider
+    * @param mixed $value
+    * @param string $exceptionClass
+    *
+    * @return void
+    */
+    public function testInvalidMetadata(mixed $value, string $exceptionClass): void
+    {
+        $instance = $this->getTestInstance();
+
+        $this->expectException($exceptionClass);
+        $instance->setMetadata($value);
+    }
+
+    /**
+    * @return array[]
+    * @throws Exception
+    */
+    public function validMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getValidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
+    }
+
+    /**
+    * @return array[]
+    * @throws Exception
+    */
+    public function invalidMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
     }
 }

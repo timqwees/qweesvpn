@@ -133,3 +133,10 @@ $client->setAuth('shopId', 'secretKey');
 * [Request to create payment method](docs/examples/11-payment-methods.md#Запрос-на-создание-способа-оплаты)
 * [Request to create payment method via the builder](docs/examples/11-payment-methods.md#Запрос-на-создание-способа-оплаты-через-билдер)
 * [Get information about the payment method](docs/examples/11-payment-methods.md#Получить-информацию-о-способе-оплаты)
+
+#### [Working with payment links](docs/examples/12-pos-links.md)
+* [Request to create a payment link](docs/examples/12-pos-links.md#Запрос-на-создание-кассовой-ссылки)
+* [Get information about the payment link](docs/examples/12-pos-links.md#Получить-информацию-о-кассовой-ссылке)
+* [Activate a payment link](docs/examples/12-pos-links.md#Активировать-кассовую-ссылку)
+* [Deactivate a payment link](docs/examples/12-pos-links.md#Деактивировать-кассовую-ссылку)
+* [Link a point of sale to a payment link](docs/examples/12-pos-links.md#Привязать-торговую-точку-к-кассовой-ссылке)

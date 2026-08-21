@@ -27,6 +27,7 @@
 namespace YooKassa\Model\SavePaymentMethod;
 
 use YooKassa\Common\AbstractObject;
+use YooKassa\Model\Metadata;
 use YooKassa\Model\SavePaymentMethod\Confirmation\AbstractConfirmation;
 use YooKassa\Model\SavePaymentMethod\Confirmation\ConfirmationFactory;
 use YooKassa\Validator\Constraints as Assert;
@@ -48,6 +49,7 @@ use YooKassa\Validator\Constraints as Assert;
  * @property SavePaymentMethodHolder $holder Данные магазина, для которого сохраняется способ оплаты.
  * @property string $title Название способа оплаты.
  * @property AbstractConfirmation $confirmation Выбранный сценарий подтверждения привязки. Присутствует, когда привязка ожидает подтверждения от пользователя.
+ * @property Metadata $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
 */
 abstract class AbstractSavePaymentMethod extends AbstractObject implements SavePaymentMethodInterface
 {
@@ -114,6 +116,15 @@ abstract class AbstractSavePaymentMethod extends AbstractObject implements SaveP
      */
     #[Assert\Type(AbstractConfirmation::class)]
     protected ?AbstractConfirmation $_confirmation = null;
+
+    /**
+     * Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @var Metadata|null
+     */
+    #[Assert\AllType('string')]
+    #[Assert\Type(Metadata::class)]
+    protected ?Metadata $_metadata = null;
 
     /**
      * Возвращает type.
@@ -276,6 +287,29 @@ abstract class AbstractSavePaymentMethod extends AbstractObject implements SaveP
             $confirmation = (new ConfirmationFactory())->factoryFromArray($confirmation);
         }
         $this->_confirmation = $this->validatePropertyValue('_confirmation', $confirmation);
+        return $this;
+    }
+
+    /**
+     * Возвращает metadata.
+     *
+     * @return Metadata|null
+     */
+    public function getMetadata(): ?Metadata
+    {
+        return $this->_metadata;
+    }
+
+    /**
+     * Устанавливает metadata.
+     *
+     * @param Metadata|array|null $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @return self
+     */
+    public function setMetadata(mixed $metadata = null): self
+    {
+        $this->_metadata = $this->validatePropertyValue('_metadata', $metadata);
         return $this;
     }
 }

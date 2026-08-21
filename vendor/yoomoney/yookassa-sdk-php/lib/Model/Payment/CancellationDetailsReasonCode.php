@@ -124,6 +124,15 @@ class CancellationDetailsReasonCode extends AbstractEnum
     /** Отклонено по таймауту */
     public const REJECTED_BY_TIMEOUT = 'rejected_by_timeout';
 
+    /** Организация, предоставляющая кредит или рассрочку, отказала в выдаче. При новой попытке оплаты пользователю следует выбрать другое платежное средство */
+    public const LOAN_DECLINED = 'loan_declined';
+
+    /** Покупатель отказался от кредитной сделки */
+    public const LOAN_DECLINED_BY_PAYER = 'loan_declined_by_payer';
+
+    /** Истек срок действия заявки на кредит */
+    public const LOAN_APPLICATION_EXPIRED = 'loan_application_expired';
+
     protected static array $validValues = [
         self::THREE_D_SECURE_FAILED => true,
         self::CALL_ISSUER => true,
@@ -146,5 +155,8 @@ class CancellationDetailsReasonCode extends AbstractEnum
         self::DEAL_EXPIRED => true,
         self::UNSUPPORTED_MOBILE_OPERATOR => true,
         self::REJECTED_BY_TIMEOUT => true,
+        self::LOAN_DECLINED => true,
+        self::LOAN_DECLINED_BY_PAYER => true,
+        self::LOAN_APPLICATION_EXPIRED => true,
     ];
 }

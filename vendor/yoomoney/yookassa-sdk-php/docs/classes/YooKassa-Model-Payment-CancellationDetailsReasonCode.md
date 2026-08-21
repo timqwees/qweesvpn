@@ -36,6 +36,9 @@
 | public | [DEAL_EXPIRED](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_DEAL_EXPIRED) |  | Для тех, кто использует Безопасную сделку: закончился срок жизни сделки. |
 | public | [UNSUPPORTED_MOBILE_OPERATOR](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_UNSUPPORTED_MOBILE_OPERATOR) |  | Нельзя заплатить с номера телефона этого мобильного оператора. При новой попытке оплаты пользователю следует использовать другое платежное средство. Список поддерживаемых операторов |
 | public | [REJECTED_BY_TIMEOUT](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_REJECTED_BY_TIMEOUT) |  | Отклонено по таймауту |
+| public | [LOAN_DECLINED](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_LOAN_DECLINED) |  | Организация, предоставляющая кредит или рассрочку, отказала в выдаче. При новой попытке оплаты пользователю следует выбрать другое платежное средство |
+| public | [LOAN_DECLINED_BY_PAYER](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_LOAN_DECLINED_BY_PAYER) |  | Покупатель отказался от кредитной сделки |
+| public | [LOAN_APPLICATION_EXPIRED](../classes/YooKassa-Model-Payment-CancellationDetailsReasonCode.md#constant_LOAN_APPLICATION_EXPIRED) |  | Истек срок действия заявки на кредит |
 
 ---
 ### Properties
@@ -267,6 +270,33 @@ REJECTED_BY_TIMEOUT = 'rejected_by_timeout'
 ```
 
 
+<a name="constant_LOAN_DECLINED" class="anchor"></a>
+###### LOAN_DECLINED
+Организация, предоставляющая кредит или рассрочку, отказала в выдаче. При новой попытке оплаты пользователю следует выбрать другое платежное средство
+
+```php
+LOAN_DECLINED = 'loan_declined'
+```
+
+
+<a name="constant_LOAN_DECLINED_BY_PAYER" class="anchor"></a>
+###### LOAN_DECLINED_BY_PAYER
+Покупатель отказался от кредитной сделки
+
+```php
+LOAN_DECLINED_BY_PAYER = 'loan_declined_by_payer'
+```
+
+
+<a name="constant_LOAN_APPLICATION_EXPIRED" class="anchor"></a>
+###### LOAN_APPLICATION_EXPIRED
+Истек срок действия заявки на кредит
+
+```php
+LOAN_APPLICATION_EXPIRED = 'loan_application_expired'
+```
+
+
 
 ---
 ## Properties
@@ -353,6 +383,6 @@ Static public valueExists(mixed $value) : bool
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

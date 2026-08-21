@@ -37,7 +37,7 @@ use YooKassa\Request\PersonalData\PersonalDataType\PayoutStatementRecipientPerso
  *
  * Класс билдера объектов запросов к API на создание платежа.
  *
- * @example 02-builder.php 210 19 Пример использования билдера
+ * @example 02-builder.php 228 19 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

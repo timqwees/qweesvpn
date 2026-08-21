@@ -26,6 +26,7 @@
 namespace YooKassa\Model\SavePaymentMethod;
 
 
+use YooKassa\Model\Metadata;
 use YooKassa\Model\Payment\PaymentMethod\BankCard;
 use YooKassa\Model\SavePaymentMethod\Confirmation\AbstractConfirmation;
 
@@ -46,6 +47,7 @@ use YooKassa\Model\SavePaymentMethod\Confirmation\AbstractConfirmation;
  * @property SavePaymentMethodHolder $holder Данные магазина, для которого сохраняется способ оплаты.
  * @property string $title Название способа оплаты.
  * @property AbstractConfirmation $confirmation Выбранный сценарий подтверждения привязки. Присутствует, когда привязка ожидает подтверждения от пользователя.
+ * @property Metadata $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
  */
 interface SavePaymentMethodInterface
 {
@@ -97,4 +99,11 @@ interface SavePaymentMethodInterface
      * @return AbstractConfirmation|null
      */
     public function getConfirmation(): ?AbstractConfirmation;
+
+    /**
+     * Возвращает metadata.
+     *
+     * @return Metadata|null
+     */
+    public function getMetadata(): ?Metadata;
 }

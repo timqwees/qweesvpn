@@ -26,6 +26,7 @@
 namespace YooKassa\Request\PaymentMethods;
 
 use YooKassa\Common\AbstractRequestInterface;
+use YooKassa\Model\Metadata;
 use YooKassa\Request\PaymentMethods\ConfirmationData\AbstractConfirmation;
 
 /**
@@ -44,6 +45,7 @@ use YooKassa\Request\PaymentMethods\ConfirmationData\AbstractConfirmation;
  * @property string $client_ip IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения.
  * @property string $clientIp IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения.
  * @property AbstractConfirmation $confirmation Данные, необходимые для инициирования сценария подтверждения привязки.
+ * @property Metadata $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
  */
 interface CreatePaymentMethodRequestInterface extends AbstractRequestInterface
 {
@@ -126,4 +128,27 @@ interface CreatePaymentMethodRequestInterface extends AbstractRequestInterface
      * @return CreatePaymentMethodRequest
      */
     public function setConfirmation(mixed $confirmation = null): CreatePaymentMethodRequest;
+
+    /**
+     * Возвращает metadata.
+     *
+     * @return Metadata|null
+     */
+    public function getMetadata(): ?Metadata;
+
+    /**
+     * Проверяет, были ли установлены метаданные.
+     *
+     * @return bool True если метаданные были установлены, false если нет
+     */
+    public function hasMetadata(): bool;
+
+    /**
+     * Устанавливает metadata.
+     *
+     * @param Metadata|array|null $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @return CreatePaymentMethodRequest
+     */
+    public function setMetadata(mixed $metadata): CreatePaymentMethodRequest;
 }

@@ -22,6 +22,7 @@
 | public | [getConfirmation()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getConfirmation) |  | Возвращает выбранный сценарий подтверждения привязки. |
 | public | [getHolder()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getHolder) |  | Возвращает данные магазина, для которого сохраняется способ оплаты. |
 | public | [getId()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getId) |  | Возвращает идентификатор сохраненного способа оплаты. |
+| public | [getMetadata()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getMetadata) |  | Возвращает metadata. |
 | public | [getSaved()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getSaved) |  | Возвращает признак сохранения способа оплаты для %[автоплатежей](/developers/payment-acceptance/scenario-extensions/recurring-payments/pay-with-saved).  Возможные значения:   * ~`true` — способ оплаты сохранен для автоплатежей и выплат; * ~`false` — способ оплаты не сохранен. |
 | public | [getStatus()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getStatus) |  | Возвращает статус проверки и сохранения способа оплаты. |
 | public | [getTitle()](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md#method_getTitle) |  | Возвращает название способа оплаты. |
@@ -164,6 +165,23 @@ public getConfirmation() : \YooKassa\Model\SavePaymentMethod\Confirmation\Abstra
 **Returns:** \YooKassa\Model\SavePaymentMethod\Confirmation\AbstractConfirmation|null - 
 
 
+<a name="method_getMetadata" class="anchor"></a>
+#### public getMetadata() : \YooKassa\Model\Metadata|null
+
+```php
+public getMetadata() : \YooKassa\Model\Metadata|null
+```
+
+**Summary**
+
+Возвращает metadata.
+
+**Details:**
+* Inherited From: [\YooKassa\Model\SavePaymentMethod\SavePaymentMethodInterface](../classes/YooKassa-Model-SavePaymentMethod-SavePaymentMethodInterface.md)
+
+**Returns:** \YooKassa\Model\Metadata|null - 
+
+
 
 
 ---
@@ -181,6 +199,6 @@ public getConfirmation() : \YooKassa\Model\SavePaymentMethod\Confirmation\Abstra
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

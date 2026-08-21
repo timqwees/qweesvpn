@@ -1281,6 +1281,62 @@ class CreatePaymentRequestTest extends AbstractTestCase
     }
 
     /**
+     * Test property "pos_link"
+     * @dataProvider validPosLinkDataProvider
+     * @param mixed $value
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testPosLink(mixed $value): void
+    {
+        $instance = $this->getTestInstance();
+        $instance->setPosLink($value);
+        self::assertEquals($value, is_array($value) ? $instance->getPosLink()->toArray() : $instance->getPosLink());
+        self::assertEquals($value, is_array($value) ? $instance->pos_link->toArray() : $instance->pos_link);
+        if (!empty($value)) {
+            self::assertNotNull($instance->getPosLink());
+            self::assertNotNull($instance->pos_link);
+        }
+    }
+
+    /**
+     * Test invalid property "pos_link"
+     * @dataProvider invalidPosLinkDataProvider
+     * @param mixed $value
+     * @param string $exceptionClass
+     *
+     * @return void
+     */
+    public function testInvalidPosLink(mixed $value, string $exceptionClass): void
+    {
+        $instance = $this->getTestInstance();
+
+        $this->expectException($exceptionClass);
+        $instance->setPosLink($value);
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function validPosLinkDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getValidDataProviderByType($instance->getValidator()->getRulesByPropName('_pos_link'));
+    }
+
+    /**
+     * @return array[]
+     * @throws Exception
+     */
+    public function invalidPosLinkDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_pos_link'));
+    }
+
+    /**
      * Test valid method "builder"
      *
      * @return void

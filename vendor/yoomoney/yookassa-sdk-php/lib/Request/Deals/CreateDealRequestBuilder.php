@@ -35,7 +35,7 @@ use YooKassa\Model\Metadata;
  *
  * Класс билдера объектов запросов к API на создание платежа.
  *
- * @example 02-builder.php 252 19 Пример использования билдера
+ * @example 02-builder.php 270 19 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

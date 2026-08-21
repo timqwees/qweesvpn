@@ -8,6 +8,7 @@ use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\Auth\Auth;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use App\Config\Database;
 use DateTime, DateTimeZone;
 
@@ -33,7 +34,8 @@ class AdminXray
             $expiryMs = max($nowMs, $currentExpiry) + $days * 86400000;
         }
 
-        $params = [$uniID, 'on', rtrim($_ENV['XUI_URL_SUBSCRIPTION'] ?? '', '/') . '/' . $uniID, $amount, $days, $devices, $expiryMs];
+        // URL подписки — сервер пользователя (субдомен его текущей подписки) или дефолтный из реестра Network
+        $params = [$uniID, 'on', ServerNetwork::getSubscriptionUrl($uniID), $amount, $days, $devices, $expiryMs];
 
         if (Database::isMysql()) {
             $result = Database::send(

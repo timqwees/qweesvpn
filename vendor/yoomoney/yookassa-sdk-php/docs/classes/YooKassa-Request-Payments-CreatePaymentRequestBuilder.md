@@ -134,6 +134,7 @@ var_dump($response);
 | public | [setPaymentMethodId()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setPaymentMethodId) |  | Устанавливает идентификатор записи о сохранённых данных покупателя. |
 | public | [setPaymentOrder()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setPaymentOrder) |  | Устанавливает платежное поручение. |
 | public | [setPaymentToken()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setPaymentToken) |  | Устанавливает одноразовый токен для проведения оплаты. |
+| public | [setPosLink()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setPosLink) |  | Устанавливает данные о кассовой ссылке для проведения платежа в офлайне. |
 | public | [setReceipt()](../classes/YooKassa-Request-Payments-AbstractPaymentRequestBuilder.md#method_setReceipt) |  | Устанавливает чек. |
 | public | [setReceiptEmail()](../classes/YooKassa-Request-Payments-AbstractPaymentRequestBuilder.md#method_setReceiptEmail) |  | Устанавливает адрес электронной почты получателя чека. |
 | public | [setReceiptIndustryDetails()](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md#method_setReceiptIndustryDetails) |  | Устанавливает отраслевой реквизит чека. |
@@ -839,6 +840,28 @@ public setPaymentToken(string|null $value) : \YooKassa\Request\Payments\CreatePa
 **Returns:** \YooKassa\Request\Payments\CreatePaymentRequestBuilder - Инстанс текущего билдера
 
 
+<a name="method_setPosLink" class="anchor"></a>
+#### public setPosLink() : \YooKassa\Request\Payments\CreatePaymentRequestBuilder
+
+```php
+public setPosLink(\YooKassa\Model\PosLink\PosLinkPayment|array|null $value) : \YooKassa\Request\Payments\CreatePaymentRequestBuilder
+```
+
+**Summary**
+
+Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequestBuilder](../classes/YooKassa-Request-Payments-CreatePaymentRequestBuilder.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\PosLink\PosLinkPayment OR array OR null</code> | value  | Данные о кассовой ссылке |
+
+**Returns:** \YooKassa\Request\Payments\CreatePaymentRequestBuilder - Инстанс текущего билдера
+
+
 <a name="method_setReceipt" class="anchor"></a>
 #### public setReceipt() : self
 
@@ -1156,6 +1179,6 @@ protected initCurrentObject() : \YooKassa\Request\Payments\CreatePaymentRequest
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

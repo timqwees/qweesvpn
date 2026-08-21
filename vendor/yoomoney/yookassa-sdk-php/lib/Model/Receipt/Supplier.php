@@ -57,7 +57,7 @@ class Supplier extends AbstractObject implements SupplierInterface
      * @var string|null Телефон пользователя. Указывается в формате ITU-T E.164
      */
     #[Assert\Type('string')]
-    #[Assert\Regex("/[0-9]{4,15}/")]
+    #[Assert\Regex("/[0-9]{4,19}/")]
     private ?string $_phone = null;
 
     /**

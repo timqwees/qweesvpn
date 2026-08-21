@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Vpn;
 
 use Setting\Route\Function\Controllers\Client\GetUser;
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use DateTime, DateTimeZone;
 
 class VpnStatus
 {
     private GetUser $user;
+
+    /** Конфиг сервера текущего пользователя (субдомен его подписки) из реестра Network. */
+    private ?array $server = null;
 
     // Статическое кэширование для ускорения
     private static array $cache = [];
@@ -18,6 +22,11 @@ class VpnStatus
     public function __construct()
     {
         $this->user = new GetUser();
+    }
+
+    private function serverConfig(): array
+    {
+        return $this->server ??= ServerNetwork::selectServer();
     }
 
     /**
@@ -95,7 +104,7 @@ class VpnStatus
     public function getPingMs(): ?float
     {
         return self::getCachedData('ping', function () {
-            $host = $_ENV['VLESS_SERVER'] ?? 'localhost';
+            $host = $this->serverConfig()['VLESS_SERVER'] ?? 'localhost';
 
             // Супер быстрый ping - 0.5 сек таймаут
             $start = microtime(true);
@@ -137,7 +146,7 @@ class VpnStatus
     public function getIpAddress(): string
     {
         return self::getCachedData('ip_address', function () {
-            $vpnServerHost = $_ENV['VLESS_SERVER'] ?? null;
+            $vpnServerHost = $this->serverConfig()['VLESS_SERVER'] ?? null;
 
             // Быстрая проверка локального IP
             if ($vpnServerHost) {
@@ -160,28 +169,9 @@ class VpnStatus
     public function getLocation(): string
     {
         return self::getCachedData('location', function () {
-            $serverCode = $_ENV['VLESS_SERVER'] ?? 'FI';
-
-            // Быстрое преобразование кода в название
-            $countryNames = [
-                'NL' => 'Netherlands',
-                'DE' => 'Germany',
-                'US' => 'United States',
-                'GB' => 'United Kingdom',
-                'FR' => 'France',
-                'RU' => 'Russia',
-                'UA' => 'Ukraine',
-                'KZ' => 'Kazakhstan',
-                'TR' => 'Turkey',
-                'CA' => 'Canada',
-                'AU' => 'Australia',
-                'JP' => 'Japan',
-                'SG' => 'Singapore',
-                'FI' => 'Finland',
-                'SE' => 'Sweden'
-            ];
-
-            return $countryNames[$serverCode] ?? $serverCode;
+            // Страна сервера пользователя из реестра Network (по субдомену его подписки)
+            $config = $this->serverConfig();
+            return $config['country'] ?? ($config['VLESS_SERVER'] ?? 'Сервер не определен');
         }, 300); // Кэшируем на 5 минут
     }
 
@@ -212,7 +202,8 @@ class VpnStatus
         // Определяем статус подключения
         $status = $isActive && !empty($subscription) ? 'active' : 'inactive';
 
-        $serverLabel = $_ENV['VLESS_SERVER'] ?? 'NL';
+        $serverConfig = $this->serverConfig();
+        $serverLabel = $serverConfig['country'] ?? ($serverConfig['VLESS_SERVER'] ?? 'NL');
 
         return [
             'status' => $status,
@@ -247,7 +238,7 @@ class VpnStatus
             'ping' => ['ms' => null, 'status' => 'inactive'],
             'protocol' => 'VLESS',
             'ip_address' => '0.0.0.0',
-            'location' => $_ENV['VLESS_SERVER'] ?? 'Сервер не активен :(',
+            'location' => $this->serverConfig()['country'] ?? 'Сервер не активен :(',
             'speed' => ['download' => null, 'upload' => null, 'status' => 'inactive']
         ];
     }

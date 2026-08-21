@@ -347,10 +347,10 @@ class PaymentOrderUtilitiesTest extends AbstractTestCase
         if (!empty($value)) {
             self::assertNotNull($instance->getOktmo());
             self::assertNotNull($instance->oktmo);
-            self::assertMatchesRegularExpression("/^(\d{8})|(0)$/", $instance->getOktmo());
-            self::assertMatchesRegularExpression("/^(\d{8})|(0)$/", $instance->oktmo);
-            self::assertLessThanOrEqual(8, is_string($instance->getOktmo()) ? mb_strlen($instance->getOktmo()) : $instance->getOktmo());
-            self::assertLessThanOrEqual(8, is_string($instance->oktmo) ? mb_strlen($instance->oktmo) : $instance->oktmo);
+            self::assertMatchesRegularExpression("/^(\d{11})|(\d{8})|(0)$/", $instance->getOktmo());
+            self::assertMatchesRegularExpression("/^(\d{11})|(\d{8})|(0)$/", $instance->oktmo);
+            self::assertLessThanOrEqual(11, is_string($instance->getOktmo()) ? mb_strlen($instance->getOktmo()) : $instance->getOktmo());
+            self::assertLessThanOrEqual(11, is_string($instance->oktmo) ? mb_strlen($instance->oktmo) : $instance->oktmo);
             self::assertGreaterThanOrEqual(1, is_string($instance->getOktmo()) ? mb_strlen($instance->getOktmo()) : $instance->getOktmo());
             self::assertGreaterThanOrEqual(1, is_string($instance->oktmo) ? mb_strlen($instance->oktmo) : $instance->oktmo);
         }

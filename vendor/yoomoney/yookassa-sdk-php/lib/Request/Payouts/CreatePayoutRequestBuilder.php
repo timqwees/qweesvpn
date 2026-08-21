@@ -38,7 +38,7 @@ use YooKassa\Model\Payout\AbstractPayoutDestination;
  *
  * Класс билдера объектов запросов к API на создание платежа.
  *
- * @example 02-builder.php 182 26 Пример использования билдера
+ * @example 02-builder.php 200 26 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

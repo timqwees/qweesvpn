@@ -41,6 +41,7 @@ $client->setAuthToken('token_XXXXXXX');
 | public | [SELF_EMPLOYED_PATH](../classes/YooKassa-Client-BaseClient.md#constant_SELF_EMPLOYED_PATH) |  | Точка входа для запросов к API по самозанятым |
 | public | [INVOICES_PATH](../classes/YooKassa-Client-BaseClient.md#constant_INVOICES_PATH) |  | Точка входа для запросов к API по счетам |
 | public | [PAYMENT_METHODS_PATH](../classes/YooKassa-Client-BaseClient.md#constant_PAYMENT_METHODS_PATH) |  | Точка входа для запросов к API по способам оплаты |
+| public | [POS_LINKS_PATH](../classes/YooKassa-Client-BaseClient.md#constant_POS_LINKS_PATH) |  | Точка входа для запросов к API по кассовым ссылкам |
 | public | [IDEMPOTENCE_KEY_HEADER](../classes/YooKassa-Client-BaseClient.md#constant_IDEMPOTENCE_KEY_HEADER) |  | Имя HTTP заголовка, используемого для передачи idempotence key |
 | public | [DEFAULT_DELAY](../classes/YooKassa-Client-BaseClient.md#constant_DEFAULT_DELAY) |  | Значение по умолчанию времени ожидания между запросами при отправке повторного запроса в случае получения ответа с HTTP статусом 202. |
 | public | [DEFAULT_TRIES_COUNT](../classes/YooKassa-Client-BaseClient.md#constant_DEFAULT_TRIES_COUNT) |  | Значение по умолчанию количества попыток получения информации от API если пришёл ответ с HTTP статусом 202 |
@@ -64,6 +65,7 @@ $client->setAuthToken('token_XXXXXXX');
 | Visibility | Name | Flag | Summary |
 | ----------:| ---- | ---- | ------- |
 | public | [__construct()](../classes/YooKassa-Client-BaseClient.md#method___construct) |  | Constructor. |
+| public | [activatePosLink()](../classes/YooKassa-Client.md#method_activatePosLink) |  | Активировать кассовую ссылку. |
 | public | [addWebhook()](../classes/YooKassa-Client.md#method_addWebhook) |  | Создание Webhook. |
 | public | [cancelPayment()](../classes/YooKassa-Client.md#method_cancelPayment) |  | Отменить незавершенную оплату заказа. |
 | public | [capturePayment()](../classes/YooKassa-Client.md#method_capturePayment) |  | Подтверждение платежа. |
@@ -73,9 +75,11 @@ $client->setAuthToken('token_XXXXXXX');
 | public | [createPaymentMethod()](../classes/YooKassa-Client.md#method_createPaymentMethod) |  | Создание способа оплаты. |
 | public | [createPayout()](../classes/YooKassa-Client.md#method_createPayout) |  | Создание выплаты. |
 | public | [createPersonalData()](../classes/YooKassa-Client.md#method_createPersonalData) |  | Создание персональных данных. |
+| public | [createPosLink()](../classes/YooKassa-Client.md#method_createPosLink) |  | Создание кассовой ссылки. |
 | public | [createReceipt()](../classes/YooKassa-Client.md#method_createReceipt) |  | Отправка чека в облачную кассу. |
 | public | [createRefund()](../classes/YooKassa-Client.md#method_createRefund) |  | Проведение возврата платежа. |
 | public | [createSelfEmployed()](../classes/YooKassa-Client.md#method_createSelfEmployed) |  | Создание самозанятого. |
+| public | [deactivatePosLink()](../classes/YooKassa-Client.md#method_deactivatePosLink) |  | Деактивировать кассовую ссылку. |
 | public | [getApiClient()](../classes/YooKassa-Client-BaseClient.md#method_getApiClient) |  | Возвращает CURL клиента для работы с API. |
 | public | [getConfig()](../classes/YooKassa-Client-BaseClient.md#method_getConfig) |  | Возвращает настройки клиента. |
 | public | [getDealInfo()](../classes/YooKassa-Client.md#method_getDealInfo) |  | Получить информацию о сделке. |
@@ -87,6 +91,7 @@ $client->setAuthToken('token_XXXXXXX');
 | public | [getPayoutInfo()](../classes/YooKassa-Client.md#method_getPayoutInfo) |  | Получить информацию о выплате. |
 | public | [getPayouts()](../classes/YooKassa-Client.md#method_getPayouts) |  | Получить список выплат магазина. |
 | public | [getPersonalDataInfo()](../classes/YooKassa-Client.md#method_getPersonalDataInfo) |  | Получить информацию о персональных данных. |
+| public | [getPosLinkInfo()](../classes/YooKassa-Client.md#method_getPosLinkInfo) |  | Получить информацию о кассовой ссылке. |
 | public | [getReceiptInfo()](../classes/YooKassa-Client.md#method_getReceiptInfo) |  | Получить информацию о чеке. |
 | public | [getReceipts()](../classes/YooKassa-Client.md#method_getReceipts) |  | Получить список чеков магазина. |
 | public | [getRefundInfo()](../classes/YooKassa-Client.md#method_getRefundInfo) |  | Получить информацию о возврате. |
@@ -96,6 +101,7 @@ $client->setAuthToken('token_XXXXXXX');
 | public | [getWebhooks()](../classes/YooKassa-Client.md#method_getWebhooks) |  | Список созданных Webhook. |
 | public | [isNotificationIPTrusted()](../classes/YooKassa-Client-BaseClient.md#method_isNotificationIPTrusted) |  | Метод проверяет, находится ли IP адрес среди IP адресов Юkassa, с которых отправляются уведомления. |
 | public | [me()](../classes/YooKassa-Client.md#method_me) |  | Информация о магазине. |
+| public | [recipientPosLink()](../classes/YooKassa-Client.md#method_recipientPosLink) |  | Изменение торговой точки, привязанной к кассовой ссылке. |
 | public | [removeWebhook()](../classes/YooKassa-Client.md#method_removeWebhook) |  | Удаление Webhook. |
 | public | [setApiClient()](../classes/YooKassa-Client-BaseClient.md#method_setApiClient) |  | Устанавливает CURL клиента для работы с API. |
 | public | [setAuth()](../classes/YooKassa-Client-BaseClient.md#method_setAuth) |  | Устанавливает авторизацию по логин/паролю. |
@@ -252,6 +258,17 @@ PAYMENT_METHODS_PATH = '/payment_methods'
 ```
 
 
+<a name="constant_POS_LINKS_PATH" class="anchor"></a>
+###### POS_LINKS_PATH
+Inherited from [\YooKassa\Client\BaseClient](../classes/YooKassa-Client-BaseClient.md)
+
+Точка входа для запросов к API по кассовым ссылкам
+
+```php
+POS_LINKS_PATH = '/pos_links'
+```
+
+
 <a name="constant_IDEMPOTENCE_KEY_HEADER" class="anchor"></a>
 ###### IDEMPOTENCE_KEY_HEADER
 Inherited from [\YooKassa\Client\BaseClient](../classes/YooKassa-Client-BaseClient.md)
@@ -301,7 +318,7 @@ DEFAULT_ATTEMPTS_COUNT = 3
 Текущая версия библиотеки.
 
 ```php
-SDK_VERSION = '3.14.0'
+SDK_VERSION = '3.15.1'
 ```
 
 
@@ -431,6 +448,62 @@ Constructor.
 | <code lang="php">?\YooKassa\Helpers\Config\ConfigurationLoaderInterface</code> | configLoader  |  |
 
 **Returns:** mixed - 
+
+
+<a name="method_activatePosLink" class="anchor"></a>
+#### public activatePosLink() : null|\YooKassa\Model\PosLink\PosLinkInfo
+
+```php
+public activatePosLink(string $posLinkId, null|string $idempotenceKey = null) : null|\YooKassa\Model\PosLink\PosLinkInfo
+```
+
+**Summary**
+
+Активировать кассовую ссылку.
+
+**Description**
+
+Запрос позволяет активировать кассовую ссылку, чтобы она стала доступна для приема платежей.
+
+**Details:**
+* Inherited From: [\YooKassa\Client](../classes/YooKassa-Client.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">string</code> | posLinkId  | Идентификатор кассовой ссылки |
+| <code lang="php">null OR string</code> | idempotenceKey  | [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence) |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\ApiException | Неожиданный код ошибки |
+| \YooKassa\Common\Exceptions\BadApiRequestException | Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API |
+| \YooKassa\Common\Exceptions\ForbiddenException | Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции |
+| \YooKassa\Common\Exceptions\InternalServerError | Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности |
+| \YooKassa\Common\Exceptions\NotFoundException | Ресурс не найден |
+| \YooKassa\Common\Exceptions\ResponseProcessingException | Запрос был принят на обработку, но она не завершена |
+| \YooKassa\Common\Exceptions\TooManyRequestsException | Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов |
+| \YooKassa\Common\Exceptions\UnauthorizedException | Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации |
+| \YooKassa\Common\Exceptions\ExtensionNotFoundException | Требуемое PHP расширение не установлено |
+
+**Returns:** null|\YooKassa\Model\PosLink\PosLinkInfo - Объект ответа от API
+##### Examples:
+Активировать кассовую ссылку:
+
+```php
+$posLinkId = 'pl-285d3ab7-0003-5000-9000-0e1166498fda';
+try {
+    $response = $client->activatePosLink($posLinkId, uniqid('', true));
+    if ($response->getStatus() === \YooKassa\Model\PosLink\PosLinkStatus::ACTIVE) {
+        // Кассовая ссылка активирована
+    }
+    var_dump($response->toArray());
+} catch (\Exception $e) {
+    var_dump($e);
+}
+
+```
 
 
 <a name="method_addWebhook" class="anchor"></a>
@@ -1191,6 +1264,70 @@ try {
 ```
 
 
+<a name="method_createPosLink" class="anchor"></a>
+#### public createPosLink() : null|\YooKassa\Model\PosLink\PosLinkInfo
+
+```php
+public createPosLink(array|\YooKassa\Request\PosLink\CreatePosLinkRequestInterface $posLinkData, null|string $idempotenceKey = null) : null|\YooKassa\Model\PosLink\PosLinkInfo
+```
+
+**Summary**
+
+Создание кассовой ссылки.
+
+**Description**
+
+Запрос позволяет создать кассовую ссылку для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Client](../classes/YooKassa-Client.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">array OR \YooKassa\Request\PosLink\CreatePosLinkRequestInterface</code> | posLinkData  | Данные для создания кассовой ссылки |
+| <code lang="php">null OR string</code> | idempotenceKey  | [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence) |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\ApiException | Неожиданный код ошибки |
+| \YooKassa\Common\Exceptions\BadApiRequestException | Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API |
+| \YooKassa\Common\Exceptions\ForbiddenException | Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции |
+| \YooKassa\Common\Exceptions\InternalServerError | Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности |
+| \YooKassa\Common\Exceptions\NotFoundException | Ресурс не найден |
+| \YooKassa\Common\Exceptions\ResponseProcessingException | Запрос был принят на обработку, но она не завершена |
+| \YooKassa\Common\Exceptions\TooManyRequestsException | Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов |
+| \YooKassa\Common\Exceptions\UnauthorizedException | Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации |
+| \YooKassa\Common\Exceptions\ExtensionNotFoundException | Требуемое PHP расширение не установлено |
+
+**Returns:** null|\YooKassa\Model\PosLink\PosLinkInfo - Объект ответа от API
+##### Examples:
+Запрос на создание кассовой ссылки:
+
+```php
+$posLinkData = [
+    'recipient' => [
+        'gateway_id' => '123',
+    ],
+    'pos_link_data' => [
+        'link' => 'https://shop.example.ru/pay/1234567890',
+    ],
+];
+$idempotenceKey = uniqid('', true);
+try {
+    $response = $client->createPosLink($posLinkData, $idempotenceKey);
+    if ($response->getStatus()) {
+        // Кассовая ссылка успешно создана
+    }
+    var_dump($response->toArray());
+} catch (\Exception $e) {
+    var_dump($e);
+}
+
+```
+
+
 <a name="method_createReceipt" class="anchor"></a>
 #### public createReceipt() : ?\YooKassa\Request\Receipts\AbstractReceiptResponse
 
@@ -1258,6 +1395,12 @@ try {
                     'vat_code' => 2,
                     'payment_mode' => 'full_payment',
                     'payment_subject' => 'commodity',
+                    'agent_type' => 'banking_payment_agent',
+                    'supplier' => [
+                        'name' => 'ООО Поставщик',
+                        'phone' => '79000000000',
+                        'inn' => '6321341814',
+                    ],
                 ],
             ],
             'settlements' => [
@@ -1415,6 +1558,62 @@ $idempotenceKey = uniqid('', true);
 try {
     $idempotenceKey = uniqid('', true);
     $response = $client->createSelfEmployed($request, $idempotenceKey);
+    var_dump($response->toArray());
+} catch (\Exception $e) {
+    var_dump($e);
+}
+
+```
+
+
+<a name="method_deactivatePosLink" class="anchor"></a>
+#### public deactivatePosLink() : null|\YooKassa\Model\PosLink\PosLinkInfo
+
+```php
+public deactivatePosLink(string $posLinkId, null|string $idempotenceKey = null) : null|\YooKassa\Model\PosLink\PosLinkInfo
+```
+
+**Summary**
+
+Деактивировать кассовую ссылку.
+
+**Description**
+
+Запрос позволяет деактивировать кассовую ссылку, прием платежей по ней будет недоступен.
+
+**Details:**
+* Inherited From: [\YooKassa\Client](../classes/YooKassa-Client.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">string</code> | posLinkId  | Идентификатор кассовой ссылки |
+| <code lang="php">null OR string</code> | idempotenceKey  | [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence) |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\ApiException | Неожиданный код ошибки |
+| \YooKassa\Common\Exceptions\BadApiRequestException | Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API |
+| \YooKassa\Common\Exceptions\ForbiddenException | Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции |
+| \YooKassa\Common\Exceptions\InternalServerError | Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности |
+| \YooKassa\Common\Exceptions\NotFoundException | Ресурс не найден |
+| \YooKassa\Common\Exceptions\ResponseProcessingException | Запрос был принят на обработку, но она не завершена |
+| \YooKassa\Common\Exceptions\TooManyRequestsException | Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов |
+| \YooKassa\Common\Exceptions\UnauthorizedException | Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации |
+| \YooKassa\Common\Exceptions\ExtensionNotFoundException | Требуемое PHP расширение не установлено |
+
+**Returns:** null|\YooKassa\Model\PosLink\PosLinkInfo - Объект ответа от API
+##### Examples:
+Деактивировать кассовую ссылку:
+
+```php
+$posLinkId = 'pl-285d3ab7-0003-5000-9000-0e1166498fda';
+try {
+    $response = $client->deactivatePosLink($posLinkId, uniqid('', true));
+    if ($response->getStatus() === \YooKassa\Model\PosLink\PosLinkStatus::INACTIVE) {
+        // Кассовая ссылка деактивирована
+    }
     var_dump($response->toArray());
 } catch (\Exception $e) {
     var_dump($e);
@@ -2018,6 +2217,58 @@ try {
 ```
 
 
+<a name="method_getPosLinkInfo" class="anchor"></a>
+#### public getPosLinkInfo() : null|\YooKassa\Model\PosLink\PosLinkInfo
+
+```php
+public getPosLinkInfo(string $posLinkId) : null|\YooKassa\Model\PosLink\PosLinkInfo
+```
+
+**Summary**
+
+Получить информацию о кассовой ссылке.
+
+**Description**
+
+Запрос позволяет получить информацию о кассовой ссылке по её уникальному идентификатору.
+
+**Details:**
+* Inherited From: [\YooKassa\Client](../classes/YooKassa-Client.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">string</code> | posLinkId  | Идентификатор кассовой ссылки |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\ApiException | Неожиданный код ошибки |
+| \YooKassa\Common\Exceptions\BadApiRequestException | Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API |
+| \YooKassa\Common\Exceptions\ForbiddenException | Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции |
+| \YooKassa\Common\Exceptions\InternalServerError | Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности |
+| \YooKassa\Common\Exceptions\NotFoundException | Ресурс не найден |
+| \YooKassa\Common\Exceptions\ResponseProcessingException | Запрос был принят на обработку, но она не завершена |
+| \YooKassa\Common\Exceptions\TooManyRequestsException | Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов |
+| \YooKassa\Common\Exceptions\UnauthorizedException | Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации |
+| \YooKassa\Common\Exceptions\ExtensionNotFoundException | Требуемое PHP расширение не установлено |
+
+**Returns:** null|\YooKassa\Model\PosLink\PosLinkInfo - Объект ответа от API
+##### Examples:
+Получить информацию о кассовой ссылке:
+
+```php
+$posLinkId = 'pl-285d3ab7-0003-5000-9000-0e1166498fda';
+try {
+    $response = $client->getPosLinkInfo($posLinkId);
+    var_dump($response->toArray());
+} catch (\Exception $e) {
+    var_dump($e);
+}
+
+```
+
+
 <a name="method_getReceiptInfo" class="anchor"></a>
 #### public getReceiptInfo() : ?\YooKassa\Request\Receipts\ReceiptResponseInterface
 
@@ -2061,7 +2312,7 @@ public getReceiptInfo(string $receiptId) : ?\YooKassa\Request\Receipts\ReceiptRe
 
 ```php
 try {
-    $response = $client->getPaymentInfo('24e89cb0-000f-5000-9000-1de77fa0d6df');
+    $response = $client->getReceiptInfo('ra-27ed1660-0001-0050-7a5e-10f80e0f0f29');
     echo $response->getStatus();
     var_dump($response->toArray());
 } catch (\Exception $e) {
@@ -2121,8 +2372,8 @@ public getReceipts(null|array|\YooKassa\Request\Receipts\ReceiptsRequestInterfac
 $cursor = null;
 $params = [
     'limit' => 30,
-    'status' => \YooKassa\Model\Payment\PaymentStatus::CANCELED,
-    'payment_method' => \YooKassa\Model\Payment\PaymentMethodType::BANK_CARD,
+    'status' => \YooKassa\Model\Payment\ReceiptRegistrationStatus::SUCCEEDED,
+    'payment_id' => '1da5c87d-0984-50e8-a7f3-8de646dd9ec9',
     'created_at_gte' => '2023-01-01T00:00:00.000Z',
     'created_at_lt' => '2023-03-30T23:59:59.999Z',
 ];
@@ -2130,13 +2381,11 @@ $params = [
 try {
     do {
         $params['cursor'] = $cursor;
-        $payments = $client->getPayments($params);
-        foreach ($payments->getItems() as $payment) {
-            echo $payment->getCreatedAt()->format('Y-m-d H:i:s') . ' - ' .
-                 $payment->getStatus() . ' - ' .
-                 $payment->getId() . "\n";
+        $receipts = $client->getReceipts($params);
+        foreach ($receipts->getItems() as $receipt) {
+            echo $receipt->getStatus() . ' - ' . $receipt->getId() . "\n";
         }
-    } while ($cursor = $payments->getNextCursor());
+    } while ($cursor = $receipts->getNextCursor());
 } catch (\Exception $e) {
     $response = $e;
 }
@@ -2190,7 +2439,7 @@ public getRefundInfo(string $refundId) : ?\YooKassa\Request\Refunds\RefundRespon
 
 ```php
 try {
-    $response = $client->getReceiptInfo('ra-27ed1660-0001-0050-7a5e-10f80e0f0f29');
+    $response = $client->getRefundInfo('216749f7-0016-50be-b000-078d43a63ae4');
     echo $response->getStatus();
     var_dump($response->toArray());
 } catch (\Exception $e) {
@@ -2523,6 +2772,65 @@ public me(null|array|int|string $filter = null) : null|array
 ```php
 try {
     $response = $client->me();
+    var_dump($response->toArray());
+} catch (\Exception $e) {
+    var_dump($e);
+}
+
+```
+
+
+<a name="method_recipientPosLink" class="anchor"></a>
+#### public recipientPosLink() : null|\YooKassa\Model\PosLink\PosLinkInfo
+
+```php
+public recipientPosLink(string $posLinkId, array|\YooKassa\Request\PosLink\RecipientPosLinkRequestInterface $recipientData, null|string $idempotenceKey = null) : null|\YooKassa\Model\PosLink\PosLinkInfo
+```
+
+**Summary**
+
+Изменение торговой точки, привязанной к кассовой ссылке.
+
+**Description**
+
+Запрос позволяет привязать к кассовой ссылке другую торговую точку.
+
+**Details:**
+* Inherited From: [\YooKassa\Client](../classes/YooKassa-Client.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">string</code> | posLinkId  | Идентификатор кассовой ссылки |
+| <code lang="php">array OR \YooKassa\Request\PosLink\RecipientPosLinkRequestInterface</code> | recipientData  | Идентификатор торговой точки, которую вы хотите привязать к кассовой ссылке. |
+| <code lang="php">null OR string</code> | idempotenceKey  | [Ключ идемпотентности](https://yookassa.ru/developers/using-api/basics?lang=php#idempotence) |
+
+##### Throws:
+| Type | Description |
+| ---- | ----------- |
+| \YooKassa\Common\Exceptions\ApiException | Неожиданный код ошибки |
+| \YooKassa\Common\Exceptions\BadApiRequestException | Неправильный запрос. Чаще всего этот статус выдается из-за нарушения правил взаимодействия с API |
+| \YooKassa\Common\Exceptions\ForbiddenException | Секретный ключ или OAuth-токен верный, но не хватает прав для совершения операции |
+| \YooKassa\Common\Exceptions\InternalServerError | Технические неполадки на стороне ЮKassa. Результат обработки запроса неизвестен. Повторите запрос позднее с тем же ключом идемпотентности |
+| \YooKassa\Common\Exceptions\NotFoundException | Ресурс не найден |
+| \YooKassa\Common\Exceptions\ResponseProcessingException | Запрос был принят на обработку, но она не завершена |
+| \YooKassa\Common\Exceptions\TooManyRequestsException | Превышен лимит запросов в единицу времени. Попробуйте снизить интенсивность запросов |
+| \YooKassa\Common\Exceptions\UnauthorizedException | Неверное имя пользователя или пароль или невалидный OAuth-токен при аутентификации |
+| \YooKassa\Common\Exceptions\ExtensionNotFoundException | Требуемое PHP расширение не установлено |
+
+**Returns:** null|\YooKassa\Model\PosLink\PosLinkInfo - Объект ответа от API
+##### Examples:
+Привязать торговую точку к кассовой ссылке:
+
+```php
+$posLinkId = 'pl-285d3ab7-0003-5000-9000-0e1166498fda';
+$recipientData = [
+    'recipient' => [
+        'gateway_id' => '456',
+    ],
+];
+try {
+    $response = $client->recipientPosLink($posLinkId, $recipientData, uniqid('', true));
     var_dump($response->toArray());
 } catch (\Exception $e) {
     var_dump($e);
@@ -2951,6 +3259,6 @@ protected handleError(\YooKassa\Common\ResponseObject $response) : void
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

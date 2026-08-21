@@ -76,6 +76,8 @@ use YooKassa\Request\Deals\DealsResponse;
 use YooKassa\Request\Invoices\CreateInvoiceRequest;
 use YooKassa\Request\Invoices\InvoiceResponse;
 use YooKassa\Request\Invoices\PaymentData;
+use YooKassa\Request\PosLink\CreatePosLinkResponse;
+use YooKassa\Request\PosLink\PosLinkResponse;
 use YooKassa\Request\PaymentMethods\ConfirmationData\ConfirmationRedirect;
 use YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest;
 use YooKassa\Request\PaymentMethods\PaymentMethodCard;
@@ -1567,6 +1569,238 @@ class ClientTest extends TestCase
 
             return;
         }
+    }
+
+    /**
+     * @throws ApiException
+     * @throws ResponseProcessingException
+     * @throws BadApiRequestException
+     * @throws ForbiddenException
+     * @throws InternalServerError
+     * @throws NotFoundException
+     * @throws TooManyRequestsException
+     * @throws UnauthorizedException
+     * @throws ExtensionNotFoundException
+     */
+    public function testCreatePosLink(): void
+    {
+        $curlClientStub = $this->getCurlClientStub();
+        $curlClientStub
+            ->expects($this->once())
+            ->method('sendRequest')
+            ->willReturn([
+                ['Header-Name' => 'HeaderValue'],
+                $this->getFixtures('createPosLinkFixtures.json'),
+                ['http_code' => 200],
+            ])
+        ;
+
+        $apiClient = new Client();
+        $response = $apiClient
+            ->setApiClient($curlClientStub)
+            ->setAuth('123456', 'shopPassword')
+            ->createPosLink([
+                'recipient' => ['gateway_id' => '123456'],
+                'pos_link_data' => ['link' => Random::str(20)],
+            ])
+        ;
+
+        self::assertSame($curlClientStub, $apiClient->getApiClient());
+        self::assertInstanceOf(CreatePosLinkResponse::class, $response);
+    }
+
+    /**
+     * @dataProvider posLinkIdDataProvider
+     *
+     * @throws ApiException
+     * @throws ResponseProcessingException
+     * @throws BadApiRequestException
+     * @throws ForbiddenException
+     * @throws InternalServerError
+     * @throws NotFoundException
+     * @throws TooManyRequestsException
+     * @throws UnauthorizedException
+     * @throws ExtensionNotFoundException
+     */
+    public function testGetPosLinkInfo(mixed $posLinkId, ?string $exceptionClassName = null): void
+    {
+        $curlClientStub = $this->getCurlClientStub();
+        $curlClientStub
+            ->expects(null !== $exceptionClassName ? self::never() : self::once())
+            ->method('sendRequest')
+            ->willReturn([
+                ['Header-Name' => 'HeaderValue'],
+                $this->getFixtures('createPosLinkFixtures.json'),
+                ['http_code' => 200],
+            ])
+        ;
+
+        $apiClient = new Client();
+        if (null === $exceptionClassName) {
+            $response = $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->getPosLinkInfo($posLinkId)
+            ;
+            self::assertInstanceOf(PosLinkResponse::class, $response);
+        } else {
+            $this->expectException($exceptionClassName);
+            $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->getPosLinkInfo($posLinkId)
+            ;
+        }
+    }
+
+    /**
+     * @dataProvider posLinkIdDataProvider
+     *
+     * @throws ApiException
+     * @throws ResponseProcessingException
+     * @throws BadApiRequestException
+     * @throws ForbiddenException
+     * @throws InternalServerError
+     * @throws NotFoundException
+     * @throws TooManyRequestsException
+     * @throws UnauthorizedException
+     * @throws ExtensionNotFoundException
+     */
+    public function testActivatePosLink(mixed $posLinkId, ?string $exceptionClassName = null): void
+    {
+        $curlClientStub = $this->getCurlClientStub();
+        $curlClientStub
+            ->expects(null !== $exceptionClassName ? self::never() : self::once())
+            ->method('sendRequest')
+            ->willReturn([
+                ['Header-Name' => 'HeaderValue'],
+                $this->getFixtures('createPosLinkFixtures.json'),
+                ['http_code' => 200],
+            ])
+        ;
+
+        $apiClient = new Client();
+        if (null === $exceptionClassName) {
+            $response = $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->activatePosLink($posLinkId)
+            ;
+            self::assertInstanceOf(PosLinkResponse::class, $response);
+        } else {
+            $this->expectException($exceptionClassName);
+            $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->activatePosLink($posLinkId)
+            ;
+        }
+    }
+
+    /**
+     * @dataProvider posLinkIdDataProvider
+     *
+     * @throws ApiException
+     * @throws ResponseProcessingException
+     * @throws BadApiRequestException
+     * @throws ForbiddenException
+     * @throws InternalServerError
+     * @throws NotFoundException
+     * @throws TooManyRequestsException
+     * @throws UnauthorizedException
+     * @throws ExtensionNotFoundException
+     */
+    public function testDeactivatePosLink(mixed $posLinkId, ?string $exceptionClassName = null): void
+    {
+        $curlClientStub = $this->getCurlClientStub();
+        $curlClientStub
+            ->expects(null !== $exceptionClassName ? self::never() : self::once())
+            ->method('sendRequest')
+            ->willReturn([
+                ['Header-Name' => 'HeaderValue'],
+                $this->getFixtures('createPosLinkFixtures.json'),
+                ['http_code' => 200],
+            ])
+        ;
+
+        $apiClient = new Client();
+        if (null === $exceptionClassName) {
+            $response = $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->deactivatePosLink($posLinkId)
+            ;
+            self::assertInstanceOf(PosLinkResponse::class, $response);
+        } else {
+            $this->expectException($exceptionClassName);
+            $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->deactivatePosLink($posLinkId)
+            ;
+        }
+    }
+
+    /**
+     * @dataProvider posLinkIdDataProvider
+     *
+     * @throws ApiException
+     * @throws ResponseProcessingException
+     * @throws BadApiRequestException
+     * @throws ForbiddenException
+     * @throws InternalServerError
+     * @throws NotFoundException
+     * @throws TooManyRequestsException
+     * @throws UnauthorizedException
+     * @throws ExtensionNotFoundException
+     */
+    public function testRecipientPosLink(mixed $posLinkId, ?string $exceptionClassName = null): void
+    {
+        $curlClientStub = $this->getCurlClientStub();
+        $curlClientStub
+            ->expects(null !== $exceptionClassName ? self::never() : self::once())
+            ->method('sendRequest')
+            ->willReturn([
+                ['Header-Name' => 'HeaderValue'],
+                $this->getFixtures('createPosLinkFixtures.json'),
+                ['http_code' => 200],
+            ])
+        ;
+
+        $apiClient = new Client();
+        if (null === $exceptionClassName) {
+            $response = $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->recipientPosLink($posLinkId, ['recipient' => ['gateway_id' => '123456']])
+            ;
+            self::assertInstanceOf(PosLinkResponse::class, $response);
+        } else {
+            $this->expectException($exceptionClassName);
+            $apiClient
+                ->setApiClient($curlClientStub)
+                ->setAuth('123456', 'shopPassword')
+                ->recipientPosLink($posLinkId, ['recipient' => ['gateway_id' => '123456']])
+            ;
+        }
+    }
+
+    /**
+     * @return array[]
+     */
+    public function posLinkIdDataProvider(): array
+    {
+        return [
+            [Random::str(36, '0123456789')],
+            [new StringObject(Random::str(36, '0123456789'))],
+            [true, InvalidArgumentException::class],
+            [false, InvalidArgumentException::class],
+            [0, InvalidArgumentException::class],
+            [1, InvalidArgumentException::class],
+            [0.1, InvalidArgumentException::class],
+            [Random::str(35), InvalidArgumentException::class],
+            [Random::str(51), InvalidArgumentException::class],
+        ];
     }
 
     /**

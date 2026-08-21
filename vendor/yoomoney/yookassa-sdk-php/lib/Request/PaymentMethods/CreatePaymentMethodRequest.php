@@ -27,6 +27,7 @@
 namespace YooKassa\Request\PaymentMethods;
 
 use YooKassa\Common\AbstractRequest;
+use YooKassa\Model\Metadata;
 use YooKassa\Model\SavePaymentMethod\SavePaymentMethodType;
 use YooKassa\Request\PaymentMethods\ConfirmationData\AbstractConfirmation;
 use YooKassa\Request\PaymentMethods\ConfirmationData\ConfirmationFactory;
@@ -48,6 +49,7 @@ use YooKassa\Validator\Constraints as Assert;
  * @property string $client_ip IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения.
  * @property string $clientIp IPv4 или IPv6-адрес пользователя. Если не указан, используется IP-адрес TCP-подключения.
  * @property AbstractConfirmation $confirmation Данные, необходимые для инициирования сценария подтверждения привязки.
+ * @property Metadata $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa. Ограничения: максимум 16 ключей, имя ключа не больше 32 символов, значение ключа не больше 512 символов, тип данных — строка в формате UTF-8.
 */
 class CreatePaymentMethodRequest extends AbstractRequest implements CreatePaymentMethodRequestInterface
 {
@@ -93,6 +95,14 @@ class CreatePaymentMethodRequest extends AbstractRequest implements CreatePaymen
      */
     #[Assert\Type(AbstractConfirmation::class)]
     private ?AbstractConfirmation $_confirmation = null;
+
+    /**
+     * Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @var Metadata|null
+     */
+    #[Assert\Type(Metadata::class)]
+    private ?Metadata $_metadata = null;
 
     /**
      * Возвращает type.
@@ -219,6 +229,39 @@ class CreatePaymentMethodRequest extends AbstractRequest implements CreatePaymen
             $confirmation = (new ConfirmationFactory())->factoryFromArray($confirmation);
         }
         $this->_confirmation = $this->validatePropertyValue('_confirmation', $confirmation);
+        return $this;
+    }
+
+    /**
+     * Возвращает metadata.
+     *
+     * @return Metadata|null
+     */
+    public function getMetadata(): ?Metadata
+    {
+        return $this->_metadata;
+    }
+
+    /**
+     * Проверяет, были ли установлены метаданные.
+     *
+     * @return bool True если метаданные были установлены, false если нет
+     */
+    public function hasMetadata(): bool
+    {
+        return !empty($this->_metadata) && $this->_metadata->count() > 0;
+    }
+
+    /**
+     * Устанавливает metadata.
+     *
+     * @param Metadata|array|null $metadata Любые дополнительные данные, которые нужны вам для работы (например, ваш внутренний идентификатор заказа). Передаются в виде набора пар «ключ-значение» и возвращаются в ответе от ЮKassa.
+     *
+     * @return self
+     */
+    public function setMetadata(mixed $metadata): self
+    {
+        $this->_metadata = $this->validatePropertyValue('_metadata', $metadata);
         return $this;
     }
 

@@ -105,8 +105,8 @@ var_dump($response);
 | Visibility | Name | Flag | Summary |
 | ----------:| ---- | ---- | ------- |
 | public | [$airline](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md#property_airline) |  | Объект с данными для продажи авиабилетов |
-| public | [$amount](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_amount) |  | Сумма создаваемого платежа |
 | public | [$amount](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md#property_amount) |  | Сумма |
+| public | [$amount](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_amount) |  | Сумма создаваемого платежа |
 | public | [$capture](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_capture) |  | Автоматически принять поступившую оплату |
 | public | [$client_ip](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_client_ip) |  | IPv4 или IPv6-адрес покупателя. Если не указан, используется IP-адрес TCP-подключения |
 | public | [$clientIp](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_clientIp) |  | IPv4 или IPv6-адрес покупателя. Если не указан, используется IP-адрес TCP-подключения |
@@ -123,6 +123,8 @@ var_dump($response);
 | public | [$paymentMethodData](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_paymentMethodData) |  | Данные используемые для создания метода оплаты |
 | public | [$paymentMethodId](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_paymentMethodId) |  | Идентификатор записи о сохраненных платежных данных покупателя |
 | public | [$paymentToken](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_paymentToken) |  | Одноразовый токен для проведения оплаты, сформированный YooKassa JS widget |
+| public | [$pos_link](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_pos_link) |  | Данные о кассовой ссылке для проведения платежа в офлайне |
+| public | [$posLink](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_posLink) |  | Данные о кассовой ссылке для проведения платежа в офлайне |
 | public | [$receipt](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_receipt) |  | Данные фискального чека 54-ФЗ |
 | public | [$receipt](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md#property_receipt) |  | Данные фискального чека 54-ФЗ |
 | public | [$receiver](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#property_receiver) |  | Реквизиты получателя оплаты при пополнении электронного кошелька, банковского счета или баланса телефона |
@@ -163,6 +165,7 @@ var_dump($response);
 | public | [getPaymentMethodId()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getPaymentMethodId) |  | Устанавливает идентификатор записи платёжных данных покупателя. |
 | public | [getPaymentOrder()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getPaymentOrder) |  | Возвращает платежное поручение. |
 | public | [getPaymentToken()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getPaymentToken) |  | Возвращает одноразовый токен для проведения оплаты. |
+| public | [getPosLink()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getPosLink) |  | Возвращает данные о кассовой ссылке для проведения платежа в офлайне. |
 | public | [getReceipt()](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md#method_getReceipt) |  | Возвращает чек, если он есть. |
 | public | [getReceiver()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getReceiver) |  | Возвращает реквизиты получателя оплаты. |
 | public | [getRecipient()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_getRecipient) |  | Возвращает объект получателя платежа. |
@@ -210,6 +213,7 @@ var_dump($response);
 | public | [setPaymentMethodId()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setPaymentMethodId) |  | Устанавливает идентификатор записи о сохранённых данных покупателя. |
 | public | [setPaymentOrder()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setPaymentOrder) |  | Устанавливает платежное поручение. |
 | public | [setPaymentToken()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setPaymentToken) |  | Устанавливает одноразовый токен для проведения оплаты, сформированный YooKassa JS widget. |
+| public | [setPosLink()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setPosLink) |  | Устанавливает данные о кассовой ссылке для проведения платежа в офлайне. |
 | public | [setReceipt()](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md#method_setReceipt) |  | Устанавливает чек. |
 | public | [setReceiver()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setReceiver) |  | Устанавливает реквизиты получателя оплаты. |
 | public | [setRecipient()](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md#method_setRecipient) |  | Устанавливает объект с информацией о получателе платежа. |
@@ -274,11 +278,12 @@ MAX_LENGTH_PAYMENT_TOKEN = 10240
 ---
 ***Description***
 
-Сумма создаваемого платежа
+Сумма
 
 **Type:** <a href="../classes/YooKassa-Model-AmountInterface.html"><abbr title="\YooKassa\Model\AmountInterface">AmountInterface</abbr></a>
 
 **Details:**
+* Inherited From: [\YooKassa\Request\Payments\AbstractPaymentRequest](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md)
 
 
 <a name="property_amount"></a>
@@ -286,12 +291,11 @@ MAX_LENGTH_PAYMENT_TOKEN = 10240
 ---
 ***Description***
 
-Сумма
+Сумма создаваемого платежа
 
 **Type:** <a href="../classes/YooKassa-Model-AmountInterface.html"><abbr title="\YooKassa\Model\AmountInterface">AmountInterface</abbr></a>
 
 **Details:**
-* Inherited From: [\YooKassa\Request\Payments\AbstractPaymentRequest](../classes/YooKassa-Request-Payments-AbstractPaymentRequest.md)
 
 
 <a name="property_capture"></a>
@@ -482,6 +486,30 @@ IPv4 или IPv6-адрес покупателя. Если не указан, и
 Одноразовый токен для проведения оплаты, сформированный YooKassa JS widget
 
 **Type:** <a href="../string"><abbr title="string">string</abbr></a>
+
+**Details:**
+
+
+<a name="property_pos_link"></a>
+#### public $pos_link : \YooKassa\Model\PosLink\PosLinkPayment
+---
+***Description***
+
+Данные о кассовой ссылке для проведения платежа в офлайне
+
+**Type:** <a href="../classes/YooKassa-Model-PosLink-PosLinkPayment.html"><abbr title="\YooKassa\Model\PosLink\PosLinkPayment">PosLinkPayment</abbr></a>
+
+**Details:**
+
+
+<a name="property_posLink"></a>
+#### public $posLink : \YooKassa\Model\PosLink\PosLinkPayment
+---
+***Description***
+
+Данные о кассовой ссылке для проведения платежа в офлайне
+
+**Type:** <a href="../classes/YooKassa-Model-PosLink-PosLinkPayment.html"><abbr title="\YooKassa\Model\PosLink\PosLinkPayment">PosLinkPayment</abbr></a>
 
 **Details:**
 
@@ -1045,6 +1073,23 @@ public getPaymentToken() : string|null
 * Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequest](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md)
 
 **Returns:** string|null - Одноразовый токен для проведения оплаты, сформированный YooKassa JS widget
+
+
+<a name="method_getPosLink" class="anchor"></a>
+#### public getPosLink() : \YooKassa\Model\PosLink\PosLinkPayment|null
+
+```php
+public getPosLink() : \YooKassa\Model\PosLink\PosLinkPayment|null
+```
+
+**Summary**
+
+Возвращает данные о кассовой ссылке для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequest](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md)
+
+**Returns:** \YooKassa\Model\PosLink\PosLinkPayment|null - Данные о кассовой ссылке
 
 
 <a name="method_getReceipt" class="anchor"></a>
@@ -1978,6 +2023,28 @@ public setPaymentToken(string|null $payment_token) : self
 **Returns:** self - 
 
 
+<a name="method_setPosLink" class="anchor"></a>
+#### public setPosLink() : self
+
+```php
+public setPosLink(\YooKassa\Model\PosLink\PosLinkPayment|array|null $pos_link = null) : self
+```
+
+**Summary**
+
+Устанавливает данные о кассовой ссылке для проведения платежа в офлайне.
+
+**Details:**
+* Inherited From: [\YooKassa\Request\Payments\CreatePaymentRequest](../classes/YooKassa-Request-Payments-CreatePaymentRequest.md)
+
+##### Parameters:
+| Type | Name | Description |
+| ---- | ---- | ----------- |
+| <code lang="php">\YooKassa\Model\PosLink\PosLinkPayment OR array OR null</code> | pos_link  | Данные о кассовой ссылке |
+
+**Returns:** self - 
+
+
 <a name="method_setReceipt" class="anchor"></a>
 #### public setReceipt() : self
 
@@ -2224,6 +2291,6 @@ protected validatePropertyValue(string $propertyName, mixed $propertyValue) : mi
 
 ---
 
-This document was automatically generated from source code comments on 2026-06-29 using [phpDocumentor](http://www.phpdoc.org/)
+This document was automatically generated from source code comments on 2026-08-13 using [phpDocumentor](http://www.phpdoc.org/)
 
 &copy; 2026 YooMoney

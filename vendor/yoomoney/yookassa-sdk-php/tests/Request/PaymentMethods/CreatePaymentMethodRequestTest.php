@@ -28,6 +28,7 @@ namespace Tests\YooKassa\Request\PaymentMethods;
 
 use Exception;
 use Tests\YooKassa\AbstractTestCase;
+use YooKassa\Model\Metadata;
 use YooKassa\Request\PaymentMethods\CreatePaymentMethodRequest;
 
 /**
@@ -347,5 +348,63 @@ class CreatePaymentMethodRequestTest extends AbstractTestCase
     {
         $instance = $this->getTestInstance();
         return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_confirmation'));
+    }
+
+    /**
+    * Test property "metadata"
+    * @dataProvider validMetadataDataProvider
+    * @param mixed $value
+    *
+    * @return void
+    * @throws Exception
+    */
+    public function testMetadata(mixed $value): void
+    {
+        $instance = $this->getTestInstance();
+        self::assertEmpty($instance->getMetadata());
+        self::assertEmpty($instance->metadata);
+        $instance->setMetadata($value);
+        if (!empty($value)) {
+            self::assertNotNull($instance->getMetadata());
+            self::assertNotNull($instance->metadata);
+        }
+        self::assertEquals($value, is_array($value) ? $instance->getMetadata()->toArray() : $instance->getMetadata());
+        self::assertEquals($value, is_array($value) ? $instance->metadata->toArray() : $instance->metadata);
+    }
+
+    /**
+    * Test invalid property "metadata"
+    * @dataProvider invalidMetadataDataProvider
+    * @param mixed $value
+    * @param string $exceptionClass
+    *
+    * @return void
+    */
+    public function testInvalidMetadata(mixed $value, string $exceptionClass): void
+    {
+        $instance = $this->getTestInstance();
+
+        $this->expectException($exceptionClass);
+        $instance->setMetadata($value);
+    }
+
+    /**
+    * @return array[]
+    * @throws Exception
+    */
+    public function validMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getValidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
+    }
+
+    /**
+    * @return array[]
+    * @throws Exception
+    */
+    public function invalidMetadataDataProvider(): array
+    {
+        $instance = $this->getTestInstance();
+        return $this->getInvalidDataProviderByType($instance->getValidator()->getRulesByPropName('_metadata'));
     }
 }

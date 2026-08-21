@@ -35,7 +35,7 @@ use YooKassa\Validator\Constraints as Assert;
  *
  * Запрос на создание объекта самозанятого.
  *
- * @example 02-builder.php 232 18 Пример использования билдера
+ * @example 02-builder.php 250 18 Пример использования билдера
  *
  * @category Class
  * @package  YooKassa\Request

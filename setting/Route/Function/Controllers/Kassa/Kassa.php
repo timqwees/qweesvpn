@@ -11,17 +11,17 @@ use YooKassa\Model\Receipt\Receipt;
 use YooKassa\Model\Receipt\ReceiptItem;
 use App\Config\Database;
 use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
+use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use DateTime, DateTimeZone;
 
 class Kassa
 {
     private Client $client;
 
-    /** URL подписки X-UI из .env (единый формат без разных доменов/портов в коде). */
+    /** URL подписки X-UI: сервер пользователя (субдомен его подписки) или сервер по умолчанию из реестра Network. */
     private static function subscriptionUrl(string $uniID): string
     {
-        $base = rtrim($_ENV['XUI_URL_SUBSCRIPTION'] ?? '', '/');
-        return $base . '/' . $uniID;
+        return ServerNetwork::getSubscriptionUrl($uniID);
     }
 
     /**
