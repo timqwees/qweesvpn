@@ -383,14 +383,26 @@ class AdminXray
      */
     public static function onAdminReduceClient()
     {
+        $url = $_POST['url'] ?: '/admin';
+
         if (empty($_POST['uniID'])) {
-            Network::onRedirect($_POST['url'] ?: '/admin?message_status=error&message_msg=не указан ID пользователя для изьятия подписки');
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Не указан ID пользователя для изьятия подписки'));
             return;
         }
 
         $xray = new Xray();
-        $xray->DeleteKey((string) $_POST['uniID']);
-        Network::onRedirect($_POST['url'] ?: '/admin?message_status=success&message_msg=Подписка успешно была изьята!');
+        $result = $xray->DeleteKey((string) $_POST['uniID']);
+
+        // Уведомление об удалении подписки: ok -> success, partial -> info, error -> error
+        $deleteStatus = (string) ($result['status'] ?? 'error');
+        $notifyStatus = 'error';
+        if ($deleteStatus === 'ok') {
+            $notifyStatus = 'success';
+        } elseif ($deleteStatus === 'partial') {
+            $notifyStatus = 'info';
+        }
+
+        Network::onRedirect($url . '?message_status=' . $notifyStatus . '&message_msg=' . urlencode((string) ($result['message'] ?? 'Результат изьятия подписки неизвестен')));
     }
 
     /**
