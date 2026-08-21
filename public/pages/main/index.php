@@ -1001,11 +1001,10 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 <!-- 1 -->
                                 <div class="flex flex-col items-center justify-between gap-2">
                                     <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/protocol.svg"
-                                        alt="protocol" loading="lazy" class="h-6">
-                                    <p class="text-[#93A7C8] font-bold">
-                                        <?= htmlspecialchars($formattedVpnStatus['protocol'] ?: '—') ?>
-                                    </p>
+                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/timeleft.svg"
+                                        alt="timeleft" loading="lazy" class="h-6">
+                                    <span class="text-white text-sm font-light" data-server
+                                        data-timeleft></span>
                                 </div>
                                 <!-- 2 -->
                                 <div class="flex flex-col items-center justify-between gap-2">
