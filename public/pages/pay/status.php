@@ -46,7 +46,7 @@ if ($paymentId) {//true - this is object
     <title><?= $t($paymentStatus['paid'] ? 'pay_success' : 'pay_status_title') ?></title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css" as="style">
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
@@ -62,9 +62,9 @@ if ($paymentId) {//true - this is object
         <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/style.css">
+        <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <!-- Deferred scripts -->
@@ -72,7 +72,7 @@ if ($paymentId) {//true - this is object
 
     <!-- Noscript fallback -->
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/noscript.css">
+        <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <?php if ($paymentStatus['status'] === 'pending'): ?>

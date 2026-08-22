@@ -16,7 +16,7 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
     <title>Авторизация</title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css" as="style">
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
@@ -32,9 +32,9 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
         <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/style.css">
+        <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <!-- Deferred scripts -->
@@ -43,7 +43,7 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
 
     <!-- Noscript fallback -->
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/noscript.css">
+        <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 </head>
 

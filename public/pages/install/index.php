@@ -22,7 +22,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
         integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
         crossorigin="anonymous" referrerpolicy="no-referrer" defer />
     <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet" />
-    <link rel="stylesheet" href="/public/assets/styles/style.css" defer>
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" defer>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <!--  -->
 </head>
@@ -587,8 +587,8 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
         </main>
     </div>
 
-    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js"></script>
-    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js"></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>"></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>"></script>
     <?php include_once "public/components/tour.php"; ?>
 </body>
 

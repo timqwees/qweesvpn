@@ -17,7 +17,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
     <title><?= $t('about_title') ?></title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css" as="style">
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
@@ -33,19 +33,19 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
         <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/style.css">
+        <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <!-- Deferred scripts -->
     <script src="https://cdn.tailwindcss.com" defer></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer></script>
-    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
+    <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
 
     <!-- Noscript fallback -->
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/noscript.css">
+        <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
   
 </head>
@@ -646,8 +646,8 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
             </div>
 
         </main>
-        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
-        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
     </div>
 </body>
 

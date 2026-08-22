@@ -1486,8 +1486,8 @@ $colors = [
                     
                 });
             </script>
-            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
-            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js" defer></script>
+            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
+            <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
         </main>
     </div>
 </body>

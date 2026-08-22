@@ -15,7 +15,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
     <title>Auth</title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css" as="style">
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
@@ -31,9 +31,9 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
         <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/style.css">
+        <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <!-- Deferred scripts -->
@@ -42,7 +42,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
     <!-- Noscript fallback -->
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/noscript.css">
+        <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 </head>
 
@@ -111,9 +111,9 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                         <!-- INPUT -->
                         <label for="verefy" class="text-white/70 text-2xl font-sans"><?= $t('code_sent') ?></label>
                         <div class="flex flex-col md:flex-row justify-center items-center gap-4">
-                            <div class="flex-1 relative">
-                                <input type="text" id="verefy" placeholder="****" maxlength="4" required
-                                    class="w-full text-center tracking-[20px] pl-4 py-3 text-white border-b border-solid border-white/20 bg-transparent text-2xl font-[qwees-poppins-regular] outline-none">
+                            <div class="flex-1 relative w-full min-w-[160px]">
+                                <input type="text" id="verefy" placeholder="****" maxlength="4" required inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+                                    class="w-full text-center tracking-[12px] pl-[12px] py-3 text-white border-b border-solid border-white/20 bg-transparent text-2xl font-[qwees-poppins-regular] outline-none">
                             </div>
                             <!-- BUTTON -->
                             <button data-button="verefy" type="submit"
@@ -129,7 +129,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
         </div>
 
         <!-- customized scripts -->
-        <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/regist/main.js"></script>
+        <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/regist/main.js<?= '?v=' . $site['versionApp'] ?>"></script>
         <!--  -->
 
     </div>

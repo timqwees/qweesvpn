@@ -22,7 +22,7 @@ class Network
     /** Реестр серверов: новый сервер = новая запись массива. */
     private const SERVERS = [
         'gb' => [
-            'country' => 'Лондон',
+            'country' => 'London',
             'flag' => 'london.svg',
             'XUI_API_TOKEN' => "hz4QtjFxLdfuqatWop7yFFiKOpasegmlsV43Bw5KuoiuKA39", #куки токен
             'XUI_LOGIN' => "timqwees", #логин

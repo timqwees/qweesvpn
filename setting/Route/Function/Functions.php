@@ -18,6 +18,7 @@ class Functions
     public function on_Main(
         $path = '/public/pages/main/index.php'
     ) {
+		header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -25,6 +26,7 @@ class Functions
     public function on_Login(
         $path = '/public/pages/auth/login/index.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -32,6 +34,7 @@ class Functions
     public function on_About(
         $path = '/public/pages/about/about.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -39,6 +42,7 @@ class Functions
     public function on_Requisites(
         $path = '/public/pages/about/requisites.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -51,6 +55,7 @@ class Functions
         if (!empty($refCode)) {
             Session::init('pending_refer_code', $refCode);
         }
+        header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -58,6 +63,7 @@ class Functions
     public function on_Pay(
         $path = '/public/pages/pay/index.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -65,6 +71,7 @@ class Functions
     public function on_Install(
         $path = '/public/pages/install/index.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -72,6 +79,7 @@ class Functions
     public function on_PayStatus(
         $path = '/public/pages/pay/status.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -79,6 +87,7 @@ class Functions
     public function on_Admin(
         $path = '/public/pages/admin/index.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -86,6 +95,7 @@ class Functions
     public function on_AdminLogin(
         $path = '/public/pages/admin/auth/index.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -93,6 +103,7 @@ class Functions
     public function on_AdminDatabase(
         $path = '/public/pages/admin/database.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -100,6 +111,7 @@ class Functions
     public function on_AdminEdit(
         $path = '/public/pages/admin/edit.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path); // мини добавка элементов проверок
     }
 
@@ -107,6 +119,7 @@ class Functions
     public function on_AdminStats(
         $path = '/public/pages/admin/stats.php'
     ) {
+    header('Cache-Control: no-cache');
         Routes::auto_element(dirname(__DIR__, 3) . $path);
     }
 
@@ -121,7 +134,7 @@ class Functions
             'url' => $url,
             'baseUrl' => $baseUrl,
             'ООО' => 'QweesVPN',
-            'versionApp' => 'v4.0.0',
+            'versionApp' => 'v4.0.1',
             'описание' => 'Сетевой продукт от QweesTeam Studio — Венчурное агенство.',
             'банк' => [
                 'Банк' => 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ОЗОН БАНК»',

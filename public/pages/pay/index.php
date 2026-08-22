@@ -53,7 +53,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
     <title><?= $t('pay_title') ?></title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css" as="style" defer>
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style" defer>
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml" defer>
     <link rel="preload" href="/public/assets/images/icons/services/buy/crown.svg" as="image" defer>
 
@@ -71,9 +71,9 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
         <link href="https://unpkg.com/@csstools/normalize.css" rel="stylesheet">
     </noscript>
 
-    <link rel="stylesheet" href="/public/assets/styles/style.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/style.css">
+        <link rel="stylesheet" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
     <!-- Deferred scripts -->
@@ -82,7 +82,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
 
     <!-- Noscript fallback -->
     <noscript>
-        <link rel="stylesheet" href="/public/assets/styles/noscript.css">
+        <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 </head>
 
@@ -2113,8 +2113,8 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                 $('#qr-modal').remove();
             }
         </script>
-        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js" defer></script>
-        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
+        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
     </div>
 </body>
 
