@@ -19,21 +19,33 @@ class OS
 
         // iOS/iPadOS devices
         if (preg_match('/iPhone|iPad|iPod|iOS|iPadOS/i', $this->UA)) {
+          // return [
+          //     'os' => 'iOS',
+          //     'url' => 'https://apps.apple.com/am/app/%D0%B8%D0%B7%D0%B8-vpn/id6746414734',//изи впн
+          //     'api' => 'easyvpn://import?url=',
+          //     'data' => ['logo' => '/public/assets/images/icons/services/install/изиvpn.svg', 'name' => 'Изи VPN']
+          // ];
           return [
               'os' => 'iOS',
-              'url' => 'https://apps.apple.com/am/app/%D0%B8%D0%B7%D0%B8-vpn/id6746414734',//изи впн
-              'api' => 'easyvpn://import?url=',
-              'data' => ['logo' => '/public/assets/images/icons/services/install/изиvpn.svg', 'name' => 'Изи VPN']
+              'url' => 'https://apps.apple.com/am/app/incy/id6756943388',
+              'api' => 'incy://add/',
+              'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
           ];
         }
 
         // MacOS
         if (preg_match('/Macintosh|Mac OS|Macintosh; Intel Mac OS/i', $this->UA)) {
+          // return [
+          //     'os' => 'macOS',
+          //     'url' => 'https://apps.apple.com/am/app/%D0%B8%D0%B7%D0%B8-vpn/id6746414734',//изи впн
+          //     'api' => 'easyvpn://import?url=',
+          //     'data' => ['logo' => '/public/assets/images/icons/services/install/изиvpn.svg', 'name' => 'Изи VPN']
+          // ];
           return [
               'os' => 'macOS',
-              'url' => 'https://apps.apple.com/am/app/%D0%B8%D0%B7%D0%B8-vpn/id6746414734',//изи впн
-              'api' => 'easyvpn://import?url=',
-              'data' => ['logo' => '/public/assets/images/icons/services/install/изиvpn.svg', 'name' => 'Изи VPN']
+              'url' => 'https://apps.apple.com/am/app/incy/id6756943388',
+              'api' => 'incy://add/',
+              'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
           ];
         }
 
