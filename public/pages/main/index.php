@@ -997,24 +997,24 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 <?php endif; ?>
                             </li>
                             <!-- block 3 -->
-                            <li class="relative w-full flex justify-between px-4 py-3 rounded-xl text-sm">
+                            <li class="relative w-full flex justify-between gap-2 py-3 rounded-xl text-sm">
                                 <!-- 1 -->
-                                <div class="flex flex-col items-center justify-between gap-2">
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
                                     <img decoding="async" loading="lazy"
                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/timeleft.svg"
-                                        alt="timeleft" loading="lazy" class="h-6">
-                                    <span class="text-white text-sm font-light" data-server
+                                        alt="timeleft" loading="lazy" class="h-6 shrink-0">
+                                    <span class="text-white text-sm font-light text-center break-words whitespace-normal leading-tight max-w-full [overflow-wrap:anywhere]" data-server
                                         data-timeleft></span>
                                 </div>
                                 <!-- 2 -->
-                                <div class="flex flex-col items-center justify-between gap-2">
-                                    <p class="text-white text-lg"><?= $t('main') ?></p>
-                                    <p class="text-[#93A7C8]">
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
+                                    <p class="text-white text-lg leading-tight"><?= $t('main') ?></p>
+                                    <p class="text-[#93A7C8] break-words whitespace-normal max-w-full text-center [overflow-wrap:anywhere]">
                                         <?= htmlspecialchars($formattedVpnStatus['ip_address'] ?: '—') ?>
                                     </p>
                                 </div>
                                 <!-- 3 -->
-                                <div class="flex flex-col items-center justify-between gap-2">
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
                                     <div class="flex gap-2 items-center justify-center h-8">
                                         <span
                                             class="<?= htmlspecialchars($formattedVpnStatus['ping_class']) ?> bg-current h-2 w-2 rounded-full aspect-square"></span>
@@ -1023,7 +1023,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                         <span
                                             class="<?= htmlspecialchars($formattedVpnStatus['ping_class']) ?> bg-current h-2 w-2 rounded-full aspect-square"></span>
                                     </div>
-                                    <p class="text-[#93A7C8] font-bold">
+                                    <p class="text-[#93A7C8] font-bold break-words whitespace-normal max-w-full text-center [overflow-wrap:anywhere]">
                                         <?= htmlspecialchars($formattedVpnStatus['ping_label']) ?>
                                     </p>
                                 </div>

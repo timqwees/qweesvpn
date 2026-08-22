@@ -21,34 +21,22 @@ class Network
 
     /** Реестр серверов: новый сервер = новая запись массива. */
     private const SERVERS = [
-        'nl' => [
-            'country' => 'Нидерланды',
-            'flag' => 'netherlands.svg',
-            'XUI_API_TOKEN' => "91tCVXc5nQQh7nfGJQNTFqzjTgHeplXYYg8zCcnU6WD8dE6Q", #куки токен
+        'gb' => [
+            'country' => 'Лондон',
+            'flag' => 'london.svg',
+            'XUI_API_TOKEN' => "hz4QtjFxLdfuqatWop7yFFiKOpasegmlsV43Bw5KuoiuKA39", #куки токен
             'XUI_LOGIN' => "timqwees", #логин
             'XUI_PASSWORD' => "timqwees2018$", #пароль
             'XUI_LOGIN_NAME_COOKIE' => "x-ui", #имя куки
-            'XUI_URL_PANEL' => "https://nl.qweesvpn.online:12200/qwees_administrator", #панель
-            'XUI_URL_SUBSCRIPTION' => "https://nl.qweesvpn.online:1005/qweesteam_subscription/", #сабскрипшн
+            'XUI_URL_PANEL' => "https://gb.qweesvpn.online:12200/qwees_administrator", #панель
+            'XUI_URL_SUBSCRIPTION' => "https://gb.qweesvpn.online:1005/qweesteam_subscription/", #сабскрипшн
             'XUI_INBOUND_NUMBER' => 0, #номер инбаунда
-            'VLESS_SERVER' => "nl.qweesvpn.online", #сервер для vless
+            'VLESS_SERVER' => "gb.qweesvpn.online", #сервер для vless
         ],
-        // 'fi' => [
-        //     'country' => 'Нидерланды',
-        //     'flag' => 'netherlands.svg',
-        //     'XUI_API_TOKEN' => "", #куки токен
-        //     'XUI_LOGIN' => "timqwees", #логин
-        //     'XUI_PASSWORD' => "timqwees2018$", #пароль
-        //     'XUI_LOGIN_NAME_COOKIE' => "x-ui", #имя куки
-        //     'XUI_URL_PANEL' => "https://nl.qweesvpn.online:12200/qwees_administrator", #панель
-        //     'XUI_URL_SUBSCRIPTION' => "https://nl.qweesvpn.online:1005/qweesteam_subscription/", #сабскрипшн
-        //     'XUI_INBOUND_NUMBER' => 0, #номер инбаунда
-        //     'VLESS_SERVER' => "nl.qweesvpn.online", #сервер для vless
-        // ],
     ];
 
     /** Сервер по умолчанию (используется клиентами без подписки). */
-    private const DEFAULT_SERVER = 'nl';
+    private const DEFAULT_SERVER = 'gb';
 
     /** Код текущего выбранного сервера. */
     private static string $current = self::DEFAULT_SERVER;
