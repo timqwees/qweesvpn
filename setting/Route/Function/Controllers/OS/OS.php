@@ -53,7 +53,7 @@ class OS
         if (preg_match('/Windows NT/i', $this->UA)) {
             return [
                 'os' => 'Windows',
-                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/incy-windows-setup.exe',
+                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-windows-setup.exe',
                 'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
@@ -63,7 +63,7 @@ class OS
         if (preg_match('/Linux/i', $this->UA) && !preg_match('/Android/i', $this->UA)) {
             return [
                 'os' => 'Linux',
-                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/incy-linux-arm64.deb',
+                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/latest/download/incy-linux-x64.deb',
                 'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
@@ -75,7 +75,7 @@ class OS
         ) {
             return [
                 'os' => 'Huawei',
-                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
+                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk',
                 'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
@@ -97,7 +97,7 @@ class OS
         if (preg_match('/Android/i', $this->UA)) {
             return [
                 'os' => 'Android',
-                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
+                'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk',
                 'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];
@@ -106,7 +106,7 @@ class OS
         // Fallback
         return [
             'os' => 'Other',
-            'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/download/desktop-v3.3.9/Incy.apk',
+            'url' => 'https://github.com/INCY-DEV/incy-platforms/releases/latest/download/Incy.apk',
             'api' => 'incy://add/',
             'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
         ];
