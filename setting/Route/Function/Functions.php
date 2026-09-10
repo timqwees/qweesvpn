@@ -10,10 +10,8 @@ use App\Config\Session;
 class Functions
 {
 
-    // public $reflink;
-
     //################################# МАРШРУТЫ ######################################
-
+    
     // Главная страница || Main page
     public function on_Main(
         $path = '/public/pages/main/index.php'
@@ -134,7 +132,7 @@ class Functions
             'url' => $url,
             'baseUrl' => $baseUrl,
             'ООО' => 'QweesVPN',
-            'versionApp' => 'v4.0.1',
+            'versionApp' => 'v4.1.0',
             'описание' => 'Сетевой продукт от QweesTeam Studio — Венчурное агенство.',
             'банк' => [
                 'Банк' => 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ОЗОН БАНК»',

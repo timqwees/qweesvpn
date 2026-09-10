@@ -1,5 +1,42 @@
 <?php
-
+/**
+ *
+ *  _____                                                                                _____
+ * ( ___ )                                                                              ( ___ )
+ *  |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   |
+ *  |   |                                                                                |   |
+ *  |   |                                                                                |   |
+ *  |   |    ________  ___       __   _______   _______   ________                       |   |
+ *  |   |   |\   __  \|\  \     |\  \|\  ___ \ |\  ___ \ |\   ____\                      |   |
+ *  |   |   \ \  \|\  \ \  \    \ \  \ \   __/|\ \   __/|\ \  \___|_                     |   |
+ *  |   |    \ \  \\\  \ \  \  __\ \  \ \  \_|/_\ \  \_|/_\ \_____  \                    |   |
+ *  |   |     \ \  \\\  \ \  \|\__\_\  \ \  \_|\ \ \  \_|\ \|____|\  \                   |   |
+ *  |   |      \ \_____  \ \____________\ \_______\ \_______\____\_\  \                  |   |
+ *  |   |       \|___| \__\|____________|\|_______|\|_______|\_________\                 |   |
+ *  |   |             \|__|                                 \|_________|                 |   |
+ *  |   |    ________  ________  ________  _______   ________  ________  ________        |   |
+ *  |   |   |\   ____\|\   __  \|\   __  \|\  ___ \ |\   __  \|\   __  \|\   __  \       |   |
+ *  |   |   \ \  \___|\ \  \|\  \ \  \|\  \ \   __/|\ \  \|\  \ \  \|\  \ \  \|\  \      |   |
+ *  |   |    \ \  \    \ \  \\\  \ \   _  _\ \  \_|/_\ \   ____\ \   _  _\ \  \\\  \     |   |
+ *  |   |     \ \  \____\ \  \\\  \ \  \\  \\ \  \_|\ \ \  \___|\ \  \\  \\ \  \\\  \    |   |
+ *  |   |      \ \_______\ \_______\ \__\\ _\\ \_______\ \__\    \ \__\\ _\\ \_______\   |   |
+ *  |   |       \|_______|\|_______|\|__|\|__|\|_______|\|__|     \|__|\|__|\|_______|   |   |
+ *  |   |                                                                                |   |
+ *  |   |                                                                                |   |
+ *  |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___|
+ * (_____)                                                                              (_____)
+ *
+ * Эта программа является свободным программным обеспечением: вы можете распространять ее и/или модифицировать
+ * в соответствии с условиями GNU General Public License, опубликованными
+ * Фондом свободного программного обеспечения (Free Software Foundation), либо в версии 3 Лицензии, либо (по вашему выбору) в любой более поздней версии.
+ *
+ *
+ * @license GPL-3.0-or-later (см. файл LICENSE.txt)
+ * @author TimQwees
+ * @link https://github.com/TimQwees/Qwees_CorePro
+ *
+ *
+ */
 declare(strict_types=1);
 
 namespace Setting\Route\Function\Controllers\Admin;
@@ -385,7 +422,7 @@ class AdminDatabase
             foreach ($tariff['periods'] as $months => &$period) {
                 $newPrice = (int) ($prices[$tariffName][$months] ?? 0);
                 if ($newPrice > 0 && $newPrice !== (int) $period['price']) {
-                    $changed[] = strtoupper($tariffName) . ' ' . $months . 'мес: ' . $period['price'] . ' → ' . $newPrice . ' ₽';
+                    $changed[] = strtoupper((string) $tariffName) . ' ' . $months . 'мес: ' . $period['price'] . ' → ' . $newPrice . ' ₽';
                     $period['price'] = $newPrice;
                 }
             }
@@ -477,7 +514,11 @@ class AdminDatabase
     {
         if (empty($date))
             return '-';
-        return date($format, strtotime($date));
+        $timestamp = strtotime($date);
+        if ($timestamp === false)
+            return '-';
+        $formatted = date($format, $timestamp);
+        return $formatted !== false ? $formatted : '-';
     }
 
     /**
@@ -506,7 +547,8 @@ class AdminDatabase
                 LEFT JOIN qwees_subscriptions s ON u.uniID = s.uniID 
                 ORDER BY u.id DESC 
                 LIMIT ?";
-        return Database::send($sql, [$limit]);
+        $result = Database::send($sql, [$limit]);
+        return is_array($result) ? $result : [];
     }
 
     /**

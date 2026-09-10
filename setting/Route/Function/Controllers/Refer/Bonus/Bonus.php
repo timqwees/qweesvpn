@@ -62,13 +62,13 @@ class Bonus
             return;
         }
         $users = Database::send("SELECT uniID FROM qwees_users WHERE id = ?", [$userId]);
-        if (!is_array($users) || $users === [] || empty($users[0]['uniID'])) {
+        if (!\is_array($users) || $users === [] || empty($users[0]['uniID'])) {
             return;
         }
         $uniID = (string) $users[0]['uniID'];
 
         $sub = Database::send('SELECT uniID FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
-        if (!is_array($sub) || $sub === [] || empty($sub[0]['uniID'])) {
+        if (!\is_array($sub) || $sub === [] || empty($sub[0]['uniID'])) {
             return;
         }
 

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\Router\Routes;
-use Setting\Route\Function\Controllers\Admin\{AdminDatabase, AdminXray, PdfController, AdminAuth};
+use App\Config\Session;
+use Setting\Route\Function\Controllers\Admin\{AdminDatabase, AdminXray, PdfController, AdminAuth, Admin};
+use Setting\Route\Function\Controllers\Admin\Group\Groups;
 use Setting\Route\Function\Controllers\Auth\Auth;
 use Setting\Route\Function\Controllers\Client\GetUser;
 use Setting\Route\Function\Controllers\Language\LanguageSwitch;
@@ -65,6 +67,57 @@ Routes::get('/admin/database', 'on_AdminDatabase');
 Routes::get('/admin/edit', 'on_AdminEdit');
 Routes::get('/admin/stats', 'on_AdminStats');
 Routes::get('/admin/login', 'on_AdminLogin');
+//POST roles (только для admin)
+Routes::post('/admin/roles/perms', function () {
+    AdminAuth::auth();
+    $admin = new Admin();
+    if (!$admin->hasRole((int) (Session::init('admin')['auth'][1] ?? 0), 'admin')) {
+        header('Location: /admin');
+        exit;
+    }
+    $groups = new Groups();
+    $u = $_POST['username'] ?? '';
+    foreach (Admin::FULL_PERMISSIONS as $p => $value) {//синхроним галочки с json
+        if (in_array($p, $_POST['perms'] ?? [], true)) $groups->addPermission($u, $p);
+        else $groups->removePermission($u, $p);
+    }
+    $admin->LoggerCRM("обновил права $u");
+    header('Location: /admin');
+    exit;
+});
+Routes::post('/admin/roles/add', function () {
+    AdminAuth::auth();
+    $admin = new Admin();
+    if (!$admin->hasRole((int) (Session::init('admin')['auth'][1] ?? 0), 'admin')) {
+        header('Location: /admin');
+        exit;
+    }
+    $admin->addManager($_POST['username'] ?? '', $_POST['password'] ?? '', $_POST['role'] ?? 'manager');
+    header('Location: /admin');
+    exit;
+});
+Routes::post('/admin/roles/fire', function () {
+    AdminAuth::auth();
+    $admin = new Admin();
+    if (!$admin->hasRole((int) (Session::init('admin')['auth'][1] ?? 0), 'admin')) {
+        header('Location: /admin');
+        exit;
+    }
+    $admin->deleteManager($_POST['username'] ?? '');
+    header('Location: /admin');
+    exit;
+});
+Routes::post('/admin/roles/role', function () {
+    AdminAuth::auth();
+    $admin = new Admin();
+    if (!$admin->hasRole((int) (Session::init('admin')['auth'][1] ?? 0), 'admin')) {
+        header('Location: /admin');
+        exit;
+    }
+    $admin->changeRole($_POST['username'] ?? '', $_POST['role'] ?? 'manager');
+    header('Location: /admin');
+    exit;
+});
 //POST
 Routes::post('/admin/logout', [AdminAuth::class, 'onLogout']);
 Routes::post('/admin/save', [AdminDatabase::class, 'onAdminSave']);

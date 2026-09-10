@@ -2,6 +2,20 @@
 // Проверяем авторизацию администратора
 \Setting\Route\Function\Controllers\Admin\AdminAuth::auth();
 
+// право на раздел
+$groupsGate = new \Setting\Route\Function\Controllers\Admin\Group\Groups();//вызываем класс
+$gateName = (new \Setting\Route\Function\Controllers\Admin\Admin())->getUsername((int) (\App\Config\Session::init('admin')['auth'][1] ?? 0));//кто сидит
+if (!$groupsGate->isPermission($gateName, 'database')) {
+    http_response_code(403);
+    include_once 'includes/head.php';
+    echo "<body class='bg-gray-100'><div style='max-width:480px;margin:80px auto;text-align:center;'>"
+        . "<i class='fa-solid fa-lock' style='font-size:56px;color:#ef4444;'></i>"
+        . "<div style='font-size:20px;font-weight:700;margin-top:12px;'>Недоступно</div>"
+        . "<div style='color:#6b7280;'>Нет прав на раздел</div>"
+        . "<a href='/admin' style='display:inline-block;margin-top:16px;color:#4f46e5;'>Назад в админку</a></div></body></html>";
+    exit;
+}
+
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
 use Setting\Route\Function\Functions;
 

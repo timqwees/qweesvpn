@@ -41,7 +41,7 @@ class Refer
         }
 
         $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
-        if (!is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
+        if (!\is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
             return ['status' => false, 'error' => 'Реферальный код не найден!'];
         }
 
@@ -85,7 +85,7 @@ class Refer
         // получаем свой id и refer
         $user = Database::send("SELECT id, refer FROM qwees_users WHERE uniID = ?", [$uniID]);
 
-        if (!is_array($user) || $user === [] || !isset($user[0]['id'])) {
+        if (!\is_array($user) || $user === [] || !isset($user[0]['id'])) {
             return ['status' => false, 'error' => 'Пользователь не найден'];
         }
 
@@ -98,7 +98,7 @@ class Refer
         $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
 
         // если не нашли такого реферала
-        if (!is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
+        if (!\is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
             return ['status' => false, 'error' => 'Реферальный код не найден'];
         }
 

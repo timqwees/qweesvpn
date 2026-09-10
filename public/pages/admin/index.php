@@ -1,8 +1,13 @@
 <?php
 
 use Setting\Route\Function\Controllers\Admin\AdminAuth;
+use Setting\Route\Function\Controllers\Admin\Admin;
+use Setting\Route\Function\Controllers\Admin\Group\Groups;
 // Проверяем авторизацию администратора
 AdminAuth::auth();
+
+$adminUser = new Admin();//вызываем класс
+$groups = new Groups();//вызываем класс
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
@@ -32,8 +37,10 @@ $tariffAccents = [
 ];
 $defaultAccent = ['badge' => 'bg-gray-100 text-gray-700 ring-1 ring-gray-300', 'accent' => 'border-l-gray-400'];
 
-// админ id
-$adminID = Session::init('admin')['auth'][1];
+// админ id [true, id]
+$adminID = (int) (Session::init('admin')['auth'][1] ?? 0);
+$adminUsername = $adminUser->getUsername($adminID);//имя работника
+$adminRole = $adminUser->getRole($adminID);//роль работника
 
 // цвета для логов
 $colors = [
@@ -97,6 +104,7 @@ $colors = [
         <main class="flex-1 px-4 pt-14 md:pt-0 md:px-6 lg:px-8 overflow-x-hidden">
 
             <!-- Секция: Главная -->
+            <?php if ($groups->isPermission($adminUsername,'main')): ?>
             <section class="max-w-7xl mx-auto my-3" data-section="main">
                 <?php
                 // Получаем всю статистику одним вызовом
@@ -188,8 +196,10 @@ $colors = [
                 <!-- Сводка по таблицам -->
                 <div class="mb-8">
                     <h2 class="text-lg font-semibold text-gray-700 mb-4">Сводка по таблицам</h2>
-                    <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-                        <table class="w-full text-sm">
+                    <div class="flex flex-col md:flex-row bg-white rounded-xl shadow-sm overflow-x-auto">
+
+                      <!--база данных-->
+                      <table class="flex-1 w-full text-sm">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium text-gray-700">Таблица</th>
@@ -211,49 +221,55 @@ $colors = [
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
-                        </table>
-
-                        <!-- PDF Экспорт -->
-                        <div
-                            class="mt-4 p-4 bg-gradient-to-br from-slate-50 to-gray-100 rounded-xl border border-slate-200">
-                            <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                                <div
-                                    class="w-6 h-6 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xs">
-                                    <i class="fa-solid fa-file-pdf"></i>
-                                </div>
-                                <span>Экспорт отчетов</span>
-                            </h3>
-                            <div class="flex flex-wrap gap-2">
-                                <a href="/export/pdf?type=subscriptions&format=rich"
-                                    class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
-                                    <i class="fa-solid fa-chart-pie text-slate-400"></i>
-                                    <span>Подписки</span>
-                                </a>
-                                <a href="/export/pdf?type=users&format=rich"
-                                    class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
-                                    <i class="fa-solid fa-users text-slate-400"></i>
-                                    <span>Пользователи</span>
-                                </a>
-                                <a href="/export/pdf?type=about"
-                                    class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
-                                    <i class="fa-solid fa-building text-slate-400"></i>
-                                    <span>О компании</span>
-                                </a>
-                                <a href="/export/pdf?type=requisites"
-                                    class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
-                                    <i class="fa-solid fa-file-invoice text-slate-400"></i>
-                                    <span>Реквизиты</span>
-                                </a>
-                            </div>
-                        </div>
+                      </table>
+                        
+                      <!-- PDF Экспорт -->
+                      <div class="flex-1 p-4 bg-gradient-to-br from-slate-50 to-gray-100 border border-slate-200">
+                          <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                              <div
+                                  class="w-6 h-6 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white text-xs">
+                                  <i class="fa-solid fa-file-pdf"></i>
+                              </div>
+                              <span>Экспорт отчетов</span>
+                          </h3>
+                          <div class="flex flex-col flex-wrap gap-2">
+                              <a href="/export/pdf?type=subscriptions&format=rich"
+                                  class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
+                                  <i class="fa-solid fa-chart-pie text-slate-400"></i>
+                                  <span>Подписки</span>
+                              </a>
+                              <a href="/export/pdf?type=users&format=rich"
+                                  class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
+                                  <i class="fa-solid fa-users text-slate-400"></i>
+                                  <span>Пользователи</span>
+                              </a>
+                              <a href="/export/pdf?type=about"
+                                  class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
+                                  <i class="fa-solid fa-building text-slate-400"></i>
+                                  <span>О компании</span>
+                              </a>
+                              <a href="/export/pdf?type=requisites"
+                                  class="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-600 text-sm hover:border-green-400 hover:text-green-600 hover:shadow-sm transition-all">
+                                  <i class="fa-solid fa-file-invoice text-slate-400"></i>
+                                  <span>Реквизиты</span>
+                              </a>
+                          </div>
+                      </div>
+                      
                     </div>
                 </div>
 
                 <!-- Логи -->
                 <div class="container mx-auto">
                     <!-- Заголовок -->
-                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Логи данных <i
-                            class="fa-solid fa-eye-low-vision cursor-pointer" data-show-logs></i>
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4">Логи данных 
+                      <?php if ($groups->isPermission($adminUsername,'logs')): ?>
+                      <i class="fa-solid fa-eye-low-vision cursor-pointer" data-show-logs></i>
+                      <? else: ?>
+                      <i class="relative fa-solid fa-eye-low-vision cursor-pointer">
+                      <span class="left-6 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                      </i>
+                      <? endif; ?>
                     </h2>
 
                     <div data-logs class="block blur-sm">
@@ -265,7 +281,7 @@ $colors = [
                             <?php
                             $logfile = dirname(__DIR__, 3) . '/qwees.log';
                             if (file_exists($logfile)) {
-                                $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+                                $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
                                 $last_date = null;
                                 foreach ($lines as $line) {
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
@@ -287,7 +303,7 @@ $colors = [
                                         ob_start();
                                         ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
-                                            <?= date('d M Y', strtotime($matches[1])) ?>
+                                            <?= date('d M Y', strtotime($matches[1] ?? '') ?: time()) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
                                         <?php
@@ -324,8 +340,18 @@ $colors = [
                 </div>
 
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="main">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Секция: Графики -->
+            <?php if ($groups->isPermission($adminUsername,'charts')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="charts">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
@@ -348,133 +374,9 @@ $colors = [
                         <canvas data-chart="chart_users_monthly"></canvas>
                     </div>
                 </div>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <script>
-                    const ctx = document.querySelectorAll('[data-chart="chart_clients"]');
-                    for (const chart of ctx) {
-                        new Chart(chart, {
-                            type: 'polarArea',
-                            data: {
-                                labels: ['С подписками', 'Без подписок'],
-                                datasets: [{
-                                    label: 'Пользователей',
-                                    data: [<?= htmlspecialchars((string) intval($stats['usersWithSubscriptions'])) ?>, <?= htmlspecialchars((string) intval($stats['usersWithoutSubscriptions'])) ?>],
-                                    borderWidth: 1
-                                }]
-                            },
-                            options: {
-                                scales: {
-                                    y: {
-                                        beginAtZero: true
-                                    }
-                                },
-                                plugins: {
-                                    legend: {
-                                        display: true,
-                                        position: 'top'
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: 'График подписок',
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    // График прибыли по месяцам
-                    const revenueMonthlyCtx = document.querySelectorAll('[data-chart="chart_revenue_monthly"]');
-                    for (const chart of revenueMonthlyCtx) {
-                        new Chart(chart, {
-                            type: 'line',
-                            data: {
-                                labels: <?= json_encode(array_column($financialStats['monthlyRevenueChart'], 'month')) ?>,
-                                datasets: [{
-                                    label: 'Прибыль (₽)',
-                                    data: <?= json_encode(array_column($financialStats['monthlyRevenueChart'], 'revenue')) ?>,
-                                    borderColor: 'rgb(34, 197, 94)',
-                                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                                    tension: 0.4,
-                                    fill: true
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return value.toLocaleString('ru-RU') + ' ₽';
-                                            }
-                                        }
-                                    }
-                                },
-                                plugins: {
-                                    legend: {
-                                        display: true,
-                                        position: 'center'
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: 'График прибыли по месяцам',
-                                    }
-                                }
-                            }
-                        });
-                    }
-
-                    // График статистика количество пользователей
-                    const usersMonthlyCtx = document.querySelectorAll('[data-chart="chart_users_monthly"]');
-                    for (const chart of usersMonthlyCtx) {
-                        new Chart(chart, {
-                            type: 'line',
-                            data: {
-                                labels: <?= json_encode(array_column($financialStats['monthlyUsersChart'], 'month')) ?>,
-                                datasets: [{
-                                    label: 'Пользователей',
-                                    data: <?= json_encode(array_column($financialStats['monthlyUsersChart'], 'users_count')) ?>,
-                                    borderColor: 'rgb(59, 130, 246)',
-                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                    tension: 0.4,
-                                    fill: true
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                interaction: {
-                                    mode: 'index',
-                                    intersect: false,
-                                },
-                                scales: {
-                                    y: {
-                                        beginAtZero: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return value.toLocaleString('ru-RU') + ' чел.';
-                                            }
-                                        }
-                                    }
-                                },
-                                plugins: {
-                                    legend: {
-                                        display: true,
-                                        position: 'top'
-                                    },
-                                    title: {
-                                        display: true,
-                                        text: 'Статистика новых пользователей',
-                                    }
-                                }
-                            }
-                        });
-                    }
-                </script>
 
                 <!-- Финансовая статистика (только для админов) -->
-                <?php if (AdminAuth::hasRole($adminID, 'admin')): ?>
+                <?php if ($adminUser->hasRole($adminID, 'admin')): ?>
                     <div class="py-8">
                         <h2 class="text-lg font-semibold text-gray-700 mb-4">Финансовая статистика</h2>
 
@@ -576,8 +478,18 @@ $colors = [
                     </div>
                 <?php endif; ?>
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="charts">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Секция: Цены -->
+            <?php if ($groups->isPermission($adminUsername,'price')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="price">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row md:items-center justify-between gap-2">
@@ -772,8 +684,18 @@ $colors = [
                     });
                 </script>
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="price">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Секция: Логи -->
+            <?php if ($groups->isPermission($adminUsername,'logs')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="logs">
                 <!-- Заголовок -->
                 <div class="py-6 flex md:flex-row justify-between items-center">
@@ -802,7 +724,7 @@ $colors = [
                             <?php
                             $logfile = dirname(__DIR__, 3) . '/qwees.log';
                             if (file_exists($logfile)) {
-                                $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+                                $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
                                 $last_date = null;
                                 foreach ($lines as $line) {
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
@@ -824,7 +746,7 @@ $colors = [
                                         ob_start();
                                         ?>
                                         <div class='flex gap-2 items-center justify-between text-white/70 text-sm px-2 py-0.5'>
-                                            <?= date('d M Y', strtotime($matches[1])) ?>
+                                            <?= date('d M Y', strtotime($matches[1] ?? '') ?: time()) ?>
                                             <div class='flex-1 h-0.5 w-full bg-white/70'></div>
                                         </div>
                                         <?php
@@ -845,8 +767,18 @@ $colors = [
                     </div>
                 </div>
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="logs">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Секция: Выдачи -->
+            <?php if ($groups->isPermission($adminUsername,'give')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="give">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
@@ -1143,8 +1075,18 @@ $colors = [
 
                 </div>
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="give">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
             <!-- Секция: Изьятие подписок -->
+            <?php if ($groups->isPermission($adminUsername,'reduce')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="reduce">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
@@ -1226,9 +1168,18 @@ $colors = [
                     </div>
                 </div>
             </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="reduce">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
 
-            <!-- Секция: Добавление пользователей (только для админов и менеджеров) -->
-            <?php if (AdminAuth::hasRole($adminID, 'admin')): ?>
+            <!-- Секция: Добавление пользователей -->
+            <?php if ($groups->isPermission($adminUsername,'add_user')): ?>
                 <section class="max-w-7xl mx-auto my-3 hidden" data-section="add_user">
                     <!-- Заголовок -->
                     <div class="py-6 flex-col flex md:flex-row justify-between items-center">
@@ -1236,8 +1187,8 @@ $colors = [
                             Добавление пользователя
                         </h1>
                         <div class="text-sm text-gray-500">
-                            Ваша роль: <span class="font-semibold text-blue-600">
-                                <?= AdminAuth::getRole($adminID) ?>
+                            <?= htmlspecialchars($adminUsername) ?>, Ваша роль: <span class="font-semibold text-blue-600">
+                                <?= htmlspecialchars($adminRole) ?>
                             </span>
                         </div>
                     </div>
@@ -1332,6 +1283,194 @@ $colors = [
                         </form>
                     </div>
                 </section>
+            <?php else: ?>
+                <section class="max-w-7xl mx-auto my-3 hidden" data-section="add_user">
+                    <div class="py-10 flex flex-col items-center gap-3 text-center">
+                        <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                        <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                        <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <!-- Секция: Роли и права -->
+            <?php if ($groups->isPermission($adminUsername, 'roles')): ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="roles">
+                <div class="py-6 flex-col flex md:flex-row justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                        Рабочие
+                    </h1>
+                    <div class="text-sm text-gray-500">
+                        <?= htmlspecialchars($adminUsername) ?>, Ваша роль: <span class="font-semibold text-blue-600">
+                            <?= htmlspecialchars($adminRole) ?>
+                        </span>
+                    </div>
+                </div>
+
+
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                    <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                        <span class="text-xs font-medium text-gray-600">Сессия администратора</span>
+                        <span class="text-[11px] text-gray-400">Session::init('admin')</span>
+                    </div>
+                
+                    <div class="p-4">
+                        <?php 
+                            $adminSession = Session::init();
+                            
+                            if (empty($adminSession)): 
+                        ?>
+                            <div class="text-xs text-gray-400 italic">Сессия пуста</div>
+                        <?php else: ?>
+                            <div class="space-y-2.5">
+                                <?php foreach ($adminSession as $key => $value): ?>
+                                    <div class="flex gap-3 text-xs">
+                                        <div class="w-28 shrink-0 text-gray-400 font-medium">
+                                            <?= htmlspecialchars($key) ?>
+                                        </div>
+                                        <div class="flex-1 text-gray-800 break-all">
+                                            <?php if (is_array($value) || is_object($value)): ?>
+                                                <pre class="bg-gray-50 rounded-md p-2 text-[11px] m-0 overflow-x-auto"><?= htmlspecialchars(print_r($value, true)) ?></pre>
+                                            <?php elseif (is_bool($value)): ?>
+                                                <span class="<?= $value ? 'text-green-600' : 'text-red-500' ?>">
+                                                    <?= $value ? 'true' : 'false' ?>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="font-mono"><?= htmlspecialchars((string)$value) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                
+                <div class="bg-white border border-border rounded-2xl">
+                    <div class="hidden md:block">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-500 border-b">
+                                    <th class="p-3">Логин</th>
+                                    <th class="p-3">Роль</th>
+                                    <?php foreach (Setting\Route\Function\Controllers\Admin\Admin::FULL_PERMISSIONS as $p => $value): ?>
+                                        <th class="p-3 text-center"><?= htmlspecialchars($p) ?>
+                                          <div class="z-[99] relative inline-block group">
+                                            <i class="fa-solid fa-circle-info text-gray-400 hover:text-gray-600 cursor-pointer"></i>
+                                        
+                                            <!-- Подсказка -->
+                                            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                                                <div class="bg-gray-900 text-white text-xs rounded-lg px-3 py-1.5 whitespace-nowrap shadow-lg">
+                                                    <?= htmlspecialchars($value) ?>
+                                                    <!-- Стрелочка -->
+                                                    <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        </th>
+                                    <?php endforeach; ?>
+                                    <th class="p-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($groups->data as $row): ?>
+                                    <tr class="border-b last:border-0">
+                                        <td class="p-3 font-semibold"><?= htmlspecialchars($row['username']) ?></td>
+                                        <td class="p-3">
+                                            <form action="/admin/roles/role" method="POST" class="flex gap-2">
+                                                <input type="hidden" name="username"
+                                                    value="<?= htmlspecialchars($row['username']) ?>">
+                                                <select name="role" onchange="this.form.submit()"
+                                                    class="px-2 py-1 rounded-lg border">
+                                                    <?php foreach (array_keys(Setting\Route\Function\Controllers\Admin\Admin::ROLES) as $r): ?>
+                                                        <option value="<?= $r ?>" <?= ($row['role'] ?? '') === $r ? 'selected' : '' ?>><?= $r ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </form>
+                                        </td>
+                                        <?php foreach (Setting\Route\Function\Controllers\Admin\Admin::FULL_PERMISSIONS as $p => $value): ?>
+                                            <td class="p-3 text-center">
+                                                <form action="/admin/roles/perms" method="POST">
+                                                    <input type="hidden" name="username"
+                                                        value="<?= htmlspecialchars($row['username']) ?>">
+                                                    <?php foreach ($groups->hasPermission($row['username']) as $keep): ?>
+                                                        <?php if ($keep !== $p): ?>
+                                                            <input type="hidden" name="perms[]"
+                                                                value="<?= htmlspecialchars($keep) ?>">
+                                                        <?php endif; ?>
+                                                    <?php endforeach; ?>
+                                                    <label class="relative inline-flex cursor-pointer items-center">
+                                                        <input type="checkbox" name="perms[]"
+                                                            value="<?= htmlspecialchars($p) ?>" class="peer sr-only"
+                                                            <?= $groups->isPermission($row['username'], $p) ? 'checked' : '' ?>
+                                                            onchange="this.form.submit()">
+                                                        <span
+                                                            class="h-6 w-11 rounded-full bg-gray-300 peer-checked:bg-green-500 transition-colors"></span>
+                                                        <span
+                                                            class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                                                    </label>
+                                                </form>
+                                            </td>
+                                        <?php endforeach; ?>
+                                        <td class="p-3">
+                                            <form action="/admin/roles/fire" method="POST">
+                                                <input type="hidden" name="username"
+                                                    value="<?= htmlspecialchars($row['username']) ?>">
+                                                <button class="text-red-500 hover:text-red-700" title="Уволить">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <h2 class="text-xl font-bold text-gray-800 py-6">Нанять менеджера</h2>
+                <form action="/admin/roles/add" method="POST"
+                    class="bg-white border border-border rounded-2xl p-4 flex flex-col md:flex-row gap-3">
+                    <input type="text" name="username" required placeholder="Логин"
+                        class="px-3 py-2 rounded-lg border flex-1">
+                    <input type="text" name="password" required placeholder="Пароль"
+                        class="px-3 py-2 rounded-lg border flex-1">
+                    <select name="role" class="px-3 py-2 rounded-lg border">
+                        <?php foreach (array_keys(Setting\Route\Function\Controllers\Admin\Admin::ROLES) as $r): ?>
+                            <option value="<?= $r ?>"><?= $r ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <button class="px-4 py-2 rounded-xl bg-violet-600 text-white font-semibold">Добавить</button>
+                </form>
+                <h2 class="text-xl font-bold text-gray-800 py-6">Логи рабочих</h2>
+                <div class="bg-black rounded-xl p-2 max-h-[40vw] overflow-scroll flex flex-col gap-0.5">
+                    <?php
+                    $rolesLog = dirname(__DIR__, 3) . '/qwees.log';
+                    $wlines = [];
+                    if (file_exists($rolesLog)) {
+                        $raw = file($rolesLog, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                        if (is_array($raw)) {
+                            $wlines = array_filter($raw, fn($l) => str_contains((string) $l, '[WRK '));
+                        }
+                    }
+                    if (!empty($wlines)) {
+                        foreach (array_slice(array_reverse($wlines), 0, 30) as $line) {
+                            echo "<div class='text-[13px] font-mono text-green-300 px-2 py-0.5'>" . htmlspecialchars((string) $line, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</div>";
+                        }
+                    } else {
+                        echo "<div class='text-[13px] italic text-white'>Лог-файл не найден.</div>";
+                    }
+                    ?>
+                </div>
+            </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="roles">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
             <?php endif; ?>
 
             <script defer>
@@ -1488,6 +1627,130 @@ $colors = [
             </script>
             <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
             <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                const ctx = document.querySelectorAll('[data-chart="chart_clients"]');
+                for (const chart of ctx) {
+                    new Chart(chart, {
+                        type: 'polarArea',
+                        data: {
+                            labels: ['С подписками', 'Без подписок'],
+                            datasets: [{
+                                label: 'Пользователей',
+                                data: [<?= htmlspecialchars((string) intval($stats['usersWithSubscriptions'])) ?>, <?= htmlspecialchars((string) intval($stats['usersWithoutSubscriptions'])) ?>],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'График подписок',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // График прибыли по месяцам
+                const revenueMonthlyCtx = document.querySelectorAll('[data-chart="chart_revenue_monthly"]');
+                for (const chart of revenueMonthlyCtx) {
+                    new Chart(chart, {
+                        type: 'line',
+                        data: {
+                            labels: <?= json_encode(array_column($financialStats['monthlyRevenueChart'], 'month')) ?>,
+                            datasets: [{
+                                label: 'Прибыль (₽)',
+                                data: <?= json_encode(array_column($financialStats['monthlyRevenueChart'], 'revenue')) ?>,
+                                borderColor: 'rgb(34, 197, 94)',
+                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function (value) {
+                                            return value.toLocaleString('ru-RU') + ' ₽';
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'center'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'График прибыли по месяцам',
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // График статистика количество пользователей
+                const usersMonthlyCtx = document.querySelectorAll('[data-chart="chart_users_monthly"]');
+                for (const chart of usersMonthlyCtx) {
+                    new Chart(chart, {
+                        type: 'line',
+                        data: {
+                            labels: <?= json_encode(array_column($financialStats['monthlyUsersChart'], 'month')) ?>,
+                            datasets: [{
+                                label: 'Пользователей',
+                                data: <?= json_encode(array_column($financialStats['monthlyUsersChart'], 'users_count')) ?>,
+                                borderColor: 'rgb(59, 130, 246)',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                mode: 'index',
+                                intersect: false,
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function (value) {
+                                            return value.toLocaleString('ru-RU') + ' чел.';
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Статистика новых пользователей',
+                                }
+                            }
+                        }
+                    });
+                }
+            </script>
         </main>
     </div>
 </body>

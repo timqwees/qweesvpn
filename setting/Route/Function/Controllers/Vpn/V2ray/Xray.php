@@ -320,7 +320,7 @@ class Xray
             return false;
         }
         $decoded = json_decode((string) $response, true);
-        if (!is_array($decoded)) {
+        if (!\is_array($decoded)) {
             file_put_contents(
                 self::logFile(),
                 sprintf("[%s] [3X-UI] Invalid JSON from %s HTTP %d\n", date('Y-m-d H:i:s'), $path, $httpCode),
@@ -390,7 +390,7 @@ class Xray
         ServerNetwork::selectServer($uniID);
 
         $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
-        if ($data === false || empty($data['success']) || empty($data['obj']) || !is_array($data['obj'])) {
+        if ($data === false || empty($data['success']) || empty($data['obj']) || !\is_array($data['obj'])) {
             file_put_contents(
                 self::logFile(),
                 sprintf("[%s] [3X-UI addClient] Список inbounds недоступен\n", date('Y-m-d H:i:s')),
@@ -417,10 +417,10 @@ class Xray
         $protocol = strtolower((string) ($inbound['protocol'] ?? ''));
         $rawSettings = $inbound['settings'] ?? '{}';
         $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
-        if (!is_array($settings)) {
+        if (!\is_array($settings)) {
             $settings = [];
         }
-        if (!isset($settings['clients']) || !is_array($settings['clients'])) {
+        if (!isset($settings['clients']) || !\is_array($settings['clients'])) {
             $settings['clients'] = [];
         }
 
@@ -434,7 +434,7 @@ class Xray
         $existingIndex = null;
         $currentExpiryMs = 0;
         foreach ($settings['clients'] as $idx => $c) {
-            if (!is_array($c)) {
+            if (!\is_array($c)) {
                 continue;
             }
             if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {
@@ -595,10 +595,10 @@ class Xray
 
         $rawSettings = $inbound['settings'] ?? '{}';
         $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
-        if (!is_array($settings)) {
+        if (!\is_array($settings)) {
             $settings = [];
         }
-        if (!isset($settings['clients']) || !is_array($settings['clients'])) {
+        if (!isset($settings['clients']) || !\is_array($settings['clients'])) {
             $settings['clients'] = [];
         }
 
@@ -606,7 +606,7 @@ class Xray
         $clientRow = null;
         $newExpiry = 0;
         foreach ($settings['clients'] as $idx => $c) {
-            if (!is_array($c)) {
+            if (!\is_array($c)) {
                 continue;
             }
             // Ищем по subId (= uniID) — уникальный ключ; email (= имя) может совпадать у разных юзеров
@@ -703,7 +703,7 @@ class Xray
         $inbound = $data['obj'][$inboundIdx];
         $rawSettings = $inbound['settings'] ?? '{}';
         $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
-        if (!is_array($settings)) {
+        if (!\is_array($settings)) {
             $settings = [];
         }
 
@@ -712,7 +712,7 @@ class Xray
         $found = false;
         $deleteEmail = $uniID; // запасной вариант
         foreach ($settings['clients'] ?? [] as $c) {
-            if (!is_array($c)) {
+            if (!\is_array($c)) {
                 continue;
             }
             if (($c['subId'] ?? '') === $uniID || ($c['email'] ?? '') === $uniID) {

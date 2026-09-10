@@ -155,7 +155,7 @@ class Network
         $xray = new Xray();
         $added = $xray->addClient(1, $uniID, max(1, (int) ($sub[0]['count_devices'] ?? 1)), '', $expiryMs);
 
-        if (!is_array($added) || ($added['success'] ?? false) !== true) {
+        if (!\is_array($added) || ($added['success'] ?? false) !== true) {
             // откат подписки на старый сервер — клиента нужно перевыдать вручную
             Database::send(
                 'UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',

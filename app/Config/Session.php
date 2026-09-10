@@ -156,9 +156,14 @@ class Session
             return true;
         }
 
+        $json = json_encode(self::$data, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            return false;
+        }
+
         @setcookie(
             self::$cookieName,
-            json_encode(self::$data, JSON_UNESCAPED_UNICODE),
+            $json,
             new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + self::$lifetime,
             '/',
             '',
