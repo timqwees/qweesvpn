@@ -62,7 +62,7 @@ $(function () {
     // В DOM находится только активная секция активного layout (desktop/mobile).
     // Остальные лежат в <template> и не рендерятся: нет фоновых анимаций,
     // изображения не загружаются, нагрузка идёт только на видимый экран.
-    const SECTIONS = ['main', 'profile', 'setting', 'referal'];
+    const SECTIONS = ['main', 'profile', 'setting', 'referal', 'support'];
 
     let activeSection = document.body.dataset.activeSection || 'main';
     if (SECTIONS.indexOf(activeSection) === -1) activeSection = 'main';
@@ -91,8 +91,9 @@ $(function () {
         t.remove();
       });
 
-      // Вставляем активную секцию
-      const sectionTpl = layoutTpl.content.querySelector('template[data-section="' + sectionId + '"]');
+      // Вставляем активную секцию (нет такой в layout — откат на main)
+      const sectionTpl = layoutTpl.content.querySelector('template[data-section="' + sectionId + '"]')
+        || layoutTpl.content.querySelector('template[data-section="main"]');
       frag.querySelector('.js-sections').appendChild(sectionTpl.content.cloneNode(true));
 
       return frag;
@@ -112,8 +113,11 @@ $(function () {
           $root.empty().append(render(layoutId, sectionId));
         } else {
           // Смена секции: меняем только секцию, меню не трогаем
+          // (нет такой в layout — откат на main)
           const sectionTpl = document.getElementById(currentLayout)
-            .content.querySelector('template[data-section="' + sectionId + '"]');
+            .content.querySelector('template[data-section="' + sectionId + '"]')
+            || document.getElementById(currentLayout)
+            .content.querySelector('template[data-section="main"]');
           $root.find('.js-sections').empty().append(sectionTpl.content.cloneNode(true));
         }
 

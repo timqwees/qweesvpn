@@ -10,15 +10,26 @@ $adminUser = new Admin();//вызываем класс
 $groups = new Groups();//вызываем класс
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
+use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
+use App\Config\Database;
 use App\Config\Session;
 use Setting\Route\Function\Functions;
 
 $site = Functions::site();
 $admin = new AdminDatabase();
+$gifts = new Gifts();//пробные подписки
 
 // Конфигурация тарифов (единый объект из PriceConfig)
 $tariffConfig = PriceConfig::getConfig();
+
+// юзеры для datalist инпутов — один запрос вместо четырех
+$allUsers = AdminDatabase::getData('qwees_users');
+// у кого уже есть подписка — один запрос для подсветки в пробных
+$subMap = [];
+foreach ((array) Database::send("SELECT uniID, status FROM qwees_subscriptions") as $s) {
+    $subMap[$s['uniID']] = ($s['status'] ?? '') === 'on' ? 1 : 0;
+}
 
 // Все сроки (объединение по тарифам) — шапка таблицы цен
 $periods = [];
@@ -424,13 +435,13 @@ $colors = [
                             <canvas id="chart_plans"></canvas>
                         </div>
                         <script defer>
-                            const plansCtx = document.getElementById('chart_plans');
-                            if (plansCtx) {
+                            const $plansCtx = $('#chart_plans');
+                            if ($plansCtx.length) {
                                 const labels = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'subscription') : []) ?>;
                                 const data = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'revenue') : []) ?>;
 
                                 if (labels.length > 0 && data.length > 0) {
-                                    new Chart(plansCtx, {
+                                    new Chart($plansCtx[0], {
                                         type: 'doughnut',
                                         data: {
                                             labels: labels,
@@ -507,8 +518,8 @@ $colors = [
                         <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
                         <input type="hidden" name="table" value="price_config">
 
-                        <div class="hidden md:block overflow-x-auto">
-                            <table class="w-full text-sm table-fixed">
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[640px] text-sm table-fixed">
                                 <thead>
                                     <tr class="bg-gray-50 border-b border-border">
                                         <th class="w-44 text-left px-4 py-3.5 font-semibold text-gray-600">
@@ -639,7 +650,7 @@ $colors = [
                     </form>
                 </div>
                 <script defer>
-                    document.addEventListener('DOMContentLoaded', function () {
+                    $(function () {
                         function updateCount() {
                             var n = 0;
                             var seen = {};
@@ -718,15 +729,16 @@ $colors = [
                     <div class="block">
                         <div
                             class="bg-black/75 text-white border-b-white p-2 text-start flex items-center px-4 rounded-t-xl">
-                            Логи qwees.log</div>
+                            Логи <?= htmlspecialchars(basename($_ENV['LOG_FILE_NAME'] ?? 'qwees.log')) ?></div>
                         <div
                             class="relative max-h-[42vw] overflow-scroll flex flex-col gap-0.5 bg-black rounded-b-xl py-2">
                             <?php
-                            $logfile = dirname(__DIR__, 3) . '/qwees.log';
+                            $logfile = dirname(__DIR__, 3) . '/' . ($_ENV['LOG_FILE_NAME'] ?? 'qwees.log');//тот же файл, куда пишут логгеры
                             if (file_exists($logfile)) {
                                 $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
                                 $last_date = null;
                                 foreach ($lines as $line) {
+                                    if (str_starts_with($line, '[WRK ')) continue;//рабочие смотрят в Ролях
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 
                                     $color = 'text-white';
@@ -777,6 +789,163 @@ $colors = [
             </section>
             <?php endif; ?>
 
+            <!-- Секция: Чат поддержки -->
+            <?php if ($groups->isPermission($adminUsername,'chat')): ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="chat">
+                <div class="py-6 flex md:flex-row justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                        Чат поддержки
+                    </h1>
+                </div>
+                <?php include_once __DIR__ . '/../../components/chat_admin.php'; ?>
+            </section>
+            <?php else: ?>
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="chat">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <!-- Секция: Пробная подписка -->
+            <section class="max-w-7xl mx-auto my-3 hidden" data-section="gifts">
+                <div class="py-6 flex md:flex-row justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                        Пробная подписка
+                    </h1>
+                    <?php if ($gifts->isEnabled()): ?>
+                        <span class="text-sm font-semibold text-green-700 bg-green-100 rounded-full px-3 py-1">Включена</span>
+                    <?php else: ?>
+                        <span class="text-sm font-semibold text-gray-500 bg-gray-100 rounded-full px-3 py-1">Выключена</span>
+                    <?php endif; ?>
+                </div>
+                <form action="/admin/gifts/save" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Настройки</h3>
+                        <label class="flex items-center justify-between gap-4 mb-4 cursor-pointer">
+                            <span>
+                                <span class="block font-medium text-gray-800">Показ кнопки «Пробная»</span>
+                                <span class="block text-sm text-gray-500">Сохраняется кнопкой внизу</span>
+                            </span>
+                            <span class="relative inline-flex cursor-pointer items-center shrink-0">
+                                <input type="checkbox" name="enabled" value="on" class="peer sr-only" <?= $gifts->isEnabled() ? 'checked' : '' ?>>
+                                <span class="h-6 w-11 rounded-full bg-gray-300 peer-checked:bg-green-500 transition-colors"></span>
+                                <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                            </span>
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-sm text-gray-500">Срок, дней</span>
+                            <input type="number" name="days" min="1" value="<?= (int) ($gifts->data['days'] ?? 3) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-sm text-gray-500">Кому показывать</span>
+                            <select id="gifts-mode" name="mode" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                                <option value="all" <?= ($gifts->data['mode'] ?? 'all') === 'all' ? 'selected' : '' ?>>Всем сразу</option>
+                                <option value="list" <?= ($gifts->data['mode'] ?? '') === 'list' ? 'selected' : '' ?>>Выборочным пользователям</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Кому показывать</h3>
+                        <style>
+                        #gifts-list-wrap { overflow:hidden; max-height:1200px; opacity:1; transition:max-height .35s ease, opacity .3s ease; }
+                        #gifts-list-wrap.gifts-closed { max-height:0; opacity:0; }
+                        </style>
+                        <div id="gifts-list-wrap" class="<?= ($gifts->data['mode'] ?? 'all') === 'list' ? '' : 'gifts-closed' ?>">
+                        <div class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-2">
+                                <span class="text-sm text-gray-500">Быстрое добавление (поиск по клиентам)</span>
+                                <div class="flex gap-2">
+                                <input type="text" id="gifts-quick" list="gifts_users_list" placeholder="uniID..." autocomplete="off"
+                                    class="flex-1 min-w-0 border border-gray-300 rounded-lg px-4 py-2 text-gray-800 font-mono text-sm focus:outline-none focus:border-green-500">
+                                    <datalist id="gifts_users_list">
+                                        <?php foreach ($allUsers as $user): ?>
+                                            <option value="<?= htmlspecialchars($user['uniID']) ?>"></option>
+                                        <?php endforeach; ?>
+                                    </datalist>
+                                    <button type="button" id="gifts-add-btn"
+                                        class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-colors cursor-pointer shrink-0">
+                                        Добавить
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="gifts-card" class="hidden md:flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-2 min-h-[58px]">
+                                <span class="text-sm text-gray-400">Введи uniID — увидишь клиента</span>
+                            </div>
+                        </div>
+                        <label class="flex flex-col gap-1 mt-3">
+                            <span class="text-sm text-gray-500">Список uniID (каждый с новой строки) — <span id="gifts-count" class="font-semibold text-gray-700"></span><span id="gifts-unknown" class="text-red-500"></span></span>
+                            <textarea id="gifts-users" name="users" rows="4" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 font-mono text-sm focus:outline-none focus:border-green-500"><?= htmlspecialchars(implode("\n", array_filter((array) ($gifts->data['users'] ?? [])))) ?></textarea>
+                        </label>
+                        </div>
+                    </div>
+                        <?php $giftMap = [];
+                        foreach ($allUsers as $u) { $giftMap[$u['uniID']] = ['name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')), 'email' => $u['email'] ?? '', 'sub' => $subMap[$u['uniID']] ?? 0]; } ?>
+                        <script>
+                        const GIFT_USERS = <?= json_encode($giftMap, JSON_UNESCAPED_UNICODE) ?>;
+                        $(function () {//виджет пробных: все локально, сервер не трогаем
+                            const $input = $('#gifts-quick');
+                            const $area = $('#gifts-users');
+                            if (!$input.length || !$area.length) return;
+                            function esc(s) {
+                                return $('<div>').text(s ?? '').html();
+                            }
+                            function lines() {
+                                return String($area.val()).split(/[\r\n,;]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+                            }
+                            function refresh() {//счетчик, проверка, карточка и режим разом
+                                const list = [...new Set(lines())];
+                                $('#gifts-count').text('Выбрано: ' + list.length);
+                                const bad = list.filter(function (u) { return !GIFT_USERS[u]; }).length;
+                                $('#gifts-unknown').text(bad > 0 ? ' · нет в базе: ' + bad : '');
+                                $('#gifts-list-wrap').toggleClass('gifts-closed', $('#gifts-mode').val() !== 'list');
+                                const $card = $('#gifts-card');
+                                const v = String($input.val()).trim();
+                                const hit = v ? (GIFT_USERS[v] || null) : null;
+                                if (!hit) {
+                                    $card.html('<span class="text-sm text-gray-400">' + (v ? 'Не найден в базе' : 'Введи uniID — увидишь клиента') + '</span>');
+                                    return;
+                                }
+                                const avCls = hit.sub ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500';
+                                const sub = hit.sub
+                                    ? '<span class="flex items-center gap-1 text-[11px] font-medium text-green-600"><span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>подписка есть</span>'
+                                    : '<span class="flex items-center gap-1 text-[11px] text-gray-400"><span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>без подписки</span>';
+                                $card.html('<span class="w-10 h-10 rounded-full font-bold flex items-center justify-center shrink-0 uppercase ' + avCls + '">'
+                                    + esc((hit.name || v).charAt(0)) + '</span>'
+                                    + '<span class="min-w-0"><span class="block font-semibold text-gray-800 truncate">' + esc(hit.name || v) + '</span>'
+                                    + '<span class="block text-xs text-gray-500 truncate">' + esc(hit.email) + ' · ' + esc(v) + '</span>' + sub + '</span>'
+                                    + (list.indexOf(v) !== -1 ? '<span class="ml-auto text-[11px] font-semibold text-green-700 bg-green-100 rounded-full px-2 py-0.5 shrink-0">в списке</span>' : ''));
+                            }
+                            function add() {
+                                const v = String($input.val()).trim();
+                                if (!v) return;
+                                const list = lines();
+                                if (list.indexOf(v) === -1) $area.val(list.concat([v]).join('\n'));
+                                $input.val('');
+                                refresh();
+                            }
+                            $('#gifts-add-btn').on('click', add);
+                            $input.on('keydown', function (e) {
+                                if (e.key === 'Enter') { e.preventDefault(); add(); }
+                            });
+                            $input.on('input', refresh);
+                            $area.on('input', refresh);
+                            $('#gifts-mode').on('change', refresh);
+                            refresh();
+                        });
+                        </script>
+                        <div class="md:col-span-2">
+                            <button type="submit" class="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition-colors cursor-pointer">
+                                Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
             <!-- Секция: Выдачи -->
             <?php if ($groups->isPermission($adminUsername,'give')): ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="give">
@@ -812,7 +981,7 @@ $colors = [
                                     class="w-full px-3 py-2 text-[15px] rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
                                     placeholder="uniID" required>
                                 <datalist id="list_uniID">
-                                    <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                    <?php foreach ($allUsers as $user): ?>
                                         <option value="<?= htmlspecialchars($user['uniID']) ?>">
                                             <?= htmlspecialchars($user['uniID']) ?>
                                         </option>
@@ -906,7 +1075,7 @@ $colors = [
                                     class="w-full px-3 py-2 text-[15px] rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
                                     placeholder="uniID" required>
                                 <datalist id="list_uniID">
-                                    <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                    <?php foreach ($allUsers as $user): ?>
                                         <option value="<?= htmlspecialchars($user['uniID']) ?>">
                                             <?= htmlspecialchars($user['uniID']) ?>
                                         </option>
@@ -999,7 +1168,7 @@ $colors = [
                                     class="w-full px-3 py-2 text-[15px] rounded-lg bg-muted border border-border text-black placeholder-gray-400 focus:ring-accent focus:outline-none mt-2"
                                     placeholder="uniID" required>
                                 <datalist id="list_uniID">
-                                    <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                    <?php foreach ($allUsers as $user): ?>
                                         <option value="<?= htmlspecialchars($user['uniID']) ?>">
                                             <?= htmlspecialchars($user['uniID']) ?>
                                         </option>
@@ -1114,7 +1283,7 @@ $colors = [
                                         class="px-3 py-2 rounded-lg border border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-accent focus:border-accent focus:outline-none"
                                         placeholder="uniID" required>
                                     <datalist id="list_uniID">
-                                        <?php foreach (AdminDatabase::getData('qwees_users') as $user): ?>
+                                        <?php foreach ($allUsers as $user): ?>
                                             <option value="<?= htmlspecialchars($user['uniID']) ?>">
                                                 <?= htmlspecialchars($user['uniID']) ?>
                                             </option>
@@ -1348,8 +1517,8 @@ $colors = [
 
                 
                 <div class="bg-white border border-border rounded-2xl">
-                    <div class="hidden md:block">
-                        <table class="w-full text-sm">
+                    <div class="overflow-x-auto rounded-2xl">
+                        <table class="w-full min-w-[1024px] text-sm">
                             <thead>
                                 <tr class="text-left text-gray-500 border-b">
                                     <th class="p-3">Логин</th>
@@ -1443,25 +1612,57 @@ $colors = [
                     <button class="px-4 py-2 rounded-xl bg-violet-600 text-white font-semibold">Добавить</button>
                 </form>
                 <h2 class="text-xl font-bold text-gray-800 py-6">Логи рабочих</h2>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-sm text-gray-500">Чьи логи:</span>
+                    <select id="wrk-filter" class="px-3 py-2 rounded-lg border text-sm text-gray-800 focus:outline-none focus:border-green-500">
+                        <option value="">Все работники</option>
+                        <?php foreach ($groups->data as $row): ?>
+                            <option value="<?= htmlspecialchars($row['username']) ?>"><?= htmlspecialchars($row['username']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
                 <div class="bg-black rounded-xl p-2 max-h-[40vw] overflow-scroll flex flex-col gap-0.5">
                     <?php
-                    $rolesLog = dirname(__DIR__, 3) . '/qwees.log';
+                    $rolesLog = dirname(__DIR__, 3) . '/' . ($_ENV['LOG_FILE_NAME'] ?? 'qwees.log');//тот же файл, куда пишет LoggerCRM
                     $wlines = [];
                     if (file_exists($rolesLog)) {
                         $raw = file($rolesLog, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                         if (is_array($raw)) {
-                            $wlines = array_filter($raw, fn($l) => str_contains((string) $l, '[WRK '));
-                        }
-                    }
-                    if (!empty($wlines)) {
-                        foreach (array_slice(array_reverse($wlines), 0, 30) as $line) {
-                            echo "<div class='text-[13px] font-mono text-green-300 px-2 py-0.5'>" . htmlspecialchars((string) $line, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</div>";
+                            foreach ($raw as $line) {//берем только строки с WKL
+                                if (preg_match('/^\[WRK [^\]]+\]\s+\[[^\]]+\]\s+([^:]+):/', (string) $line, $m)) {
+                                    $wlines[] = ['wkl' => trim($m[1]), 'line' => $line];
+                                }
+                            }
                         }
                     } else {
                         echo "<div class='text-[13px] italic text-white'>Лог-файл не найден.</div>";
                     }
+                    if (!empty($wlines)) {
+                        foreach (array_slice(array_reverse($wlines), 0, 100) as $w) {
+                            echo "<div data-wkl='" . htmlspecialchars($w['wkl'], ENT_QUOTES) . "' class='text-[13px] font-mono text-green-300 px-2 py-0.5'>" . htmlspecialchars((string) $w['line'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . "</div>";
+                        }
+                        echo "<div id='wrk-empty' class='hidden text-[13px] italic text-white px-2 py-0.5'>Нет записей для этого работника.</div>";
+                    } elseif (file_exists($rolesLog)) {
+                        echo "<div class='text-[13px] italic text-white'>Записей пока нет.</div>";
+                    }
                     ?>
                 </div>
+                <script>
+                $(function () {//фильтр логов по работнику (WKL), все локально
+                    const $sel = $('#wrk-filter');
+                    if (!$sel.length) return;
+                    $sel.on('change', function () {
+                        const v = $sel.val();
+                        let shown = 0;
+                        $('[data-wkl]').each(function () {
+                            const show = !v || $(this).attr('data-wkl') === v;
+                            $(this).toggle(show);
+                            if (show) shown++;
+                        });
+                        $('#wrk-empty').toggle(shown === 0);
+                    });
+                });
+                </script>
             </section>
             <?php else: ?>
             <section class="max-w-7xl mx-auto my-3 hidden" data-section="roles">
@@ -1482,13 +1683,18 @@ $colors = [
 
                 // Показать уведомление
                 function showNotification(msg, type = 'info') {
-                    let container = document.getElementById('notification-container') || ((newContainer = document.createElement('div')) => (newContainer.id = 'notification-container', newContainer.className = 'fixed right-2 top-2 z-[999] flex flex-col gap-2', document.body.appendChild(newContainer), newContainer))();
-                    const element = container.appendChild(document.createElement('div'));
-                    element.className = `px-6 py-3 rounded-lg text-white z-50 transform translate-x-full transition-transform duration-300 ${{ success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' }[type] || 'bg-blue-500'}`;
-                    element.innerHTML = '<i class="fa-solid fa-info-circle"></i> ' + msg;
-                    setTimeout(() => element.classList.remove('translate-x-full'), 100);
-                    setTimeout(() => element.classList.add('translate-x-full'), 4100);
-                    setTimeout(() => (element.remove(), container.children.length || container.remove()), 4400);
+                    let $container = $('#notification-container');
+                    if (!$container.length) {
+                        $container = $('<div>', { id: 'notification-container', 'class': 'fixed right-2 top-2 z-[999] flex flex-col gap-2' }).appendTo($(document.body));
+                    }
+                    const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+                    const $element = $('<div>', {
+                        'class': 'px-6 py-3 rounded-lg text-white z-50 transform translate-x-full transition-transform duration-300 ' + (colors[type] || colors.info),
+                        html: '<i class="fa-solid fa-info-circle"></i> ' + msg
+                    }).appendTo($container);
+                    setTimeout(() => $element.removeClass('translate-x-full'), 100);
+                    setTimeout(() => $element.addClass('translate-x-full'), 4100);
+                    setTimeout(() => { $element.remove(); if (!$container.children().length) $container.remove(); }, 4400);
                 }
 
                 function copyToClipboard(text, label = 'Текст') {
@@ -1629,9 +1835,8 @@ $colors = [
             <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/admin/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <script>
-                const ctx = document.querySelectorAll('[data-chart="chart_clients"]');
-                for (const chart of ctx) {
-                    new Chart(chart, {
+                $('[data-chart="chart_clients"]').each(function () {
+                    new Chart(this, {
                         type: 'polarArea',
                         data: {
                             labels: ['С подписками', 'Без подписок'],
@@ -1659,12 +1864,11 @@ $colors = [
                             }
                         }
                     });
-                }
+                });
 
                 // График прибыли по месяцам
-                const revenueMonthlyCtx = document.querySelectorAll('[data-chart="chart_revenue_monthly"]');
-                for (const chart of revenueMonthlyCtx) {
-                    new Chart(chart, {
+                $('[data-chart="chart_revenue_monthly"]').each(function () {
+                    new Chart(this, {
                         type: 'line',
                         data: {
                             labels: <?= json_encode(array_column($financialStats['monthlyRevenueChart'], 'month')) ?>,
@@ -1702,12 +1906,11 @@ $colors = [
                             }
                         }
                     });
-                }
+                });
 
                 // График статистика количество пользователей
-                const usersMonthlyCtx = document.querySelectorAll('[data-chart="chart_users_monthly"]');
-                for (const chart of usersMonthlyCtx) {
-                    new Chart(chart, {
+                $('[data-chart="chart_users_monthly"]').each(function () {
+                    new Chart(this, {
                         type: 'line',
                         data: {
                             labels: <?= json_encode(array_column($financialStats['monthlyUsersChart'], 'month')) ?>,
@@ -1749,7 +1952,7 @@ $colors = [
                             }
                         }
                     });
-                }
+                });
             </script>
         </main>
     </div>

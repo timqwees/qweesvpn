@@ -35,61 +35,45 @@
  * @author TimQwees
  * @link https://github.com/TimQwees/Qwees_CorePro
  *
- *
  */
+
 declare(strict_types=1);
 
-namespace Setting\Route\Function\Controllers\Admin;
+namespace Setting\Route\Function\Controllers\Gifts\Tools;
 
-use Setting\Route\Function\Controllers\Admin\Users\Users;
-use App\Models\Network\Network;
-use App\Config\Session;
+use Setting\Route\Function\Controllers\Gifts\GiftsInterface\InterfaceGiftsLoad;
+use Setting\Route\Function\Controllers\Gifts\Tools\Save;
 
-class AdminAuth
+class Load implements InterfaceGiftsLoad
 {
 
-	use Users;//испольузем трейд
+	private array $data = [];
+	private string $file;
 
-    public static function auth(): void
-    {
-        $adminSession = Session::init('admin');
-        if (!\is_array($adminSession) || !isset($adminSession['auth']) || !\is_array($adminSession['auth']) || $adminSession['auth'][0] !== true) {
-            Network::onRedirect('/admin/login');
-            exit();
-        }
-    }
+	public function __construct()
+	{
+		$this->file = \Setting\Route\Function\Controllers\Gifts\Gifts::$file ?? '';
+	}
 
-    public static function onLogin(): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $password = $_POST['password'] ?? '';
+	public function load(): void
+	{
+		if (!\is_file($this->file)) {
+			$this->setDefaultData();
+			(new Save())->save($this->data); // создаём файл
+			return;
+		}
 
-            foreach (self::$ADMIN_USERS as $admin) {
-                if ($admin['username'] === $username && $admin['password'] === $password) {
-                    $adminSession = Session::init('admin');
-                    if (!\is_array($adminSession)) {
-                        $adminSession = [];
-                    }
-                    $adminSession['auth'] = [true, $admin['id']];
-                    Session::init('admin', $adminSession);
-                    (new Admin())->LoggerCRM("вошёл в панель");
-                    Network::onRedirect('/admin');
-                    return;
-                }
-            }
+		$contents = file_get_contents($this->file);
+		if ($contents === false || trim((string)$contents) === '' || trim((string)$contents) === '[]'){//существует, но пустой
+			$this->setDefaultData();
+			(new Save())->save($this->data);
+			return;
+		}
 
-            Network::onRedirect('/admin/login?error=Неверные учетные данные');
-        } else {
-            Network::onRedirect('/admin/login');
-        }
-    }
+		$this->data = json_decode($contents, true) ?? [];
+	}
 
-    public static function onLogout(): void
-    {
-        (new Admin())->LoggerCRM("вышел из панели");
-        Session::init('admin', null);
-        Network::onRedirect('/admin/login');
-        exit();
-    }
+	private function setDefaultData(){
+		$this->data = ['enabled' => false, 'days' => 3, 'mode' => 'all', 'users' => []];//выкл, 3 дня, всем сразу
+	}
 }

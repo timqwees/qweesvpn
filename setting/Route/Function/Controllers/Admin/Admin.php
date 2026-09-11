@@ -46,6 +46,9 @@ use App\Config\Session;
 
 class Admin extends AdminAuth
 {
+	//==============ВЛАДЕЛЕЦ===================================
+    public const OWNER = 'timqwees';//его должность меняем только мы сами
+
 	//==============ПРАВА======================================
     public const FULL_PERMISSIONS = [
     'main' => 'Главное меню', 
@@ -56,7 +59,8 @@ class Admin extends AdminAuth
     'charts' => 'Статистики', 
     'logs' => 'Просмотр логов', 
     'add_user' => 'Создание пользователей', 
-    'roles' => 'Панель администратора по управлению ролями'
+    'roles' => 'Панель администратора по управлению ролями',
+    'chat' => 'Чат поддержки'
     ];
     public const DEFAULT_PERMISSIONS = ['main' => 'Главное меню'];
 
@@ -153,7 +157,7 @@ class Admin extends AdminAuth
         $id = (int) (Session::init('admin')['auth'][1] ?? 0);//кто сидит
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            sprintf("[WRK %s] [%s] %s: %s\n", date('Y-m-d H:i:s'), $this->getRole($id), $this->getUsername($id), $message),
+            \sprintf("[WRK %s] [%s] %s: %s\n", date('Y-m-d H:i:s'), $this->getRole($id), $this->getUsername($id), $message),
             FILE_APPEND
         );
     }

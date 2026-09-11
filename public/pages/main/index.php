@@ -2,6 +2,7 @@
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo};
 use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
+use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Functions;
 
 Auth::auth();//проверка авторизации
@@ -13,6 +14,8 @@ if ($user->onPaymantStatus())//если в сесии есть payment_id, то 
     Network::onRedirect('/pay/status');//перенаправляем на страницу проверки
 //===================================================================================
 $site = Functions::site();//после всех провроек получем уже данные сервиса
+$gifts = new Gifts();//пробные
+$trialShow = $gifts->isEnabled() && $gifts->canSee($user->getUniID()) && $user->getStatus() !== 'on';//вкл + положено + нет активной подписки
 
 // язык
 $currentLanguage = Language::getCurrent();
@@ -86,7 +89,7 @@ $formattedSystemInfo = [
 ];
 
 $activeSection = $_GET['section'] ?? 'main';
-if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) {
+if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support'], true)) {
     $activeSection = 'main';
 }
 ?>
@@ -214,6 +217,18 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/refer.svg"
                                         alt="home" decoding="async">
                                     <?= $t('additional') ?>
+                                </span>
+                            </li>
+                            <!-- support -->
+                            <li class="relative flex items-center py-3 ml-4 rounded-xl transition-all duration-500 cursor-pointer"
+                                data-toggle-section="support">
+                                <span></span>
+                                <span class="pl-10 text-xl text-white flex items-center gap-4">
+                                  <img class="max-h-6" decoding="async" loading="lazy" data-theme-invert
+                                      loading="lazy"
+                                      src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/menu/support.svg"
+                                      alt="home" decoding="async">
+                                      <?= $t('support') ?>
                                 </span>
                             </li>
                         </ul>
@@ -406,6 +421,12 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                         </a>
                                     <?php endif; ?>
                                 </ul>
+                                <?php if ($trialShow): ?><!-- TRIAL -->
+                                <button onclick="showNotification(<?= json_encode($t('trial_soon')) ?>, 'info')"
+                                    class="mt-3 w-full py-3 rounded-xl border border-green-400/40 text-green-300 text-sm font-medium hover:bg-green-400/10 transition-colors cursor-pointer">
+                                    <i class="fa-solid fa-gift mr-2"></i><?= $t('trial') ?>
+                                </button>
+                                <?php endif; ?>
                             </div>
 
                         </div>
@@ -586,7 +607,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                     </section>
                     </template>
 
-                    <!-- SECTION = SETTING -->
+<!-- SECTION = SETTING -->
                     <template data-section="setting">
                     <section
                         class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
@@ -651,17 +672,16 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                             <h3 class="text-lg font-semibold text-gray-300"><?= $t('Confidentiality'); ?></h3>
                             <div class="flex flex-col gap-2">
                                 <!-- <a href="/"
-                                                                            class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
-                                                                            <div class="flex items-center gap-4">
-                                                                                <div
-                                                                                    class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                                                                                    <i class="fa fa-credit-card text-purple-400 text-lg"></i>
+                                                                                class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
+                                                                                <div class="flex items-center gap-4">
+                                                                                    <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                                                                        <i class="fa fa-credit-card text-purple-400 text-lg"></i>
+                                                                                    </div>
+                                                                                    <span class="text-[white] font-medium"><?= $t('auto_payment') ?></span>
                                                                                 </div>
-                                                                                <span class="text-[white] font-medium"><?= $t('auto_payment') ?></span>
-                                                                            </div>
-                                                                            <i
-                                                                                class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
-                                                                        </a> -->
+                                                                                <i
+                                                                                    class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
+                                                                                </a> -->
 
                                 <button data-toggle-modal="politic"
                                     class="glow-card flex items-center justify-between p-4 rounded-xl hover:bg-white/[0.06] transition-colors group text-left">
@@ -853,6 +873,22 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
 
                     </section>
                     </template>
+
+                    <!-- SECTION = SUPPORT -->
+                    <template data-section="support">
+                    <section
+                        class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
+                        data-section="support">
+
+                        <!-- Header -->
+                        <h1 class="text-3xl font-bold mb-6">
+                            <?php foreach (mb_str_split($t('support')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
+
+                        <?php include 'public/components/chat_user.php'; ?>
+                    </section>
+                    </template>
                 </div>
             </div>
             </template>
@@ -996,6 +1032,14 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                     </a>
                                 <?php endif; ?>
                             </li>
+                            <?php if ($trialShow): ?><!-- TRIAL -->
+                            <li class="relative w-full">
+                                <button onclick="showNotification(<?= json_encode($t('trial_soon')) ?>, 'info')"
+                                    class="w-full py-3 rounded-xl border border-green-400/40 text-green-300 text-sm font-medium hover:bg-green-400/10 transition-colors cursor-pointer">
+                                    <i class="fa-solid fa-gift mr-2"></i><?= $t('trial') ?>
+                                </button>
+                            </li>
+                            <?php endif; ?>
                             <!-- block 3 -->
                             <li class="relative w-full flex justify-between gap-2 py-3 rounded-xl text-sm">
                                 <!-- 1 -->
@@ -1009,7 +1053,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 <!-- 2 -->
                                 <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
                                     <p class="text-white text-lg leading-tight"><?= $t('main') ?></p>
-                                    <p class="text-[#93A7C8] break-words whitespace-normal max-w-full text-center [overflow-wrap:anywhere]">
+                                    <p class="text-[#93A7C8] break-words whitespace-normal max-w-full text-center [overflow-wrap:unset]">
                                         <?= htmlspecialchars($formattedVpnStatus['ip_address'] ?: '—') ?>
                                     </p>
                                 </div>
@@ -1296,8 +1340,13 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal'], true)) 
                                 <i
                                     class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
                             </button>
+</div>
                         </div>
-                    </div>
+
+                        <div class="mt-4 pt-4 border-t border-white/[0.1]">
+                            <h2 class="text-lg font-semibold text-gray-300 mb-4"><?= $t('technical_support') ?></h2>
+                            <?php include 'public/components/chat_user.php'; ?>
+                        </div>
 
 
                 </section>

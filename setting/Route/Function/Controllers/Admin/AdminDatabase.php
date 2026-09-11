@@ -360,6 +360,7 @@ class AdminDatabase
 
         // Сохраняем и редиректим
         $success = self::update($table, $id, $updateData);
+        if ($success) (new Admin())->LoggerCRM("сохранил $table id $id");
         if (strpos($url, 'edit') !== false) {
             Network::onRedirect(
                 $success
@@ -458,6 +459,7 @@ class AdminDatabase
             FILE_APPEND
         );
 
+        (new Admin())->LoggerCRM("сохранил цены: " . implode('; ', $changed));
         $separator = strpos($url, '?') !== false ? '&' : '?';
         Network::onRedirect($url . $separator . 'message_status=success&message_msg=' . urlencode('Цены сохранены: ' . implode('; ', $changed)));
     }
@@ -559,35 +561,16 @@ class AdminDatabase
     {
         // Общая статистика
         $totalUsers = self::aggregate('qwees_users', 'COUNT');
-        $totalSubscriptions = self::aggregate('qwees_subscriptions', 'COUNT');
 
-        // Статистика по статусам подписок
-        $activeSubscriptions = self::aggregate('qwees_subscriptions', 'COUNT', '*', "status = 'on'");
-        $inactiveSubscriptions = self::aggregate('qwees_subscriptions', 'COUNT', '*', "status = 'off'");
-        $bannedSubscriptions = self::aggregate('qwees_subscriptions', 'COUNT', '*', "status = 'banned'");
-
-        // Получаем уникальных пользователей с подписками
-        $subscriptionData = self::getData('qwees_subscriptions');
-        $usersWithSubscriptions = 0;
-
-        if (!empty($subscriptionData)) {
-            // Определяем поле с ID пользователя
-            $userIdField = null;
-            if (isset($subscriptionData[0]['user_id'])) {
-                $userIdField = 'user_id';
-            } elseif (isset($subscriptionData[0]['uniID'])) {
-                $userIdField = 'uniID';
-            } elseif (isset($subscriptionData[0]['user'])) {
-                $userIdField = 'user';
-            }
-
-            if ($userIdField) {
-                $usersWithSubscriptions = count(array_unique(array_column($subscriptionData, $userIdField)));
-            } else {
-                // Если поле не найдено, считаем что все подписки принадлежат разным пользователям
-                $usersWithSubscriptions = count($subscriptionData);
-            }
-        }
+        // Вся статистика подписок одним запросом (было 5 COUNT + выгрузка таблицы)
+        // SUM(status = '...') работает и в MySQL, и в SQLite (true = 1)
+        $row = Database::send("SELECT COUNT(*) total, SUM(status = 'on') active, SUM(status = 'off') inactive, SUM(status = 'banned') banned, COUNT(DISTINCT uniID) users FROM qwees_subscriptions");
+        $row = (is_array($row) && !empty($row)) ? $row[0] : [];
+        $totalSubscriptions = (int) ($row['total'] ?? 0);
+        $activeSubscriptions = (int) ($row['active'] ?? 0);
+        $inactiveSubscriptions = (int) ($row['inactive'] ?? 0);
+        $bannedSubscriptions = (int) ($row['banned'] ?? 0);
+        $usersWithSubscriptions = (int) ($row['users'] ?? 0);
 
         $usersWithoutSubscriptions = max(0, $totalUsers - $usersWithSubscriptions);
 
@@ -624,13 +607,20 @@ class AdminDatabase
      */
     public static function getFinancialStats(): array
     {
-        // Прибыль за разные периоды
-        $monthlyRevenue = self::getRevenueByPeriod('month');
-        $weeklyRevenue = self::getRevenueByPeriod('week');
-        $dailyRevenue = self::getRevenueByPeriod('day');
+        // Прибыль за периоды + итого одним запросом (было 5 запросов)
+        if (Database::isMysql()) {
+            $rev = Database::send("SELECT SUM(CASE WHEN DATE(created_at) = CURDATE() THEN amount ELSE 0 END) day, SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN amount ELSE 0 END) week, SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN amount ELSE 0 END) month, SUM(amount) total, COUNT(*) cnt FROM qwees_subscriptions");
+        } else {
+            $rev = Database::send("SELECT SUM(CASE WHEN DATE(created_at) = DATE('now') THEN amount ELSE 0 END) day, SUM(CASE WHEN created_at >= DATE('now', '-7 days') THEN amount ELSE 0 END) week, SUM(CASE WHEN created_at >= DATE('now', '-30 days') THEN amount ELSE 0 END) month, SUM(amount) total, COUNT(*) cnt FROM qwees_subscriptions");
+        }
+        $rev = (is_array($rev) && !empty($rev)) ? $rev[0] : [];
+        $dailyRevenue = (float) ($rev['day'] ?? 0);
+        $weeklyRevenue = (float) ($rev['week'] ?? 0);
+        $monthlyRevenue = (float) ($rev['month'] ?? 0);
 
         // Общая прибыль
-        $totalRevenue = self::aggregate('qwees_subscriptions', 'SUM', 'amount');
+        $totalRevenue = (float) ($rev['total'] ?? 0);
+        $subsCount = (int) ($rev['cnt'] ?? 0);
 
         // Прибыль по месяцам для графика
         $monthlyRevenueChart = self::getMonthlyRevenueChart();
@@ -642,7 +632,7 @@ class AdminDatabase
         $revenueByPlan = self::getRevenueByPlan();
 
         // Средний чек
-        $avgCheck = $totalRevenue > 0 ? $totalRevenue / max(1, self::aggregate('qwees_subscriptions', 'COUNT')) : 0;
+        $avgCheck = $totalRevenue > 0 ? $totalRevenue / max(1, $subsCount) : 0;
 
         return [
             'monthlyRevenue' => $monthlyRevenue,
@@ -805,6 +795,7 @@ class AdminDatabase
             ),
             FILE_APPEND
         );
+        (new Admin())->LoggerCRM("добавил пользователя " . $userData['email']);
         Network::onRedirect('/admin?message_status=success&message_msg=Успешно создание пользователя: ' . $userData['first_name']);
         return;
     }

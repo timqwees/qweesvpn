@@ -117,6 +117,7 @@ class AdminXray
                 sprintf("[%s] [АДМИН-ВЫДАЧА] %s: %d дней, %d уст., до %s\n", date('Y-m-d H:i:s'), $uniID, $days, $devices, date('Y-m-d H:i:s', (int) ($expiryMs / 1000))),
                 FILE_APPEND
             );
+            (new Admin())->LoggerCRM("выдал подписку $uniID");
         }
 
         return $result !== false;
@@ -185,6 +186,7 @@ class AdminXray
                 }
             }
 
+            (new Admin())->LoggerCRM("создал пользователя $uniID");
             Network::onRedirect($url . '?message_status=success&message_msg=' . urlencode('Пользователь успешно создан!'));
             return;
         }
@@ -280,6 +282,7 @@ class AdminXray
                 }
             }
 
+            (new Admin())->LoggerCRM("создал пользователя $uniID");
             Network::onRedirect($url . '?message_status=success&message_msg=' . urlencode('Пользователь успешно создан!'));
             return;
         }
@@ -375,6 +378,7 @@ class AdminXray
                 }
             }
 
+            (new Admin())->LoggerCRM("создал пользователя $uniID");
             Network::onRedirect($url . '?message_status=success&message_msg=' . urlencode('Пользователь успешно создан!'));
             return;
         }
@@ -438,6 +442,7 @@ class AdminXray
         } elseif ($deleteStatus === 'partial') {
             $notifyStatus = 'info';
         }
+        if ($deleteStatus === 'ok' || $deleteStatus === 'partial') (new Admin())->LoggerCRM("изъял подписку " . (string) $_POST['uniID']);
 
         Network::onRedirect($url . '?message_status=' . $notifyStatus . '&message_msg=' . urlencode((string) ($result['message'] ?? 'Результат изьятия подписки неизвестен')));
     }
@@ -467,6 +472,7 @@ class AdminXray
         $logFile = $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
         if (file_exists($logFile))
             file_put_contents($logFile, '');
+        (new Admin())->LoggerCRM("очистил логи");
         Network::onRedirect($_POST['url'] ?? '/admin?message_status=success&message_msg=Логи успешно очищены!');
     }
 }

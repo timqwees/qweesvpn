@@ -279,6 +279,9 @@ class Database extends Network
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
               // Отключаем эмуляцию подготовленных выражений для повышения безопасности и производительности
             PDO::ATTR_EMULATE_PREPARES => false,
+              // Постоянное соединение: не платим за handshake + INIT_COMMAND на каждый запрос
+              // Безопасно: транзакции в проекте всегда закрываются (commit/rollBack), сессии однотипные
+            PDO::ATTR_PERSISTENT => true,
               // Таймаут соединения (в секундах), чтобы избежать зависаний при проблемах сети
             PDO::ATTR_TIMEOUT => 10,
               // Использовать буферизированные результаты — удобно для работы с большими наборами данных
@@ -409,7 +412,8 @@ class Database extends Network
       }
 
       // Проверяем тип запроса (SELECT/SHOW/EXPLAIN)
-      $queryType = strtoupper(strtok(ltrim($sql), " \t\n\r"));
+      $firstWord = strtok(ltrim($sql), " \t\n\r");
+      $queryType = $firstWord !== false ? strtoupper($firstWord) : '';
       if (in_array($queryType, ['SELECT', 'SHOW', 'EXPLAIN', 'DESCRIBE'])) {
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return $data !== false ? $data : [];

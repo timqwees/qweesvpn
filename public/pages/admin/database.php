@@ -369,7 +369,7 @@ $sortIcon = function ($col) {
             <section class="container mx-auto">
                 <div class="bg-white rounded-xl shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
+                        <table class="w-full min-w-max text-sm">
                             <thead class="bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <?php foreach ($columns as $col): ?>

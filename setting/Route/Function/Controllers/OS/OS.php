@@ -27,7 +27,7 @@ class OS
           // ];
           return [
               'os' => 'iOS',
-              'url' => 'https://apps.apple.com/am/app/incy/id6756943388',
+              'url' => 'https://apps.apple.com/us/app/incy/id6756943388',
               'api' => 'incy://add/',
               'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
           ];
@@ -87,7 +87,7 @@ class OS
         ) {
             return [
                 'os' => 'Android',
-                'url' => 'https://play.google.com/store/apps/details?id=llc.itdev.incy&pli=1',
+                'url' => 'https://play.google.com/store/apps/details?id=llc.itdev.incy&pcampaignid=web_share',
                 'api' => 'incy://add/',
                 'data' => ['logo' => 'public/assets/images/icons/services/install/INCY.svg', 'name' => 'INCY']
             ];

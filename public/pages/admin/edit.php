@@ -133,7 +133,8 @@ if ($table === 'qwees_users') {
                     <input type="hidden" name="table" value="<?= htmlspecialchars($table) ?>">
                     <input type="hidden" name="id" value="<?= htmlspecialchars($id) ?>">
 
-                    <table class="w-full text-sm mb-6">
+                    <div class="overflow-x-auto -mx-1 px-1">
+                    <table class="w-full min-w-[480px] text-sm mb-6">
                         <?php foreach ($columns as $col):
                             $isReadonly = isset($readonly[$col]);
                             $value = $row[$col] ?? '';
@@ -167,6 +168,7 @@ if ($table === 'qwees_users') {
                             </tr>
                         <?php endforeach; ?>
                     </table>
+                    </div>
 
                     <div class="flex gap-3">
                         <button type="submit"

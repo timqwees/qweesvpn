@@ -35,61 +35,23 @@
  * @author TimQwees
  * @link https://github.com/TimQwees/Qwees_CorePro
  *
- *
  */
+
 declare(strict_types=1);
 
-namespace Setting\Route\Function\Controllers\Admin;
+namespace Setting\Route\Function\Controllers\Gifts\Tools;
 
-use Setting\Route\Function\Controllers\Admin\Users\Users;
-use App\Models\Network\Network;
-use App\Config\Session;
+use Setting\Route\Function\Controllers\Gifts\GiftsInterface\InterfaceGiftsSave;
 
-class AdminAuth
+//PSR-4, PSR-1, SOLID
+
+class Save implements InterfaceGiftsSave
 {
-
-	use Users;//испольузем трейд
-
-    public static function auth(): void
-    {
-        $adminSession = Session::init('admin');
-        if (!\is_array($adminSession) || !isset($adminSession['auth']) || !\is_array($adminSession['auth']) || $adminSession['auth'][0] !== true) {
-            Network::onRedirect('/admin/login');
-            exit();
-        }
-    }
-
-    public static function onLogin(): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $password = $_POST['password'] ?? '';
-
-            foreach (self::$ADMIN_USERS as $admin) {
-                if ($admin['username'] === $username && $admin['password'] === $password) {
-                    $adminSession = Session::init('admin');
-                    if (!\is_array($adminSession)) {
-                        $adminSession = [];
-                    }
-                    $adminSession['auth'] = [true, $admin['id']];
-                    Session::init('admin', $adminSession);
-                    (new Admin())->LoggerCRM("вошёл в панель");
-                    Network::onRedirect('/admin');
-                    return;
-                }
-            }
-
-            Network::onRedirect('/admin/login?error=Неверные учетные данные');
-        } else {
-            Network::onRedirect('/admin/login');
-        }
-    }
-
-    public static function onLogout(): void
-    {
-        (new Admin())->LoggerCRM("вышел из панели");
-        Session::init('admin', null);
-        Network::onRedirect('/admin/login');
-        exit();
-    }
+	public function save(array $data) : void {
+		if (!\is_array($data)) return;
+		$file = \Setting\Route\Function\Controllers\Gifts\Gifts::$file;
+		$dir = dirname($file);
+		if ($dir !== '' && !is_dir($dir)) mkdir($dir, 0755, true);//создаем цепочку директорий
+		file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));//создаем файл
+	}
 }

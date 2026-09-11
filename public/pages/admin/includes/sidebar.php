@@ -107,6 +107,22 @@ $adminRole = $adminMenu->getRole($menuId);
                 <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
             </li>
             <?php endif; ?>
+            <!-- Чат поддержки -->
+            <li class="list-none relative" data-toggle-section="chat">
+                <a
+                    class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                    <i class="fa-regular fa-comments text-gray-500"></i>
+                    <span>Чат</span>
+                </a>
+            </li>
+            <!-- Пробная подписка -->
+            <li class="list-none relative" data-toggle-section="gifts">
+                <a
+                    class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                    <i class="fa-solid fa-gift text-gray-500"></i>
+                    <span>Пробные подписки</span>
+                </a>
+            </li>
             <!-- element 2 -->
             <li class="list-none relative">
                 <details>
