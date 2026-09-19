@@ -108,11 +108,14 @@ $adminRole = $adminMenu->getRole($menuId);
             </li>
             <?php endif; ?>
             <!-- Чат поддержки -->
+            <?php $chatUnread = (new \Setting\Route\Function\Controllers\Chat\Chat())->getTotalUnread(); ?>
             <li class="list-none relative" data-toggle-section="chat">
                 <a
                     class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                     <i class="fa-regular fa-comments text-gray-500"></i>
                     <span>Чат</span>
+                    <span data-chat-menu-badge
+                        class="ml-auto text-[11px] font-bold text-white bg-red-500 rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center <?= $chatUnread > 0 ? 'inline-flex' : 'hidden' ?>"><?= (int) $chatUnread ?></span>
                 </a>
             </li>
             <!-- Пробная подписка -->
@@ -121,6 +124,14 @@ $adminRole = $adminMenu->getRole($menuId);
                     class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                     <i class="fa-solid fa-gift text-gray-500"></i>
                     <span>Пробные подписки</span>
+                </a>
+            </li>
+            <!-- Реферальная система -->
+            <li class="list-none relative" data-toggle-section="refer">
+                <a
+                    class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                    <i class="fa-solid fa-users text-gray-500"></i>
+                    <span>Рефералка</span>
                 </a>
             </li>
             <!-- element 2 -->
@@ -249,6 +260,26 @@ $adminRole = $adminMenu->getRole($menuId);
                                 class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
                                 <i class="fa-solid fa-chart-line text-gray-500"></i>
                                 <span>Графики</span>
+                            </a>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                        </li>
+                        <?php endif; ?>
+
+                        <!-- roi -->
+                        <?php if ($groups->isPermission($adminUsername,'roi')): ?>
+                            <li class="list-none relative" data-toggle-section="roi">
+                                <a
+                                    class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                    <i class="fa-solid fa-calculator text-gray-500"></i>
+                                    <span>ROI</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                        <li class="list-none relative" data-toggle-section="roi">
+                            <a
+                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-700 hover:bg-gray-100 transition-colors duration-150">
+                                <i class="fa-solid fa-calculator text-gray-500"></i>
+                                <span>ROI</span>
                             </a>
                             <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
                         </li>

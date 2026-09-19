@@ -312,6 +312,8 @@ class Database extends Network
           throw new RuntimeException('Неизвестный тип базы данных. Укажите DATABASE=sqlite или DATABASE=mysql в .env');
         }
 
+        self::tuneSqlite();//WAL и таймауты для конкурентной записи (сразу после коннекта)
+        self::guardStaleTransaction();//страховка для persistent-соединений MySQL
         return self::$instance;
       } catch (\PDOException $e) {
         error_log("Ошибка подключения к базе данных: " . $e->getMessage());
@@ -321,6 +323,193 @@ class Database extends Network
     }
 
     return self::$instance;//PDO
+  }
+
+  private static bool $shutdownGuardArmed = false;
+
+  /**
+   * Если процесс умрёт посреди транзакции, persistent-соединение MySQL
+   * вернётся в пул с открытым tx — следующий запрос получит чужую транзакцию.
+   * Откатываем такое в конце запроса. Коммитить чужое — запрещено.
+   */
+  private static function guardStaleTransaction(): void
+  {
+    if (self::$shutdownGuardArmed) {
+      return;
+    }
+    self::$shutdownGuardArmed = true;
+    register_shutdown_function(function () {
+      try {
+        if (self::$instance instanceof \PDO && self::$instance->inTransaction()) {
+          self::$instance->rollBack();
+          error_log('Rolled back stale transaction at shutdown');
+        }
+      } catch (\Throwable $e) {
+        error_log('Stale transaction rollback failed: ' . $e->getMessage());
+      }
+    });
+  }
+
+  private static bool $sqliteTuned = false;
+
+  /**
+   * Настройка SQLite под нагрузку (идемпотентно, раз за процесс):
+   * - journal_mode=WAL: читатели не блокируют писателя и наоборот;
+   * - synchronous=NORMAL: durability хватает с WAL, fsync на каждый коммит не тормозит;
+   * - busy_timeout=5000: вместо мгновенного "database is locked" ждём до 5 сек;
+   * - foreign_keys=ON: проверка ссылочной целостности (в схеме пока нет FK — no-op).
+   */
+  private static function tuneSqlite(): void
+  {
+    if (self::$sqliteTuned || self::$instance === null) {
+      return;
+    }
+    try {
+      if (self::$instance->getAttribute(PDO::ATTR_DRIVER_NAME) !== 'sqlite') {
+        return;
+      }
+      self::$instance->exec('PRAGMA journal_mode=WAL');
+      self::$instance->exec('PRAGMA synchronous=NORMAL');
+      self::$instance->exec('PRAGMA busy_timeout=5000');
+      self::$instance->exec('PRAGMA foreign_keys=ON');
+      self::$sqliteTuned = true;
+    } catch (\Throwable $e) {
+      error_log('SQLite tune failed: ' . $e->getMessage());
+    }
+  }
+
+  /**
+   * Выполнить callable в транзакции (ACID-атомарность для пачки записей).
+   *
+   * Правила:
+   * - closure возвращает false — ROLLBACK без ретрая (бизнес-ошибка, не гонка);
+   * - исключение — ROLLBACK + ретрай при признаках гонки (SQLite busy / MySQL deadlock 1213/1205);
+   * - вложенный вызов присоединяется к внешней транзакции (PDO вложенность не умеет);
+   * - внутри — только быстрые DB-операции, без sleep() и долгих HTTP (панель X-UI
+   *   в реферальных/платёжных флоу — осознанное исключение: вызовы короткие ~1с,
+   *   WAL держит читателей незаблокированными).
+   *
+   * @param callable $fn тело транзакции
+   * @param int $retries попыток при гонке (помимо первой)
+   * @return mixed результат $fn либо false при бизнес-ошибке
+   * @throws \Throwable негончая ошибка либо кончились ретраи
+   */
+  public static function transaction(callable $fn, int $retries = 3)
+  {
+    $pdo = self::getConnection();
+    if ($pdo->inTransaction()) {
+      return $fn();//уже внутри — присоединяемся
+    }
+    $attempt = 0;
+    while (true) {
+      try {
+        $pdo->beginTransaction();
+        $result = $fn();
+        if ($result === false) {
+          $pdo->rollBack();
+          return false;
+        }
+        $pdo->commit();
+        return $result;
+      } catch (\Throwable $e) {
+        if ($pdo->inTransaction()) {
+          $pdo->rollBack();
+        }
+        if (!self::isRetryable($e) || ++$attempt > $retries) {
+          throw $e;
+        }
+        usleep(100000 * $attempt);//100/200/300мс перед повтором
+      }
+    }
+  }
+
+  /**
+   * Удалить ненужную колонку, если есть. Безопасно:
+   * - нет колонки — уже ок (true);
+   * - PK и UNIQUE-колонки не трогаем (false);
+   * - SQLite умеет DROP COLUMN с 3.35, иначе false.
+   * Идемпотентно — можно звать при каждой миграции.
+   */
+  public static function dropColumnIfExists(string $table, string $column): bool
+  {
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table) || !preg_match('/^[A-Za-z0-9_]+$/', $column)) {
+      return false;
+    }
+    try {
+      if (self::isMysql()) {
+        $cols = self::send('SHOW COLUMNS FROM ' . $table);
+        if (!\is_array($cols)) {
+          return false;
+        }
+        $found = false;
+        foreach ($cols as $c) {
+          if (($c['Field'] ?? '') !== $column) {
+            continue;
+          }
+          $found = true;
+          if (($c['Key'] ?? '') === 'PRI' || ($c['Key'] ?? '') === 'UNI') {
+            return false;//ключевые не дропаем
+          }
+        }
+        if (!$found) {
+          return true;
+        }
+        return self::send("ALTER TABLE {$table} DROP COLUMN {$column}") !== false;
+      }
+      // SQLite
+      $pdo = self::getConnection();
+      $ver = $pdo->query('SELECT sqlite_version()')->fetchColumn();
+      if (version_compare((string) $ver, '3.35.0', '<')) {
+        return false;//старый SQLite не умеет DROP COLUMN
+      }
+      $info = $pdo->query("PRAGMA table_info({$table})")->fetchAll(PDO::FETCH_ASSOC);
+      $found = false;
+      foreach ($info as $c) {
+        if (($c['name'] ?? '') !== $column) {
+          continue;
+        }
+        $found = true;
+        if ((int) ($c['pk'] ?? 0) > 0) {
+          return false;//ключевые не дропаем
+        }
+      }
+      if (!$found) {
+        return true;
+      }
+      $pdo->exec("ALTER TABLE {$table} DROP COLUMN {$column}");
+      return true;
+    } catch (\Throwable $e) {
+      error_log('dropColumnIfExists failed: ' . $e->getMessage());
+      return false;
+    }
+  }
+
+  /**
+   * Гонка блокировок (можно повторить) или настоящая ошибка.
+   */
+  private static function isRetryable(\Throwable $e): bool
+  {
+    $msg = (string) $e->getMessage();
+    if ($e instanceof \PDOException) {
+      // SQLite: getCode 5/6. MySQL: SQLSTATE в getCode (40001 = deadlock),
+      // драйверный код — в errorInfo[1] (1213 deadlock, 1205 lock timeout).
+      $codes = [(string) ($e->getCode() ?? '')];
+      $info = $e->errorInfo ?? null;
+      if (\is_array($info)) {
+        foreach ($info as $part) {
+          $codes[] = (string) $part;
+        }
+      }
+      foreach ($codes as $code) {
+        if ($code === '5' || $code === '6' || $code === '40001'
+          || $code === '1213' || $code === '1205') {
+          return true;
+        }
+      }
+    }
+    return stripos($msg, 'database is locked') !== false
+      || stripos($msg, 'deadlock') !== false
+      || stripos($msg, 'lock wait timeout') !== false;
   }
 
   /**

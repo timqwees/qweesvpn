@@ -115,7 +115,7 @@ class Network extends Session
                                 );
                             }
 
-                            Database::send($createSql);
+                            Database::send((string) $createSql);
                             Message::set('info', "Создана таблица '$table' по схеме.");
                         } else {
                             Message::set('error', "Не удалось найти SQL для создания таблицы '$table' в " . Database::$schema_name);
@@ -264,16 +264,16 @@ class Network extends Session
 
             // Убираем дублирование search в пути
             $path = preg_replace('#^/search/search/#', '/search/', $path);
-            $path = preg_replace('#^search/search/#', 'search/', $path);
+            $path = preg_replace('#^search/search/#', 'search/', (string) $path);
 
             // Проверяем на бесконечные редиректы (только для GET запросов)
             // После POST запроса редирект на ту же страницу допустим
             $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
-            $normalizedPath = parse_url($path, PHP_URL_PATH) ?? $path;
+            $normalizedPath = parse_url((string) $path, PHP_URL_PATH) ?? $path;
 
             // Нормализуем пути (убираем лишние слэши)
-            $currentUri = preg_replace('#/+#', '/', rtrim($currentUri, '/')) ?: '/';
-            $normalizedPath = preg_replace('#/+#', '/', rtrim($normalizedPath, '/')) ?: '/';
+            $currentUri = preg_replace('#/+#', '/', rtrim((string) $currentUri, '/')) ?: '/';
+            $normalizedPath = preg_replace('#/+#', '/', rtrim((string) $normalizedPath, '/')) ?: '/';
 
             // Проверяем только для GET запросов, чтобы разрешить POST -> GET редиректы
             if ($_SERVER['REQUEST_METHOD'] === 'GET' && $currentUri === $normalizedPath) {
@@ -281,7 +281,7 @@ class Network extends Session
             }
 
             // Добавляем слеш в начало, если его нет
-            if (strpos($path, '/') !== 0) {
+            if (strpos((string) $path, '/') !== 0) {
                 $path = '/' . $path;
             }
 
@@ -356,14 +356,14 @@ class Network extends Session
         } else {
             $route = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
             // Убираем дублирующиеся слэши (например, // -> /)
-            $route = preg_replace('#/+#', '/', $route);
+            $route = preg_replace('#/+#', '/', (string) $route);
             if ($route === '') {
                 $route = '/';
             }
         }
 
         // Убираем дублирующиеся слэши в любом случае (например, // -> /)
-        $route = preg_replace('#/+#', '/', $route);
+        $route = preg_replace('#/+#', '/', (string) $route);
 
         $findRoute = false;
 
@@ -378,7 +378,7 @@ class Network extends Session
         foreach ($candidateMethods as $candidateMethod) {
             $routes = self::$patterns[$candidateMethod] ?? [];
             foreach ($routes as $pattern => $callback) {
-                if (preg_match($pattern, $route, $matches)) {
+                if (preg_match($pattern, (string) $route, $matches)) {
                     $findRoute = true;
                     array_shift($matches); // убираем полный путь
 
@@ -392,7 +392,7 @@ class Network extends Session
                             }
                             $controller->$action(...array_values($matches));
                         } else {
-                            self::handleInvalidCallback($route, $callback);
+                            self::handleInvalidCallback((string) $route, $callback);
                         }
                     } elseif (is_callable($callback)) {
                         // Извлекаем именованные параметры для callables (совместимо с {param} в пути)
@@ -404,7 +404,7 @@ class Network extends Session
                         }
                         call_user_func_array($callback, array_values($named_params));
                     } else {
-                        self::handleInvalidCallback($route, $callback);
+                        self::handleInvalidCallback((string) $route, $callback);
                     }
 
                     break 2; // найден маршрут, выходим из обоих циклов
@@ -414,7 +414,7 @@ class Network extends Session
 
         if (!$findRoute) {
             header("HTTP/1.1 404 Страница не найдена");
-            (new Routes())->error_404($route);
+            (new Routes())->error_404((string) $route);
             exit();
         }
     }

@@ -19,7 +19,7 @@ class Xray
         $data = random_bytes(16);
         $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
         $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-        return sprintf(
+        return \sprintf(
             '%08s-%04s-%04s-%04s-%12s',
             bin2hex(substr($data, 0, 4)),
             bin2hex(substr($data, 4, 2)),
@@ -166,8 +166,8 @@ class Xray
                     if (is_array($loginJson) && array_key_exists('success', $loginJson) && $loginJson['success'] !== true) {
                         file_put_contents(
                             self::logFile(),
-                            sprintf(
-                                "[%s] [3X-UI] Login отклонён панелью: %s\n",
+                            \sprintf(
+                                "[%s] [ПОДПИСКА -> СЕРВЕР] Login отклонён панелью: %s\n",
                                 date('Y-m-d H:i:s'),
                                 json_encode($loginJson, JSON_UNESCAPED_UNICODE)
                             ),
@@ -185,8 +185,8 @@ class Xray
 
             file_put_contents(
                 self::logFile(),
-                sprintf(
-                    "[%s] [3X-UI] Login attempt %d/%d failed: HTTP %d, cURL: %s\n",
+                \sprintf(
+                    "[%s] [ПОДПИСКА -> СЕРВЕР] Login attempt %d/%d failed: HTTP %d, cURL: %s\n",
                     date('Y-m-d H:i:s'),
                     $attempt,
                     $maxRetries,
@@ -249,7 +249,7 @@ class Xray
         if (self::$threeXuiCsrfCache === null) {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [3X-UI] CSRF токен не получен; POST может быть отклонён панелью\n", date('Y-m-d H:i:s')),
+                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] CSRF токен не получен; POST может быть отклонён панелью\n", date('Y-m-d H:i:s')),
                 FILE_APPEND
             );
         }
@@ -314,7 +314,7 @@ class Xray
         if ($response === false || $curlErr !== '') {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [3X-UI] HTTP %s %s failed: %s\n", date('Y-m-d H:i:s'), $method, $path, $curlErr),
+                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] HTTP %s %s failed: %s\n", date('Y-m-d H:i:s'), $method, $path, $curlErr),
                 FILE_APPEND
             );
             return false;
@@ -323,7 +323,7 @@ class Xray
         if (!\is_array($decoded)) {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [3X-UI] Invalid JSON from %s HTTP %d\n", date('Y-m-d H:i:s'), $path, $httpCode),
+                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Invalid JSON from %s HTTP %d\n", date('Y-m-d H:i:s'), $path, $httpCode),
                 FILE_APPEND
             );
             return false;
@@ -332,8 +332,8 @@ class Xray
         if ($httpCode >= 400) {
             file_put_contents(
                 self::logFile(),
-                sprintf(
-                    "[%s] [3X-UI] %s %s HTTP %d body: %s\n",
+                \sprintf(
+                    "[%s] [ПОДПИСКА -> СЕРВЕР] %s %s HTTP %d body: %s\n",
                     date('Y-m-d H:i:s'),
                     $method,
                     $path,
@@ -393,7 +393,7 @@ class Xray
         if ($data === false || empty($data['success']) || empty($data['obj']) || !\is_array($data['obj'])) {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [3X-UI addClient] Список inbounds недоступен\n", date('Y-m-d H:i:s')),
+                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Список inbounds недоступен\n", date('Y-m-d H:i:s')),
                 FILE_APPEND
             );
             return false;
@@ -403,7 +403,7 @@ class Xray
         if (empty($data['obj'][$inboundIdx])) {
             file_put_contents(
                 self::logFile(),
-                sprintf("[%s] [3X-UI addClient] Нет inbound с индексом %d\n", date('Y-m-d H:i:s'), $inboundIdx),
+                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет inbound с индексом %d\n", date('Y-m-d H:i:s'), $inboundIdx),
                 FILE_APPEND
             );
             return false;
@@ -502,8 +502,8 @@ class Xray
         if ($updateUser === false || ($updateUser['success'] ?? false) !== true) {
             file_put_contents(
                 self::logFile(),
-                sprintf(
-                    "[%s] [3X-UI addClient] Ошибка API (%s): %s\n",
+                \sprintf(
+                    "[%s] [ПОДПИСКА -> СЕРВЕР] Ошибка API (%s): %s\n",
                     date('Y-m-d H:i:s'),
                     $path,
                     json_encode($updateUser, JSON_UNESCAPED_UNICODE)
@@ -649,8 +649,8 @@ class Xray
         }
         file_put_contents(
             self::logFile(),
-            sprintf(
-                "[%s] [3X-UI xui_update] Update failed (%s): %s\n",
+            \sprintf(
+                "[%s] [ПОДПИСКА -> СЕРВЕР] Update failed (%s): %s\n",
                 date('Y-m-d H:i:s'),
                 $path,
                 json_encode($updateUser, JSON_UNESCAPED_UNICODE)
@@ -788,8 +788,8 @@ class Xray
 
         file_put_contents(
             self::logFile(),
-            sprintf(
-                "[%s] [DELETE KEY] Начало удаления ключа для пользователя uniID: %s\n",
+            \sprintf(
+                "[%s] [ПОДПИСКА -> УДАЛЕНИЕ] Начало удаления ключа для пользователя uniID: %s\n",
                 date('Y-m-d H:i:s'),
                 $uniID
             ),

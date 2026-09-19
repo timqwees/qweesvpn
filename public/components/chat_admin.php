@@ -3,6 +3,7 @@
 // Подключение из admin/index.php. Светлая тема, только русский.
 $base = $site['baseUrl'] ?? '';
 ?>
+<script src="<?= htmlspecialchars($base) ?>/public/assets/scripts/chat/photo.js<?= '?v=' . ($site['versionApp'] ?? '1') ?>"></script>
 <div data-admin-chat class="bg-white rounded-xl shadow-sm overflow-hidden"
     data-avatar-user="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/1.png') ?>"
     data-avatar-admin="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/2.png') ?>">
@@ -65,7 +66,7 @@ $base = $site['baseUrl'] ?? '';
                         class="w-10 h-10 shrink-0 rounded-full text-gray-400 hover:text-green-700 hover:bg-green-50 transition-colors flex items-center justify-center cursor-pointer">
                         <i class="fa-regular fa-image"></i>
                     </button>
-                    <input type="file" data-admin-file accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+                    <input type="file" data-admin-file accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" class="hidden">
                     <input type="text" data-admin-input disabled
                         class="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
                         placeholder="Сначала выберите диалог..." maxlength="2000" autocomplete="off">
@@ -181,6 +182,11 @@ $(function () {
                     return [d.uniID, d.count, d.unread, d.last_at, d.closed ? 1 : 0, d.online ? 1 : 0];
                 }));
                 setStats(root, dialogs);
+                var totalUnread = dialogs.reduce(function (s, d) { return s + (d.closed ? 0 : (d.unread | 0)); }, 0);
+                $('[data-chat-menu-badge]').each(function () {//красный счётчик в меню
+                    $(this).text(totalUnread);
+                    $(this).toggleClass('hidden', !totalUnread).toggleClass('inline-flex', !!totalUnread);
+                });
                 if (!dialogs.length) {
                     root.dataset.selected = '';
                     $list.html('<div class="flex flex-col items-center justify-center gap-2 py-10 text-center">'
@@ -361,10 +367,15 @@ $(function () {
         });
     }
 
+    // Общее сжатие/ошибки — в photo.js; нет файла — шлём как есть
+    const CP = window.ChatPhoto || {
+        normalize: function (f) { return Promise.resolve(f); },
+        showError: function () {}
+    };
+
     function uploadPhoto(root, file) {//фото: превью сразу, сервер догонит
         const uniID = root.dataset.selected || '';
         if (!uniID || !file || String(file.type || '').indexOf('image/') !== 0) return;
-        if (file.size > 5 * 1024 * 1024) return;//лимит дублирует серверный
         const $box = $(root).find('[data-admin-thread]');
         const url = URL.createObjectURL(file);
         if (root._threadXHR) root._threadXHR.abort();
@@ -376,22 +387,30 @@ $(function () {
                 + '</div></div>');
             $box.scrollTop($box.prop('scrollHeight'));
         }
-        const fd = new FormData();
-        fd.append('photo', file);
-        fd.append('uniID', uniID);
-        $.ajax({ url: '/api/chat/upload', method: 'POST', data: fd, processData: false, contentType: false, dataType: 'json' })
-            .done(function (data) {
-                URL.revokeObjectURL(url);
-                if (data.status === 'ok' && $box.length && Array.isArray(data.messages)) {
-                    root.dataset.threadKey = threadKey(data.messages);
-                    paintHead(root, false);
-                    paintThread($box, data.messages, avatars(root));
-                    loadDialogs(root);
-                    return;
-                }
-                $box.find('[data-chat-pending]').remove();
-            })
-            .fail(function () { URL.revokeObjectURL(url); });
+        CP.normalize(file).then(function (blob) {
+            if (!blob) { URL.revokeObjectURL(url); return; }
+            const fd = new FormData();
+            fd.append('photo', blob, 'photo.jpg');
+            fd.append('uniID', uniID);
+            $.ajax({ url: '/api/chat/upload', method: 'POST', data: fd, processData: false, contentType: false, dataType: 'json' })
+                .done(function (data) {
+                    URL.revokeObjectURL(url);
+                    if (data.status === 'ok' && $box.length && Array.isArray(data.messages)) {
+                        root.dataset.threadKey = threadKey(data.messages);
+                        paintHead(root, false);
+                        paintThread($box, data.messages, avatars(root));
+                        loadDialogs(root);
+                        return;
+                    }
+                    $box.find('[data-chat-pending]').remove();
+                    CP.showError($box[0], data.message, 'text-center text-xs text-red-500 my-2');
+                })
+                .fail(function () {
+                    URL.revokeObjectURL(url);
+                    $box.find('[data-chat-pending]').remove();
+                    CP.showError($box[0], 'Не удалось отправить фото', 'text-center text-xs text-red-500 my-2');
+                });
+        });
     }
 
     function initRoot(root) {

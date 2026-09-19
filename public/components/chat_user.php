@@ -5,15 +5,17 @@
 // Поиск элементов по data-атрибутам, без дублирующихся id.
 $t = $t ?? fn(string $k): string => $k;
 $base = $site['baseUrl'] ?? '';
+$chatRootClass = $chatRootClass ?? '';
+$chatBoxClass = $chatBoxClass ?? 'h-96';
 ?>
-<div data-chat-root
+<div data-chat-root class="<?= htmlspecialchars($chatRootClass) ?>"
     data-avatar-user="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/1.png') ?>"
     data-avatar-admin="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/2.png') ?>">
     <div class="flex items-center gap-2 mb-3">
         <span data-chat-dot class="w-2 h-2 rounded-full bg-gray-500 shrink-0"></span>
         <span data-chat-status class="text-xs text-gray-400"></span>
     </div>
-    <div data-chat-messages class="h-96 overflow-y-auto rounded-[20px] bg-black/20 p-4 mb-3 border border-white/[0.08]">
+    <div data-chat-messages class="<?= htmlspecialchars($chatBoxClass) ?> overflow-y-auto rounded-[20px] bg-black/20 p-4 mb-3 border border-white/[0.08]">
         <!-- Сообщения подгружаются через AJAX -->
     </div>
 
@@ -22,7 +24,7 @@ $base = $site['baseUrl'] ?? '';
             class="w-10 h-10 shrink-0 rounded-full text-gray-300 hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer">
             <i class="fa-regular fa-image"></i>
         </button>
-        <input type="file" data-chat-file accept="image/jpeg,image/png,image/gif,image/webp" class="hidden">
+        <input type="file" data-chat-file accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" class="hidden">
         <textarea rows="1" data-chat-input
             class="flex-1 bg-transparent px-2 py-2.5 text-white text-[15px] placeholder:text-gray-500 focus:outline-none resize-none overflow-y-auto max-h-32"
             placeholder="<?= $t('type_message') ?>..." maxlength="2000" autocomplete="off"></textarea>
@@ -33,6 +35,7 @@ $base = $site['baseUrl'] ?? '';
     </div>
 </div>
 
+<script src="<?= $base ?>/public/assets/scripts/chat/photo.js<?= '?v=' . ($site['versionApp'] ?? '1') ?>"></script>
 <script>
 (function () {
     if (window.__chatUserInit) return;
@@ -41,6 +44,7 @@ $base = $site['baseUrl'] ?? '';
     const T_EMPTY = <?= json_encode($t('chat_empty')) ?>;
     const T_ONLINE = <?= json_encode($t('support_online')) ?>;
     const T_OFFLINE = <?= json_encode($t('support_offline')) ?>;
+    const T_PHOTO_ERR = <?= json_encode($t('photo_send_error')) ?>;
 
     function setStatus(root, online) {
         const dot = root.querySelector('[data-chat-dot]');
@@ -168,9 +172,14 @@ $base = $site['baseUrl'] ?? '';
             input.style.height = Math.min(input.scrollHeight, 128) + 'px';
         }
 
+        // Общее сжатие/ошибки — в photo.js; нет файла — шлём как есть
+        const CP = window.ChatPhoto || {
+            normalize: function (f) { return Promise.resolve(f); },
+            showError: function () {}
+        };
+
         function upload(file) {//фото: превью сразу, сервер догонит
             if (!file || String(file.type || '').indexOf('image/') !== 0) return;
-            if (file.size > 5 * 1024 * 1024) return;//лимит дублирует серверный
             const box = root.querySelector('[data-chat-messages]');
             const url = URL.createObjectURL(file);
             if (root._pollCtrl) root._pollCtrl.abort();
@@ -178,23 +187,34 @@ $base = $site['baseUrl'] ?? '';
                 box.insertAdjacentHTML('beforeend', photoBubble(url));
                 box.scrollTop = box.scrollHeight;
             }
-            const fd = new FormData();
-            fd.append('photo', file);
-            fetch('/api/chat/upload', { method: 'POST', body: fd })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    URL.revokeObjectURL(url);
-                    if (data.status === 'ok' && box && Array.isArray(data.messages)) {
-                        root.dataset.chatKey = keyOf(data.messages);
-                        render(box, data.messages, avatars(root));
-                        return;
-                    }
-                    if (box) {
-                        const pending = box.querySelector('[data-chat-pending]');
-                        if (pending) pending.remove();
-                    }
-                })
-                .catch(function () { URL.revokeObjectURL(url); });
+            CP.normalize(file).then(function (blob) {
+                if (!blob) { URL.revokeObjectURL(url); return; }
+                const fd = new FormData();
+                fd.append('photo', blob, 'photo.jpg');
+                fetch('/api/chat/upload', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        URL.revokeObjectURL(url);
+                        if (data.status === 'ok' && box && Array.isArray(data.messages)) {
+                            root.dataset.chatKey = keyOf(data.messages);
+                            render(box, data.messages, avatars(root));
+                            return;
+                        }
+                        if (box) {
+                            const pending = box.querySelector('[data-chat-pending]');
+                            if (pending) pending.remove();
+                            CP.showError(box, data.message || T_PHOTO_ERR);
+                        }
+                    })
+                    .catch(function () {
+                        URL.revokeObjectURL(url);
+                        if (box) {
+                            const pending = box.querySelector('[data-chat-pending]');
+                            if (pending) pending.remove();
+                            CP.showError(box, T_PHOTO_ERR);
+                        }
+                    });
+            });
         }
 
         function send() {

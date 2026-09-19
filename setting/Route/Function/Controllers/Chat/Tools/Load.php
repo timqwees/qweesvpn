@@ -56,7 +56,14 @@ class Load implements InterfaceChatLoad
 			return;
 		}
 
-		$contents = file_get_contents($this->file);
+		$fp = @fopen($this->file, 'r');
+		$contents = false;
+		if ($fp !== false) {
+			flock($fp, LOCK_SH);//читаем консистентно, пока кто-то пишет
+			$contents = stream_get_contents($fp);
+			flock($fp, LOCK_UN);
+			fclose($fp);
+		}
 		if ($contents === false || trim((string)$contents) === ''){//существует, но пустой
 			$this->data = [];
 			(new Save())->save($this->data);

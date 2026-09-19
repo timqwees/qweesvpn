@@ -4,7 +4,7 @@ namespace Setting\Route\Function\Controllers\Kassa;
 
 use App\Config\Session;
 
-use Setting\Route\Function\Controllers\Kassa\Kassa;
+use Setting\Route\Function\Controllers\{Kassa\Kassa, Client\GetUser};
 use Setting\Route\Function\Functions;
 
 class PaymentController
@@ -15,11 +15,11 @@ class PaymentController
     public static function createPayment()
     {
         header('Content-Type: application/json');
-        $startTime = microtime(true);
+        // $startTime = microtime(true);
 
         try {
             $input = file_get_contents('php://input');
-            $data = json_decode($input, true);
+            $data = json_decode((string) $input, true);
 
             if (empty($data['tariff']) || empty($data['paymentMethod'])) {
                 throw new \Exception('Missing required data');
@@ -34,6 +34,8 @@ class PaymentController
 
             // Check authentication but don't redirect - return proper error
             $uniID = Session::init('user')['uniID'] ?? null;
+            $user = (new GetUser($uniID));
+            
             if (!$uniID) {
                 http_response_code(401);
                 echo json_encode([
@@ -72,7 +74,7 @@ class PaymentController
             }
 
             // запрос на создание оплаты
-            $apiStart = microtime(true);
+            // $apiStart = microtime(true);
             $paymentResult = $kassa->createPayment(
                 amount: (float) $amount,
                 description: $description,
@@ -81,14 +83,16 @@ class PaymentController
                 saveCard: $data['saveCard'] ?? false,
                 paymentMethod: $yookassaPaymentMethod,
                 returnUrl: 'http://' . $_SERVER['HTTP_HOST'] . '/pay/status',
-                metadata: [
+                metadata: [ //заполнение методанных
+		                'first_name' => $user->getFirstname(),
+		                'last_name' => $user->getLastname(),
                     'uniID' => $uniID,
                     'tariff' => $data['tariff'],
                     'payment_method' => $data['paymentMethod']
                 ]
             );
 
-            $apiTime = round(microtime(true) - $apiStart, 3);
+            // $apiTime = round(microtime(true) - $apiStart, 3);
 
             //при успешном переходе на страницу оплаты
             if ($paymentResult['success']) {
@@ -104,26 +108,13 @@ class PaymentController
                     $kassa->savePaymentMethod($uniID, $paymentResult['payment_method_id']);
                 }
 
-                $totalTime = round(microtime(true) - $startTime, 3);
-
-                // Логируем время
-                file_put_contents(
-                    $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                    sprintf(
-                        "[%s] [ОПЛАТА] Создан платеж %s: API=%s сек, Всего=%s сек\n",
-                        date('Y-m-d H:i:s'),
-                        $paymentResult['payment_id'],
-                        $apiTime,
-                        $totalTime
-                    ),
-                    FILE_APPEND
-                );
+                // $totalTime = round(microtime(true) - $startTime, 3);
 
                 echo json_encode([
                     'success' => true,
                     'payment_url' => $paymentResult['payment_url'],
                     'payment_id' => $paymentResult['payment_id'],
-                    'qr_code' => $paymentResult['qr_code'],
+                    // 'qr_code' => $paymentResult['qr_code'],
                     'payment_method' => $paymentResult['payment_method']
                 ], JSON_UNESCAPED_UNICODE);
             } else {

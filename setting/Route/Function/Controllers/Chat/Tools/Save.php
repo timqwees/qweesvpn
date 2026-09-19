@@ -45,6 +45,6 @@ class Save implements InterfaceChatSave
 		$file = \Setting\Route\Function\Controllers\Chat\Chat::$file;
 		$dir = dirname($file);
 		if ($dir !== '' && !is_dir($dir)) mkdir($dir, 0755, true);//создаем цепочку директорий
-		file_put_contents($file, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));//создаем файл
+		file_put_contents($file, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), LOCK_EX);//пишем атомарно, без рваных файлов
 	}
 }

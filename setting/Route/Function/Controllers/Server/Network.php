@@ -166,7 +166,7 @@ class Network
 
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            sprintf("[%s] [СМЕНА СЕРВЕРА] %s: %s -> %s\n", date('Y-m-d H:i:s'), $uniID, $oldCode, $newCode),
+            \sprintf("[%s] [ПОДПИСКА -> СМЕНА СЕРВЕРА] %s: %s -> %s\n", date('Y-m-d H:i:s'), $uniID, $oldCode, $newCode),
             FILE_APPEND
         );
 

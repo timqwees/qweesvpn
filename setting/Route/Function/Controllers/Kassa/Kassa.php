@@ -10,8 +10,7 @@ use YooKassa\Request\Payments\CreatePaymentRequest;
 use YooKassa\Model\Receipt\Receipt;
 use YooKassa\Model\Receipt\ReceiptItem;
 use App\Config\Database;
-use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
-use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
+use Setting\Route\Function\Controllers\{Server\Network as ServerNetwork, Vpn\V2ray\Xray, Refer\Tools\ReferRepository, Refer\Refer};
 use DateTime, DateTimeZone;
 
 class Kassa
@@ -65,8 +64,8 @@ class Kassa
             $dbReason = Database::lastError() !== '' ? Database::lastError() : 'неизвестна';
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось. Причина: %s\n",
+                \sprintf(
+                    "[%s] [ПОДПИСКА - ЧАСТИЧНАЯ ВЫДАЧА] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось. Причина: %s\n",
                     date('Y-m-d H:i:s'),
                     $uniID,
                     $countDays,
@@ -78,6 +77,22 @@ class Kassa
         }
 
         return $result !== false;
+    }
+
+    /**
+     * Разобрать существующую строку подписки: конвертируемая ли (trial/bonus/pending)
+     * и сколько целых дней остатка перенести в новую выдачу.
+     * @return array{convertible:bool,days:int}
+     */
+    public static function carryFromRow($existingUser, int $nowMs): array
+    {
+        $existingSub = \is_array($existingUser) ? (string) ($existingUser['subscription'] ?? '') : '';
+        $convertible = \in_array($existingSub, ['trial', 'bonus', ''], true) || strpos($existingSub, 'pending_') === 0;
+        $days = 0;
+        if (\is_array($existingUser) && $convertible && (int) ($existingUser['expiry'] ?? 0) > $nowMs) {
+            $days = (int) ceil(((int) $existingUser['expiry'] - $nowMs) / 86400000);
+        }
+        return ['convertible' => $convertible, 'days' => $days];
     }
 
     /**
@@ -179,29 +194,19 @@ class Kassa
                 'payment_url' => $payment->getConfirmation()?->getConfirmationUrl(),
                 'payment_id' => $payment->getId(),
                 'payment_method_id' => $payment->getPaymentMethod()?->getId(),
-                'qr_code' => $this->extractQrCode($payment),
+                // 'qr_code' => $this->extractQrCode($payment),
                 'payment_method' => $paymentMethod,
                 'status' => $payment->getStatus()
             ];
 
         } catch (\Exception $e) {
-            file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] createPayment: %s\n",
-                    date('Y-m-d H:i:s'),
-                    $e->getMessage()
-                ),
-                FILE_APPEND
-            );
-
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
                 'payment_url' => null,
                 'payment_id' => null,
                 'payment_method_id' => null,
-                'qr_code' => null,
+                // 'qr_code' => null,
                 'payment_method' => $paymentMethod
             ];
         }
@@ -228,33 +233,33 @@ class Kassa
      */
     public function startPaymentStatus(string $paymentId): array
     {
-        $startTime = microtime(true);
+        // $startTime = microtime(true);
 
-        // Логируем начало проверки статуса
-        file_put_contents(
-            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            sprintf(
-                "[%s] [DEBUG] Начало проверки статуса платежа: %s\n",
-                date('Y-m-d H:i:s'),
-                $paymentId
-            ),
-            FILE_APPEND
-        );
+        // // Логируем начало проверки статуса
+        // file_put_contents(
+        //     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+        //     \sprintf(
+        //         "[%s] [DEBUG] Начало проверки статуса платежа: %s\n",
+        //         date('Y-m-d H:i:s'),
+        //         $paymentId
+        //     ),
+        //     FILE_APPEND
+        // );
 
         try {
-            $apiStart = microtime(true);
+            // $apiStart = microtime(true);
             $payment = $this->client->getPaymentInfo($paymentId);
-            $apiTime = round(microtime(true) - $apiStart, 3);
+            // $apiTime = round(microtime(true) - $apiStart, 3);
 
-            file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [DEBUG] API YooKassa ответ: %s сек\n",
-                    date('Y-m-d H:i:s'),
-                    $apiTime
-                ),
-                FILE_APPEND
-            );
+            // file_put_contents(
+            //     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+            //     \sprintf(
+            //         "[%s] [DEBUG] API YooKassa ответ: %s сек\n",
+            //         date('Y-m-d H:i:s'),
+            //         $apiTime
+            //     ),
+            //     FILE_APPEND
+            // );
 
             $result = [
                 'success' => true,
@@ -267,11 +272,11 @@ class Kassa
 
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [DEBUG] Статус платежа: %s, оплачен: %s\n",
+                \sprintf(
+                    "[%s] [ПОКУПКА - СТАТУС] Статус платежа системы: %s, статус оплаты: %s\n",
                     date('Y-m-d H:i:s'),
-                    $payment->getStatus(),
-                    $payment->getPaid() ? 'YES' : 'NO'
+                    $payment->getStatus() ? 'Успешно' : 'Отказано',
+                    $payment->getPaid() ? 'Оплачен' : 'Не оплачен'
                 ),
                 FILE_APPEND
             );
@@ -280,6 +285,8 @@ class Kassa
             if ($payment->getPaid() && $payment->getStatus() === 'succeeded') {
                 $metadata = $payment->getMetadata();
                 $uniID = $metadata['uniID'] ?? null;
+                $first_name = $metadata['first_name'] ?? null;
+                $last_name = $metadata['last_name'] ?? null;
                 $tariff = $metadata['tariff'] ?? null;
 
                 if ($uniID && $tariff) {
@@ -287,16 +294,22 @@ class Kassa
                     $config = PriceConfig::getTariffConfig()[$tariff] ?? ['days' => 30, 'devices' => 1];
 
                     // Проверяем, не была ли уже выдана подписка для этого платежа
-                    $existingUserData = Database::send("SELECT status, expiry FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
+                    $existingUserData = Database::send("SELECT status, subscription, expiry FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
                     $existingUser = $existingUserData[0] ?? null;//получение данных
                     $current_time_MSK = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp();//текущее время MSK
+                    $nowMs = $current_time_MSK * 1000;
+                    // Триал/бонус/pending — не «активная платная», а конвертируемые: покупку не блокируем,
+                    // остаток дней переносим в выдачу (иначе сгорит в панели, где клиента ещё нет)
+                    $carry = self::carryFromRow($existingUser, $nowMs);
+                    $convertible = $carry['convertible'];
+                    $carryDays = $carry['days'];
 
-                    if ($existingUser && $existingUser['status'] === 'on' && (int) $existingUser['expiry'] > $current_time_MSK * 1000) {
+                    if ($existingUser && $existingUser['status'] === 'on' && (int) $existingUser['expiry'] > $nowMs && !$convertible) {
                         // Подписка уже активна, не создаем новую
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            sprintf(
-                                "[%s] [ПОДПИСКА] %s: Подписка уже активна до %s, пропуск создания\n",
+                            \sprintf(
+                                "[%s] [ПОДПИСКА - ЗАЩИТА] %s: Подписка уже активна до %s, пропуск создания\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
                                 date('Y-m-d H:i:s', (int) $existingUser['expiry'] / 1000)
@@ -313,11 +326,11 @@ class Kassa
                         return $result;
                     }
 
-                    // Создаем VPN подписку
-                    $vpnStart = microtime(true);
+                    // Создаем VPN подписку (плюс перенос остатка trial/bonus, если был)
+                    // $vpnStart = microtime(true);
                     $xray = new Xray();
-                    $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
-                    $vpnTime = round(microtime(true) - $vpnStart, 3);
+                    $vpnResult = $xray->addClient((int) $config['days'] + $carryDays, $uniID, $config['devices']);
+                    // $vpnTime = round(microtime(true) - $vpnStart, 3);
 
                     if ($vpnResult && $vpnResult['success']) {
                         // Источник истины — expiryTime (мс), который панель установила клиенту
@@ -326,16 +339,23 @@ class Kassa
                             $expiryMs = self::computeExpiryMs($uniID, $config['days']);
                         }
 
-                        // Сохраняем данные подписки в Базу
-                        self::saveSubscriptionToDatabase(
-                            $uniID,
-                            'on',//status
-                            self::subscriptionUrl($uniID),//subscription
-                            $payment->getAmount()?->getValue(),//amount
-                            $config['days'],//days
-                            $config['devices'],//count diveces
-                            $expiryMs//expiry (мс)
-                        );
+                        // Все записи по покупке — одним коммитом
+                        Database::transaction(function () use ($uniID, $config, $expiryMs, $payment) {
+                            self::saveSubscriptionToDatabase(
+                                $uniID,
+                                'on',//status
+                                self::subscriptionUrl($uniID),//subscription
+                                $payment->getAmount()?->getValue(),//amount
+                                $config['days'],//days
+                                $config['devices'],//count diveces
+                                $expiryMs//expiry (мс)
+                            );
+                            // Реферальная скидка: тратим одно использование из N
+                            (new ReferRepository())->useDiscountByUniID($uniID);
+                            // Реферер забирает % днями с этой покупки
+                            (new Refer())->rewardReferrerFromPurchase($uniID, $config['days']);
+                            return true;
+                        });
 
                         $result['subscription_issued'] = true;
                         $result['subscription_days'] = $config['days'];
@@ -343,19 +363,32 @@ class Kassa
                         $result['subscription_end_date'] = $expiryMs;
                         $result['vpn_data'] = $vpnResult['client_data'];
 
+                        if ($carryDays > 0) {
+                            file_put_contents(
+                                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                                \sprintf(
+                                    "[%s] [ПОДПИСКА - ПЕРЕНОС ОСТАТКА] %s: остаток trial/bonus +%d дн. перенесён в выдачу\n",
+                                    date('Y-m-d H:i:s'),
+                                    $uniID,
+                                    $carryDays
+                                ),
+                                FILE_APPEND
+                            );
+                        }
+
                         // Логирование с временем
-                        $totalTime = round(microtime(true) - $startTime, 3);
+                        // $totalTime = round(microtime(true) - $startTime, 3);
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            sprintf(
-                                "[%s] [ПОДПИСКА] %s: %s (%d дней, %d уст.) - VPN: %s сек, Всего: %s сек\n",
+                            \sprintf(
+                                "[%s] [ПОКУПКА - ВЫДАЧА ПОДПИСКИ] %s (%s %s): %s (%d дней, %d уст.)\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
+                                $first_name,
+                                $last_name,
                                 $tariff,
                                 $config['days'],
                                 $config['devices'],
-                                $vpnTime,
-                                $totalTime
                             ),
                             FILE_APPEND
                         );
@@ -367,8 +400,8 @@ class Kassa
                         // Логируем детальную информацию об ошибке
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            sprintf(
-                                "[%s] [ОШИБКА - ПОДПИСКА] Первая попытка создания VPN не удалась для %s. Повторная попытка через 5 секунд.\n",
+                            \sprintf(
+                                "[%s] [ПОДПИСКА - ОШИБКА] Первая попытка создания VPN не удалась для %s. Повторная попытка через 5 секунд.\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID
                             ),
@@ -378,10 +411,10 @@ class Kassa
                         // Ждем 5 секунд и пробуем еще раз
                         sleep(5);
 
-                        $vpnRetryStart = microtime(true);
+                        // $vpnRetryStart = microtime(true);
                         $xray = new Xray();
-                        $vpnResult = $xray->addClient($config['days'], $uniID, $config['devices']);
-                        $vpnRetryTime = round(microtime(true) - $vpnRetryStart, 3);
+                        $vpnResult = $xray->addClient((int) $config['days'] + $carryDays, $uniID, $config['devices']);
+                        // $vpnRetryTime = round(microtime(true) - $vpnRetryStart, 3);
 
                         if ($vpnResult && $vpnResult['success']) {
                             // Вторая попытка успешна! Источник истины — expiryTime (мс) из панели
@@ -390,15 +423,23 @@ class Kassa
                                 $expiryMs = self::computeExpiryMs($uniID, $config['days']);
                             }
 
-                            self::saveSubscriptionToDatabase(
-                                $uniID,
-                                'on',
-                                self::subscriptionUrl($uniID),
-                                $payment->getAmount()?->getValue(),
-                                $config['days'],
-                                $config['devices'],
-                                $expiryMs
-                            );
+                            // Все записи по покупке — одним коммитом
+                            Database::transaction(function () use ($uniID, $config, $expiryMs, $payment) {
+                                self::saveSubscriptionToDatabase(
+                                    $uniID,
+                                    'on',
+                                    self::subscriptionUrl($uniID),
+                                    $payment->getAmount()?->getValue(),
+                                    $config['days'],
+                                    $config['devices'],
+                                    $expiryMs
+                                );
+                                // Реферальная скидка: тратим одно использование из N
+                                (new ReferRepository())->useDiscountByUniID($uniID);
+                                // Реферер забирает % днями с этой покупки
+                                (new Refer())->rewardReferrerFromPurchase($uniID, $config['days']);
+                                return true;
+                            });
 
                             $result['subscription_issued'] = true;
                             $result['subscription_days'] = $config['days'];
@@ -406,28 +447,28 @@ class Kassa
                             $result['subscription_end_date'] = $expiryMs;
                             $result['vpn_data'] = $vpnResult['client_data'];
 
-                            $totalTime = round(microtime(true) - $startTime, 3);
+                            // $totalTime = round(microtime(true) - $startTime, 3);
                             file_put_contents(
                                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                                sprintf(
-                                    "[%s] [ПОДПИСКА] %s: VPN создан со 2-й попытки! (1-я: %s сек, 2-я: %s сек, Всего: %s сек)\n",
+                                \sprintf(
+                                    "[%s] [ПОДПИСКА - УСПЕШНАЯ ПОПЫТКА ВЫДАЧИ] %s: VPN создан со 2-й попытки!\n",
                                     date('Y-m-d H:i:s'),
                                     $uniID,
-                                    $vpnTime,
-                                    $vpnRetryTime,
-                                    $totalTime
+                                    // $vpnTime,
+                                    // $vpnRetryTime,
+                                    // $totalTime
                                 ),
                                 FILE_APPEND
                             );
                         } else {
                             // Вторая попытка тоже неудачна
-                            $result['subscription_error'] = 'Failed to create VPN client after retry. Please check server logs.';
+                            $result['subscription_error'] = 'Ошибка создания подписки! Посмотриет в логах';
                             $result['subscription_issued'] = false;
 
                             file_put_contents(
                                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                                sprintf(
-                                    "[%s] [ОШИБКА - ПОДПИСКА] Вторая попытка создания VPN также не удалась для %s. Тариф: %s, Дней: %d, Устройств: %d\n",
+                                \sprintf(
+                                    "[%s] [ПОДПИСКА - ОШИБКА] Вторая попытка создания VPN также не удалась для %s. Тариф: %s, Дней: %d, Устройств: %d\n",
                                     date('Y-m-d H:i:s'),
                                     $uniID,
                                     $tariff,
@@ -454,8 +495,8 @@ class Kassa
 
                                 file_put_contents(
                                     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                                    sprintf(
-                                        "[%s] [ПОДПИСКА] %s: Данные обновлены, статус 'pending_vpn'\n",
+                                    \sprintf(
+                                        "[%s] [ПОДПИСКА - ОБНОВЛЕНИЕ] %s: Данные обновлены, статус 'pending_vpn' - ожидание впн\n",
                                         date('Y-m-d H:i:s'),
                                         $uniID
                                     ),
@@ -464,8 +505,8 @@ class Kassa
                             } catch (\Exception $dbError) {
                                 file_put_contents(
                                     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                                    sprintf(
-                                        "[%s] [ОШИБКА - БД] Не удалось обновить данные пользователя: %s\n",
+                                    \sprintf(
+                                        "[%s] [ПОДПИСКА - ОШИБКА] Не удалось обновить данные пользователя: %s\n",
                                         date('Y-m-d H:i:s'),
                                         $dbError->getMessage()
                                     ),
@@ -476,8 +517,8 @@ class Kassa
 
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            sprintf(
-                                "[%s] [ОШИБКА - ПОДПИСКА] Не удалось создать VPN клиент для %s. Платеж оплачен, но требуется ручная настройка.\n",
+                            \sprintf(
+                                "[%s] [ПОДПИСКА - ОШИБКА] Не удалось создать VPN клиент для %s. Платеж оплачен, но требуется ручная настройка.\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID
                             ),
@@ -582,8 +623,8 @@ class Kassa
         } catch (\Exception $e) {
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] savePaymentMethod: %s\n",
+                \sprintf(
+                    "[%s] [ОПЛАТА - ОШИБКА] savePaymentMethod: %s\n",
                     date('Y-m-d H:i:s'),
                     $e->getMessage()
                 ),
@@ -627,8 +668,8 @@ class Kassa
         } catch (\Exception $e) {
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [ОШИБКА - YOOKASSA] createAutoPayment: %s\n",
+                \sprintf(
+                    "[%s] [ОПЛАТА - ОШИБКА] createAutoPayment: %s\n",
                     date('Y-m-d H:i:s'),
                     $e->getMessage()
                 ),

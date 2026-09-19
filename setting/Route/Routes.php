@@ -15,6 +15,7 @@ use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 use Setting\Route\Function\Controllers\Chat\Chat;
 use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Controllers\Refer\Refer;
+use Setting\Route\Function\Controllers\Finance\Finance;
 
 //=============================================//MAIN
 Routes::get('/', 'on_Main');
@@ -125,8 +126,8 @@ Routes::post('/api/chat/upload', function () {
     if ($uniID === '' || !is_array($up) || ($up['error'] ?? 1) !== UPLOAD_ERR_OK) Chat::error('Нет файла');
     if (($up['size'] ?? 0) > 5 * 1024 * 1024) Chat::error('Фото больше 5 МБ');
     $mime = @getimagesize($up['tmp_name'] ?? '')['mime'] ?? '';
-    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp'][$mime] ?? '';
-    if ($ext === '') Chat::error('Только фото: jpg, png, gif, webp');
+    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif', 'image/webp' => 'webp', 'image/heic' => 'heic', 'image/heif' => 'heif'][$mime] ?? '';
+    if ($ext === '') Chat::error('Только фото: jpg, png, gif, webp, heic');
     $name = $uniID . '_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
     if (!@move_uploaded_file($up['tmp_name'], Chat::$uploads . '/' . $name)) Chat::error('Не удалось сохранить');
     if ($isAdmin) {
@@ -148,7 +149,7 @@ Routes::get('/api/chat/photo', function () {
         header(($_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1') . ' 404 Not Found');
         exit;
     }
-    $mime = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp'][strtolower(pathinfo($path, PATHINFO_EXTENSION))] ?? 'application/octet-stream';
+    $mime = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', 'heic' => 'image/heic', 'heif' => 'image/heif'][strtolower(pathinfo($path, PATHINFO_EXTENSION))] ?? 'application/octet-stream';
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . filesize($path));
     readfile($path);
@@ -156,6 +157,10 @@ Routes::get('/api/chat/photo', function () {
 });
 //=============================================//GIFTS (пробные, пока не выкатываем)
 Routes::post('/admin/gifts/save', [Gifts::class, 'onSave']);
+//=============================================//REFERRAL (настройки из админки)
+Routes::post('/admin/refer/save', [Refer::class, 'onSave']);
+//=============================================//ROI (расходы из админки)
+Routes::post('/admin/roi/save', [Finance::class, 'onSave']);
 //=============================================//ABOUT
 Routes::get('/about', 'on_About');
 //=============================================//РЕКВИЗИТЫ
@@ -247,6 +252,7 @@ Routes::post('/admin/roles/role', function () {
 //POST
 Routes::post('/admin/logout', [AdminAuth::class, 'onLogout']);
 Routes::post('/admin/save', [AdminDatabase::class, 'onAdminSave']);
+Routes::post('/admin/delete', [AdminDatabase::class, 'onAdminDelete']);
 Routes::post('/admin/addClientDays', [AdminXray::class, 'onAdminAddClientDays']);
 Routes::post('/admin/addClientHours', [AdminXray::class, 'onAdminAddClientHours']);
 Routes::post('/admin/addClientMinutes', [AdminXray::class, 'onAdminAddClientMinutes']);

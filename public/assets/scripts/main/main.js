@@ -166,12 +166,12 @@ $(function () {
 
     // ===== Остальные страницы: классическое переключение через .hidden =====
     function showSection(sectionId) {
-      // Hide every section
-      $('[data-section]').addClass('hidden').css('opacity', 0);
-
-      // Show the requested ones
+      // Нет такой секции (чужая кнопка) — ничего не трогаем, страницу не гасим
       const $target = $('[data-section="' + sectionId + '"]');
       if (!$target.length) return;
+
+      // Hide every section
+      $('[data-section]').addClass('hidden').css('opacity', 0);
 
       $target.removeClass('hidden');
 

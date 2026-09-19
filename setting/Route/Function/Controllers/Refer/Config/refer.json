@@ -1,0 +1,9 @@
+{
+    "enabled": true,
+    "referral_days": 3,
+    "referral_discount": 10,
+    "discount_uses": 5,
+    "referrer_days": 3,
+    "referrer_percent": 5,
+    "referrer_takes": 5
+}

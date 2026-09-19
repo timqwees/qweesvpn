@@ -40,8 +40,8 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
                         // Логируем удаление
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            sprintf(
-                                "[%s] [ИСТЕКШАЯ] Подписка %s истекла (%s) — удалена из БД и X-UI\n",
+                            \sprintf(
+                                "[%s] [ПОДПИСКА - УДАЛЕНИЕ] Подписка %s истекла (%s) — удаление завершено успешно\n",
                                 date('Y-m-d H:i:s'),
                                 $uniID,
                                 date('Y-m-d H:i:s', (int) ($expiryMs / 1000))
@@ -143,9 +143,9 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
         return (int) ($this->client['discount_percent'] ?? 0);
     }
 
-    public function getBonusPercent(): int
+    public function getDiscountUses(): int
     {
-        return (int) ($this->client['bonus_percent'] ?? 0);
+        return (int) ($this->client['discount_uses'] ?? 0);
     }
 
     public function getReferCount(): int

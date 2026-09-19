@@ -44,22 +44,29 @@ use DateTime, DateTimeZone;
 
 class Session
 {
+    // Пользовательская сессия — неделя. Админская — отдельно, сутки.
+    // Ключ 'admin' всегда идёт в свой cookie и не пересекается с пользователем:
+    // выход из профиля не выкидывает из админки и наоборот.
     private static $cookieName = "__qweescore_cookie";
+    private static $adminCookieName = "__qweescore_admin";
     private static $data = null;
-    private static $lifetime = 86400; // 1 day
+    private static $adminData = null;
+    private static $lifetime = 604800; // 7 дней
+    private static $adminLifetime = 86400; // 1 день
 
     /**
      * Универсальный метод для управления cookie-сессией.
      * ---
      * ### Все варианты использования:
-     * 1. Получить все значения:                   *```Session::init()```*
+     * 1. Получить все значения (без админа):       *```Session::init()```*
      * 2. Получить значение по ключу:              *```Session::init('key')```*
      * 3. Получить значения по нескольким ключам:  *```Session::init(['key1', 'key2'])```*
      * 4. Установить значение:                     *```Session::init('key', 'value')```*
      * 5. Установить несколько значений:           *```foreach ($arr as $k=>$v) Session::init($k, $v)```*
      * 6. Удалить ключ:                            *```Session::init('key', null)```*
      * 7. Удалить несколько ключей:                *```Session::init(['key1', 'key2'], null)```*
-     * 8. Очистить всю сессию:                     *```Session::init(null)```*
+     * 8. Очистить всё (пользователь + админ):     *```Session::init(null)```*
+     * Админка живёт отдельно:                     *```Session::init('admin')```*
      *---
      * @param null|string|array $name Ключ, массив ключей или null для полной очистки
      * @param mixed $value Значение (null - удаление)
@@ -68,36 +75,35 @@ class Session
     public static function init($name = '', $value = null)
     {
         $hasValueArg = func_num_args() >= 2;
+        $isAdmin = ($name === 'admin');
 
-        // Загружаем данные из cookie
-        if (self::$data === null) {
-            self::$data = [];
-            if (!empty($_COOKIE[self::$cookieName])) {
-                $tmp = json_decode($_COOKIE[self::$cookieName], true);
-                if (is_array($tmp)) {
-                    self::$data = $tmp;
-                }
-            }
+        self::loadStore($isAdmin);
+        if ($isAdmin) {
+            $data = &self::$adminData;
+        } else {
+            $data = &self::$data;
         }
 
-        // === Удаление всей сессии ===
+        // === Удаление всей сессии (обе) ===
         if ($name === null) {
             self::$data = [];
-            self::rewrite(true); // удаление cookie
+            self::$adminData = [];
+            self::rewrite(true, false);
+            self::rewrite(true, true);
             return true;
         }
 
-        // === Получение всех данных ===
+        // === Получение всех данных (без админа) ===
         if ($name === '' || $name === false || empty($name)) {
-            return self::$data;
+            return $data;
         }
 
         // === Удаление нескольких ключей ===
         if (is_array($name) && $value === null) {
             foreach ($name as $key) {
-                unset(self::$data[$key]);
+                unset($data[$key]);
             }
-            self::rewrite();
+            self::rewrite(false, $isAdmin);
             return true;
         }
 
@@ -105,7 +111,7 @@ class Session
         if (is_array($name) && !$hasValueArg) {
             $result = [];
             foreach ($name as $key) {
-                $result[$key] = self::$data[$key] ?? null;
+                $result[$key] = $data[$key] ?? null;
             }
             return $result;
         }
@@ -114,38 +120,73 @@ class Session
         if (is_array($name) && $value !== null) {
             $result = [];
             foreach ($name as $key) {
-                $result[$key] = self::$data[$key] ?? null;
+                $result[$key] = $data[$key] ?? null;
             }
             return $result;
         }
 
         // === Получение одного значения ===
         if (!$hasValueArg) {
-            return self::$data[$name] ?? null;
+            return $data[$name] ?? null;
         }
 
         // === Удаление одного ключа ===
         if ($value === null) {
-            unset(self::$data[$name]);
-            self::rewrite();
+            unset($data[$name]);
+            self::rewrite(false, $isAdmin);
             return true;
         }
 
         // === Установка значения ===
-        self::$data[$name] = $value;
-        self::rewrite();
+        $data[$name] = $value;
+        self::rewrite(false, $isAdmin);
         return true;
+    }
+
+    /**
+     * Ленивая загрузка хранилища из cookie
+     */
+    private static function loadStore(bool $isAdmin): void
+    {
+        if ($isAdmin) {
+            if (self::$adminData !== null) {
+                return;
+            }
+            self::$adminData = [];
+            if (!empty($_COOKIE[self::$adminCookieName])) {
+                $tmp = json_decode($_COOKIE[self::$adminCookieName], true);
+                if (is_array($tmp)) {
+                    self::$adminData = $tmp;
+                }
+            }
+            return;
+        }
+        if (self::$data !== null) {
+            return;
+        }
+        self::$data = [];
+        if (!empty($_COOKIE[self::$cookieName])) {
+            $tmp = json_decode($_COOKIE[self::$cookieName], true);
+            if (is_array($tmp)) {
+                self::$data = $tmp;
+            }
+        }
     }
 
     /**
      * Записывает cookie
      * @param bool $all_remove удалить cookie
+     * @param bool $isAdmin чьё хранилище пишем
      */
-    private static function rewrite($all_remove = false)
+    private static function rewrite($all_remove = false, bool $isAdmin = false)
     {
+        $cookie = $isAdmin ? self::$adminCookieName : self::$cookieName;
+        $lifetime = $isAdmin ? self::$adminLifetime : self::$lifetime;
+        $payload = $isAdmin ? self::$adminData : self::$data;
+
         if ($all_remove) {
             @setcookie(
-                self::$cookieName,
+                $cookie,
                 '',
                 new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() - 3600,
                 '/',
@@ -156,15 +197,15 @@ class Session
             return true;
         }
 
-        $json = json_encode(self::$data, JSON_UNESCAPED_UNICODE);
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
         if ($json === false) {
             return false;
         }
 
         @setcookie(
-            self::$cookieName,
+            $cookie,
             $json,
-            new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + self::$lifetime,
+            new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + $lifetime,
             '/',
             '',
             false,

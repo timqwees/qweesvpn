@@ -1,6 +1,6 @@
 <?php
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo};
+use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo, Refer\Refer, Refer\Config\ReferConfig};
 use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
 use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Functions;
@@ -28,6 +28,19 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 $vpnStatusObj = new VpnStatus();
 $profileObj = new Profile();
 $usageStats = $vpnStatusObj->getUsageStats();
+
+// Список приглашённых по реферальной ссылке (для секции referal)
+$referralsList = (new Refer())->getMyReferrals($user->getID());
+
+// Что получают стороны (цифры из настроек рефералки)
+$refNew = ReferConfig::getNewReferralBonus();
+$refRef = ReferConfig::getReferrerBonus();
+$referWhat = [
+    'invited_days' => str_replace('{d}', (string) $refNew['days_added'], $t('refer_g_days')),
+    'invited_discount' => str_replace(['{p}', '{n}'], [(string) $refNew['discount_percent'], (string) $refNew['discount_uses']], $t('refer_g_discount')),
+    'inviter_each' => str_replace('{d}', (string) $refRef['days_per_referral'], $t('refer_g_each')),
+    'inviter_percent' => str_replace(['{p}', '{n}'], [(string) $refRef['percent'], (string) $refRef['takes']], $t('refer_g_percent')),
+];
 
 // Серверы для выбора в профиле (реестр Network) + текущий сервер пользователя
 $availableServers = ServerNetwork::getAvailableServers();
@@ -74,7 +87,6 @@ $formattedUserProfile = [
     'refer_count' => $user->getReferCount(),
     'has_discount' => $user->getDiscountPercent() > 0 ? $t('yes') : $t('no'),
     'discount_percent' => $user->getDiscountPercent(),
-    'bonus_percent' => $user->getBonusPercent(),
     'subscription_status' => $t($user->getStatus() === 'on' ? 'active' : 'inactive'),
     'theme' => $_COOKIE['theme'] ?? $_SESSION['theme'] ?? 'Темная', // Получаем тему из куки или сессии
     'language' => Language::LANGUAGES[$currentLanguage] ?? 'Русский'
@@ -754,14 +766,6 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <span
                                     class="text-[white] text-xl font-semibold"><?= $user->getDiscountPercent() ?>%</span>
                             </div>
-                            <div
-                                class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
-                                <div class="flex items-center gap-2 text-purple-400">
-                                    <i class="fa fa-gift text-lg"></i>
-                                    <span class="text-sm font-medium"><?= $t('my_bonus'); ?></span>
-                                </div>
-                                <span class="text-[white] text-xl font-semibold"><?= $user->getBonusPercent() ?>%</span>
-                            </div>
                         </div>
 
                         <!-- Referral Link Cards -->
@@ -822,11 +826,55 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 </div>
                                 <div
                                     class="flex flex-col items-center p-6 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
-                                    <span class="text-sm text-gray-400 mb-2"><?= $t('my_bonus'); ?></span>
+                                    <span class="text-sm text-gray-400 mb-2"><?= $t('your_discount'); ?></span>
                                     <span
-                                        class="text-3xl font-bold text-green-400"><?= intval($user->getBonusPercent()) ?>%</span>
-                                    <span class="text-xs text-gray-500 mt-1"><?= $t('days_for_buy'); ?></span>
+                                        class="text-3xl font-bold text-green-400">-<?= intval($user->getDiscountPercent()) ?>%</span>
+                                    <span class="text-xs text-gray-500 mt-1"><?= $t('discount_uses_left'); ?>: <?= intval($user->getDiscountUses()) ?></span>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Who gets what -->
+                        <div class="flex flex-col gap-4 mt-4">
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('refer_what_get'); ?></h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                                    <div class="flex items-center gap-2 text-emerald-400">
+                                        <i class="fa fa-ticket text-lg"></i>
+                                        <span class="text-sm font-medium"><?= $t('refer_for_invited'); ?></span>
+                                    </div>
+                                    <ul class="flex flex-col gap-1.5 text-[white] text-sm">
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['invited_days']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['invited_discount']) ?></li>
+                                    </ul>
+                                </div>
+                                <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                                    <div class="flex items-center gap-2 text-blue-400">
+                                        <i class="fa fa-users text-lg"></i>
+                                        <span class="text-sm font-medium"><?= $t('refer_for_inviter'); ?></span>
+                                    </div>
+                                    <ul class="flex flex-col gap-1.5 text-[white] text-sm">
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['inviter_each']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['inviter_percent']) ?></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Invited by you -->
+                        <div class="flex flex-col gap-4 mt-4">
+                            <h3 class="text-lg font-semibold text-gray-300"><?= $t('invited_by_you'); ?> (<?= count($referralsList) ?>)</h3>
+                            <div class="flex flex-col gap-2 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
+                                <?php if (!empty($referralsList)): ?>
+                                    <?php foreach ($referralsList as $ref): ?>
+                                        <div class="flex justify-between items-center py-2 border-b border-white/5">
+                                            <span class="font-medium"><?= htmlspecialchars($ref['name'] !== '' ? $ref['name'] : $ref['email']) ?></span>
+                                            <span class="text-sm text-gray-400"><?= htmlspecialchars($ref['date']) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-sm text-gray-400"><?= $t('invited_empty'); ?></div>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -850,6 +898,12 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <span
                                             class="font-bold text-green-400">-<?= intval($user->getDiscountPercent()) ?>%</span>
                                     </div>
+                                    <?php if ($user->getDiscountPercent() > 0): ?>
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-sm text-gray-400"><?= $t('discount_uses_left'); ?></span>
+                                        <span class="font-medium"><?= intval($user->getDiscountUses()) ?></span>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php else: ?>
@@ -877,16 +931,16 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                     <!-- SECTION = SUPPORT -->
                     <template data-section="support">
                     <section
-                        class="flex-col gap-8 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
+                        class="flex flex-col gap-6 box-border h-full w-full p-10 ml-2 relative z-10 rounded-3xl setka"
                         data-section="support">
 
                         <!-- Header -->
-                        <h1 class="text-3xl font-bold mb-6">
+                        <h1 class="text-3xl font-bold">
                             <?php foreach (mb_str_split($t('support')) as $letter): ?>
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
 
-                        <?php include 'public/components/chat_user.php'; ?>
+                        <?php $chatRootClass = 'flex flex-col flex-1 min-h-0'; $chatBoxClass = 'flex-1 min-h-[320px]'; include 'public/components/chat_user.php'; unset($chatRootClass, $chatBoxClass); ?>
                     </section>
                     </template>
                 </div>
@@ -1340,14 +1394,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <i
                                     class="fa fa-angle-right text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all"></i>
                             </button>
-</div>
+                          </div>
                         </div>
-
-                        <div class="mt-4 pt-4 border-t border-white/[0.1]">
-                            <h2 class="text-lg font-semibold text-gray-300 mb-4"><?= $t('technical_support') ?></h2>
-                            <?php include 'public/components/chat_user.php'; ?>
-                        </div>
-
 
                 </section>
                 </template>
@@ -1388,14 +1436,6 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 </div>
                                 <span
                                     class="text-white text-sm font-semibold"><?= $user->getDiscountPercent() ?>%</span>
-                            </div>
-                            <div
-                                class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
-                                <div class="flex items-center gap-2 text-purple-400">
-                                    <i class="fa fa-gift text-lg"></i>
-                                    <span class="text-xs font-medium"><?= $t('bonus'); ?></span>
-                                </div>
-                                <span class="text-white text-sm font-semibold"><?= $user->getBonusPercent() ?>%</span>
                             </div>
                         </div>
 
@@ -1439,6 +1479,31 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     title="<?= $t('copy_link') ?>">
                                     <i class="fa fa-copy text-gray-400 group-hover:text-white"></i>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Who gets what (mobile) -->
+                        <div class="flex flex-col gap-3">
+                            <h4 class="text-white text-lg font-semibold"><?= $t('refer_what_get'); ?></h4>
+                            <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
+                                <div class="flex items-center gap-2 text-emerald-400">
+                                    <i class="fa fa-ticket"></i>
+                                    <span class="text-xs font-medium"><?= $t('refer_for_invited'); ?></span>
+                                </div>
+                                <div class="flex flex-col gap-1.5 text-sm text-white">
+                                    <div><?= htmlspecialchars($referWhat['invited_days']) ?></div>
+                                    <div><?= htmlspecialchars($referWhat['invited_discount']) ?></div>
+                                </div>
+                            </div>
+                            <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
+                                <div class="flex items-center gap-2 text-blue-400">
+                                    <i class="fa fa-users"></i>
+                                    <span class="text-xs font-medium"><?= $t('refer_for_inviter'); ?></span>
+                                </div>
+                                <div class="flex flex-col gap-1.5 text-sm text-white">
+                                    <div><?= htmlspecialchars($referWhat['inviter_each']) ?></div>
+                                    <div><?= htmlspecialchars($referWhat['inviter_percent']) ?></div>
+                                </div>
                             </div>
                         </div>
 
@@ -1486,9 +1551,48 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <?php endif; ?>
                                     </span>
                                 </div>
+                                <?php if ($user->getDiscountPercent() > 0): ?>
+                                <div class="flex justify-between gap-4">
+                                    <span class="text-sm text-gray-400"><?= $t('discount_uses_left'); ?></span>
+                                    <span class="text-sm text-white font-semibold"><?= intval($user->getDiscountUses()) ?></span>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
 
+                        <!-- Invited by you (mobile) -->
+                        <div class="flex flex-col gap-3">
+                            <h4 class="text-white text-lg font-semibold"><?= $t('invited_by_you'); ?> (<?= count($referralsList) ?>)</h4>
+                            <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
+                                <?php if (!empty($referralsList)): ?>
+                                    <?php foreach ($referralsList as $ref): ?>
+                                        <div class="flex justify-between gap-4">
+                                            <span class="text-sm text-white font-semibold truncate"><?= htmlspecialchars($ref['name'] !== '' ? $ref['name'] : $ref['email']) ?></span>
+                                            <span class="text-xs text-gray-400 shrink-0"><?= htmlspecialchars($ref['date']) ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="text-sm text-gray-400"><?= $t('invited_empty'); ?></div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </section>
+                </template>
+
+                <template data-section="support">
+                <section
+                    class="setka overflow-hidden relative flex flex-col pb-[95px] box-border w-full min-h-[100dvh]"
+                    data-section="support">
+                    <div class="px-6 pt-[5.5rem] flex flex-col gap-5">
+                        <h1 class="text-2xl font-bold">
+                            <?php foreach (mb_str_split($t('support')) as $letter): ?>
+                                    <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
+                                <?php endforeach; ?></h1>
+
+                        <?php include 'public/components/chat_user.php'; ?>
                     </div>
 
                 </section>

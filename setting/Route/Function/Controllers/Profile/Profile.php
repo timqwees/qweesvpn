@@ -40,22 +40,6 @@ class Profile
         return self::_referrerName($referCode);
     }
 
-    /**
-     * Получить процент бонусных дней (для отображения)
-     */
-    public function getBonusDaysPercent(): int
-    {
-        return $this->user->getBonusPercent();
-    }
-
-    /**
-     * Получить процент бонуса
-     */
-    public function getBonusPercent(): int
-    {
-        return $this->user->getBonusPercent();
-    }
-
     public function getPricingInfo(): array
     {
         return self::_pricingInfo();
@@ -90,7 +74,7 @@ class Profile
                 'refer_count' => $this->user->getReferCount(),
                 'has_discount' => $this->user->getDiscountPercent() > 0,
                 'discount_percent' => $this->user->getDiscountPercent(),
-                'bonus_percent' => $this->user->getBonusPercent(),
+                'discount_uses' => $this->user->getDiscountUses(),
                 'referrer_name' => self::_referrerName($this->user->getRefer())
             ],
             'pricing_info' => self::_pricingInfo()

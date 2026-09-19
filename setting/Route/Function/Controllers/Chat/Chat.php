@@ -97,36 +97,44 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 	public function getMessages(string $uniID) : array
 	{
 		if ($uniID === '') return [];//пустого не берем
-		if (!\is_array($this->data)) return [];//это массив
 		$this->touch($uniID);//я тут
-		$dialog = $this->dialog($uniID);
-		$changed = false;
-		foreach ($dialog as $key => $value) {//пробежимся по сообщениям
-			if (($value['sender_type'] ?? '') === 'admin' && empty($value['is_read'])) {//ответ админа еще не читали
-				$dialog[$key]['is_read'] = true;
-				$changed = true;
-			}
-		}
-		if ($changed) $this->store($uniID, $dialog);//что-то пометили, пишем в файл
-		return $dialog;
+		$this->markDialogRead($uniID, 'admin');//ответы админа считаем прочитанными
+		return $this->dialog($uniID);
 	}
 
 	public function markRead(string $uniID) : bool
 	{
 		if ($uniID === '') return false;//пустого не берем
-		if (!\is_array($this->data)) return false;//это массив
 		$this->touch($uniID);//я тут
-		$dialog = $this->dialog($uniID);
-		$changed = false;
-		foreach ($dialog as $key => $value) {//пробежимся по сообщениям
-			if (($value['sender_type'] ?? '') === 'admin' && empty($value['is_read'])) {//ответ админа еще не читали
-				$dialog[$key]['is_read'] = true;
-				$changed = true;
+		$this->markDialogRead($uniID, 'admin');
+		return true;
+	}
+
+	// Пометить прочитанными входящие (от $from) — атомарно под flock
+	private function markDialogRead(string $uniID, string $from) : void
+	{
+		$this->mutate(function (&$data) use ($uniID, $from) {
+			if (!isset($data[$uniID]) || !\is_array($data[$uniID])) return;
+			foreach ($data[$uniID] as $key => $value) {//пробежимся по сообщениям
+				if (($value['sender_type'] ?? '') === $from && empty($value['is_read'])) {
+					$data[$uniID][$key]['is_read'] = true;
+				}
+			}
+		});
+	}
+
+	public function getTotalUnread() : int
+	{
+		if (!\is_array($this->data)) return 0;//это массив
+		$total = 0;
+		foreach ($this->data as $uniID => $dialog) {//пробежимся по диалогам
+			if (!\is_array($dialog) || empty($dialog)) continue;//пустых не берем
+			if ($this->isClosedDialog($dialog)) continue;//закрытые не считаем
+			foreach ($dialog as $value) {//непрочитанное от юзеров
+				if (($value['sender_type'] ?? '') === 'user' && empty($value['is_read'])) $total++;
 			}
 		}
-		if (!$changed) return true;//уже все прочитано, файл не трогаем
-		$this->store($uniID, $dialog);
-		return true;
+		return $total;
 	}
 
 	public function getUnreadCount(string $uniID) : int
@@ -195,18 +203,9 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 	public function getDialog(string $uniID) : array
 	{
 		if ($uniID === '') return [];//пустого не берем
-		if (!\is_array($this->data)) return [];//это массив
 		$this->touch('admin');//админ тут
-		$dialog = $this->dialog($uniID);
-		$changed = false;
-		foreach ($dialog as $key => $value) {//пробежимся по сообщениям
-			if (($value['sender_type'] ?? '') === 'user' && empty($value['is_read'])) {//юзер написал, админ смотрит
-				$dialog[$key]['is_read'] = true;
-				$changed = true;
-			}
-		}
-		if ($changed) $this->store($uniID, $dialog);//что-то пометили, пишем в файл
-		return $dialog;
+		$this->markDialogRead($uniID, 'user');//написанное юзером считаем прочитанным
+		return $this->dialog($uniID);
 	}
 
 	public function reply(string $uniID, string $message) : bool
@@ -222,11 +221,16 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 	public function closeDialog(string $uniID) : bool
 	{
 		if ($uniID === '') return false;//пустого не берем
-		if (!\is_array($this->data)) return false;//это массив
-		$dialog = $this->dialog($uniID);
-		if (empty($dialog)) return false;//пустых не берем
-		if ($this->isClosedDialog($dialog)) return true;//уже закрыт
-		$this->push($uniID, 'system', 'user', 'closed', true);//системная пометка, не сообщение
+		$state = $this->mutate(function (&$data) use ($uniID) {
+			$dialog = (isset($data[$uniID]) && \is_array($data[$uniID])) ? $data[$uniID] : [];
+			if (empty($dialog)) return 'empty';//пустых не берем
+			$last = end($dialog);
+			if (\is_array($last) && ($last['sender_type'] ?? '') === 'system') return 'already';//уже закрыт
+			$data[$uniID][] = $this->makeMessage($dialog, 'system', 'user', 'closed', true);//системная пометка, не сообщение
+			return 'ok';
+		});
+		if ($state === 'empty') return false;
+		if ($state !== 'ok') return true;//уже закрыт, фото и лог не трогаем
 		$this->cleanPhotos($uniID);
 		(new Admin())->LoggerCRM("завершил диалог $uniID");
 		return true;
@@ -235,10 +239,12 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 	public function clearDialog(string $uniID) : bool
 	{
 		if ($uniID === '') return false;//пустого не берем
-		if (!\is_array($this->data)) return false;//это массив
-		if (!isset($this->data[$uniID])) return true;//уже пусто
-		unset($this->data[$uniID]);//сносим ветку целиком
-		(new Save())->save($this->data);//пишем в файл
+		$existed = $this->mutate(function (&$data) use ($uniID) {
+			if (!isset($data[$uniID])) return false;//уже пусто
+			unset($data[$uniID]);//сносим ветку целиком
+			return true;
+		});
+		if (!$existed) return true;
 		$this->cleanPhotos($uniID);
 		(new Admin())->LoggerCRM("очистил диалог $uniID");
 		return true;
@@ -262,7 +268,7 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 
 	public function photoPath(string $name, string $uniID) : string
 	{
-		if (!preg_match('/^[A-Za-z0-9_-]+\.(jpg|jpeg|png|gif|webp)$/i', $name)) return '';//чужое имя не берем
+		if (!preg_match('/^[A-Za-z0-9_-]+\.(jpg|jpeg|png|gif|webp|heic|heif)$/i', $name)) return '';//чужое имя не берем
 		if ($uniID !== '' && !str_starts_with($name, $uniID . '_')) return '';//чужое фото не отдаем
 		$path = self::$uploads . '/' . $name;
 		return is_file($path) ? $path : '';
@@ -293,30 +299,66 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 
 	private function dialog(string $uniID) : array
 	{
+		if (!\is_array($this->data)) return [];
 		$dialog = $this->data[$uniID] ?? [];//диалог юзера
 		return \is_array($dialog) ? $dialog : [];
 	}
 
-	private function store(string $uniID, array $dialog) : void
+	// Атомарное чтение-изменение-запись chats.json под LOCK_EX.
+	// Лечит lost update: параллельные опросы юзера и админа + медленная
+	// отправка фото больше не затирают друг друга. Локи не вкладываем:
+	// внутри $fn нельзя вызывать touch()/mutate().
+	private function mutate(callable $fn)
 	{
-		$this->data[$uniID] = $dialog;//кладем обратно
-		(new Save())->save($this->data);//пишем в файл
+		$file = self::$file;
+		$dir = dirname($file);
+		if ($dir !== '' && !is_dir($dir)) mkdir($dir, 0755, true);
+		$fp = @fopen($file, 'c+');
+		if ($fp === false) {//файл недоступен — старое поведение из памяти
+			$data = \is_array($this->data) ? $this->data : [];
+			$result = $fn($data);
+			$this->data = $data;
+			(new Save())->save($this->data);
+			return $result;
+		}
+		flock($fp, LOCK_EX);
+		$data = json_decode((string) stream_get_contents($fp), true);
+		if (!\is_array($data)) $data = [];
+		$result = $fn($data);
+		ftruncate($fp, 0);
+		rewind($fp);
+		fwrite($fp, (string) json_encode($data, JSON_UNESCAPED_UNICODE));
+		fflush($fp);
+		flock($fp, LOCK_UN);
+		fclose($fp);
+		$this->data = $data;//обновляем кэш свежими данными
+		return $result;
 	}
 
-	private function push(string $uniID, string $sender, string $receiver, string $message, bool $read = false, array $extra = []) : void
+	private function makeMessage(array $dialog, string $sender, string $receiver, string $message, bool $read = false, array $extra = []) : array
 	{
-		if (!\is_array($this->data)) $this->data = [];//это массив
-		$dialog = $this->dialog($uniID);
-		$dialog[] = [//новое сообщение
-			'id' => \count($dialog) + 1,
-			'uniID' => $uniID,
+		$lastId = 0;
+		foreach ($dialog as $m) $lastId = max($lastId, (int) ($m['id'] ?? 0));//max, а не count — переживает параллельные вставки
+		return [
+			'id' => $lastId + 1,
+			'uniID' => '',
 			'sender_type' => $sender,
 			'receiver_type' => $receiver,
 			'message' => $message,
 			'is_read' => $read,
 			'created_at' => date('Y-m-d H:i:s')
 		] + $extra;
-		$this->store($uniID, $dialog);
+	}
+
+	private function push(string $uniID, string $sender, string $receiver, string $message, bool $read = false, array $extra = []) : void
+	{
+		$this->mutate(function (&$data) use ($uniID, $sender, $receiver, $message, $read, $extra) {
+			$dialog = (isset($data[$uniID]) && \is_array($data[$uniID])) ? $data[$uniID] : [];
+			$msg = $this->makeMessage($dialog, $sender, $receiver, $message, $read, $extra);
+			$msg['uniID'] = $uniID;
+			$dialog[] = $msg;//новое сообщение
+			$data[$uniID] = $dialog;
+		});
 	}
 
 	private function isClosedDialog(array $dialog) : bool
@@ -343,12 +385,22 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 		$all = $this->presence();
 		$now = time();
 		if (isset($all[$id]) && $now - (int) $all[$id] < 5) return;//были недавно, файл не трогаем
-		$all[$id] = $now;//я тут
-		foreach ($all as $key => $ts) {//старше суток выкидываем, файл не пухнет
-			if (!is_int($ts) || $ts < $now - 86400) unset($all[$key]);
+		$fp = @fopen(self::$presence, 'c+');
+		if ($fp === false) return;
+		flock($fp, LOCK_EX);//онлайн-метки тоже правим атомарно
+		$cur = json_decode((string) stream_get_contents($fp), true);
+		if (!\is_array($cur)) $cur = [];
+		$cur[$id] = $now;//я тут
+		foreach ($cur as $key => $ts) {//старше суток выкидываем, файл не пухнет
+			if (!is_int($ts) || $ts < $now - 86400) unset($cur[$key]);
 		}
-		@file_put_contents(self::$presence, json_encode($all, JSON_UNESCAPED_UNICODE));
-		$this->seen = $all;
+		ftruncate($fp, 0);
+		rewind($fp);
+		fwrite($fp, (string) json_encode($cur, JSON_UNESCAPED_UNICODE));
+		fflush($fp);
+		flock($fp, LOCK_UN);
+		fclose($fp);
+		$this->seen = $cur;
 	}
 
 	private function cleanPhotos(string $uniID) : void

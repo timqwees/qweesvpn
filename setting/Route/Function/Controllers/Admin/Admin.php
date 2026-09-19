@@ -60,7 +60,10 @@ class Admin extends AdminAuth
     'logs' => 'Просмотр логов', 
     'add_user' => 'Создание пользователей', 
     'roles' => 'Панель администратора по управлению ролями',
-    'chat' => 'Чат поддержки'
+    'chat' => 'Чат поддержки',
+    'refer' => 'Реферальная система',
+    'gifts' => 'Пробная подписка',
+    'roi' => 'Калькулятор ROI'
     ];
     public const DEFAULT_PERMISSIONS = ['main' => 'Главное меню'];
 
@@ -157,7 +160,7 @@ class Admin extends AdminAuth
         $id = (int) (Session::init('admin')['auth'][1] ?? 0);//кто сидит
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            \sprintf("[WRK %s] [%s] %s: %s\n", date('Y-m-d H:i:s'), $this->getRole($id), $this->getUsername($id), $message),
+            \sprintf("[WLC] [%s] %s: %s\n", date('Y-m-d H:i:s'), $this->getRole($id), $this->getUsername($id), $message),
             FILE_APPEND
         );
     }

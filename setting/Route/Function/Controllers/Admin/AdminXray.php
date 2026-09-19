@@ -101,8 +101,8 @@ class AdminXray
             $dbReason = Database::lastError() !== '' ? Database::lastError() : 'неизвестна';
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf(
-                    "[%s] [ОШИБКА БД] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось. Причина: %s\n",
+                \sprintf(
+                    "[%s] [АДМИН ПАНЕЛЬ - ВЫДАЧА ПОДПИСКИ (ОШИБКА)] %s: подписка %d дней, %d уст. выдана, но обновление БД не удалось. Причина: %s\n",
                     date('Y-m-d H:i:s'),
                     $uniID,
                     $days,
@@ -114,7 +114,7 @@ class AdminXray
         } else {
             file_put_contents(
                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                sprintf("[%s] [АДМИН-ВЫДАЧА] %s: %d дней, %d уст., до %s\n", date('Y-m-d H:i:s'), $uniID, $days, $devices, date('Y-m-d H:i:s', (int) ($expiryMs / 1000))),
+                \sprintf("[%s] [АДМИН ПАНЕЛЬ - ВЫДАЧА ПОДПИСКИ] %s: %d дней, %d уст., до %s\n", date('Y-m-d H:i:s'), $uniID, $days, $devices, date('Y-m-d H:i:s', (int) ($expiryMs / 1000))),
                 FILE_APPEND
             );
             (new Admin())->LoggerCRM("выдал подписку $uniID");

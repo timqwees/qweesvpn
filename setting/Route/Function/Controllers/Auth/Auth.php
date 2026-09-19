@@ -16,10 +16,21 @@ use DateTime, DateTimeZone;
 class Auth extends Network
 {
 
+    /** Ключи пользовательской сессии (админскую не трогаем). */
+    private const USER_KEYS = ['user', 'kassa', 'pending_refer_code', 'notification'];
+
     public static function auth(): void
     {
-        if (!isset(Session::init('user')['uniID']))
+        $uniID = Session::init('user')['uniID'] ?? null;
+        if (empty($uniID)) {
             self::onRedirect('/auth/login');
+        }
+        // Пользователя могли удалить — сессия больше недействительна
+        $exists = Database::send('SELECT id FROM qwees_users WHERE uniID = ? LIMIT 1', [(string) $uniID]);
+        if (!\is_array($exists) || $exists === []) {
+            Session::init(self::USER_KEYS, null);
+            self::onRedirect('/auth/login');
+        }
     }
 
     // ======= GLOBAL FUNCTION AUTH =============
@@ -40,11 +51,11 @@ class Auth extends Network
         $code = mt_rand(1000, 9999);
 
         // Записываем в лог для отладки
-        $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
+        $logFile = $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
         file_put_contents(
             $logFile,
-            sprintf(
-                "[%s] [AUTH-SUCCESS] Попытка отправки кода %s на %s\n",
+            \sprintf(
+                "[%s] [АВТОРИЗАЦИЯ - КОД] Попытка отправки кода %s на %s\n",
                 date('Y-m-d H:i:s'),
                 $code,
                 $email
@@ -101,7 +112,7 @@ class Auth extends Network
         $email = isset($_POST['email']) ? (string) trim($_POST['email']) : '';
         try {
             $user = Database::send('SELECT uniID FROM qwees_users WHERE email = ?', [$email]);
-            Session::init(null);
+            Session::init(self::USER_KEYS, null);//чистим только пользовательское (админку не трогаем)
             Session::init('user', $user[0]);// user => ['uniID' => ....]
             Session::init('lang', 'ru');
             self::onRedirect('/');
@@ -130,44 +141,55 @@ class Auth extends Network
 
         // Генерация данных
         $uniID = $userData['uniID'] ?? uniqid('qws');
-        $myreferCode = $userData['myrefer'] ?? (new Refer())->generationRefer();
+        $myreferCode = $userData['myrefer'] ?? (new Refer())->generateCode();
 
-        // Добавление пользователя
+        // Добавление пользователя (атомарно: юзер + подписка одним коммитом)
         try {
-            Database::send("INSERT INTO qwees_users (first_name, last_name, email, uniID, myrefer) VALUES (?, ?, ?, ?, ?)", [
-                $userData['first_name'],
-                $userData['last_name'] ?? '',
-                $userData['email'],
-                $uniID,
-                $myreferCode
-            ]);
-
-            // Подписка (если указана)
-            if (!empty($userData['subscription']) && !empty($userData['duration_days'])) {
-                $planPrice = PriceConfig::getPrices()[1][$userData['subscription']] ?? 0;
-                $expiry = (new DateTime('now', new DateTimeZone('Europe/Moscow')))->modify('+' . (int) $userData['duration_days'] . ' days')->getTimestamp() * 1000;
-
-                Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, expiry) VALUES (?, ?, ?, ?, ?, ?)", [
+            $saved = Database::transaction(function () use ($userData, $uniID, $myreferCode) {
+                if (Database::send("INSERT INTO qwees_users (first_name, last_name, email, uniID, myrefer) VALUES (?, ?, ?, ?, ?)", [
+                    $userData['first_name'],
+                    $userData['last_name'] ?? '',
+                    $userData['email'],
                     $uniID,
-                    'on',
-                    $userData['subscription'],
-                    $planPrice,
-                    $userData['duration_days'],
-                    $expiry
-                ]);
+                    $myreferCode
+                ]) === false) {
+                    return false;
+                }
+
+                // Подписка (если указана)
+                if (!empty($userData['subscription']) && !empty($userData['duration_days'])) {
+                    $planPrice = PriceConfig::getPrices()[1][$userData['subscription']] ?? 0;
+                    $expiry = (new DateTime('now', new DateTimeZone('Europe/Moscow')))->modify('+' . (int) $userData['duration_days'] . ' days')->getTimestamp() * 1000;
+
+                    if (Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, amount, count_days, expiry) VALUES (?, ?, ?, ?, ?, ?)", [
+                        $uniID,
+                        'on',
+                        $userData['subscription'],
+                        $planPrice,
+                        $userData['duration_days'],
+                        $expiry
+                    ]) === false) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            if (!$saved) {
+                return ['success' => false, 'message' => 'Ошибка записи в базу данных'];
             }
 
             // Реферальный код
             $pendingReferCode = Session::init('pending_refer_code') ?? '';
             if (!empty($pendingReferCode)) {
-                (new Refer())->setRefer($uniID, $pendingReferCode, true);
+                (new Refer())->setRefer($uniID, $pendingReferCode);
                 Session::init('pending_refer_code', null);
             }
 
             // Логирование
             $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
-            file_put_contents($logFile, sprintf(
-                "[%s] REGISTER: %s (%s)\n",
+            file_put_contents($logFile, \sprintf(
+                "[%s] [РЕГИСТРАЦИЯ - НОВЫЙ ПОЛЬЗОВАТЕЛЬ]: %s (%s)\n",
                 date('Y-m-d H:i:s'),
                 $userData['first_name'] . ' ' . ($userData['last_name'] ?? ''),
                 $userData['email']
@@ -199,7 +221,7 @@ class Auth extends Network
         $result = (array) self::registerUser($userData);
 
         if ($result['success']) {
-            Session::init(null);//очищяем сессии для обходов и иньекций
+            Session::init(self::USER_KEYS, null);//очищяем пользовательское для обходов и иньекций (админку не трогаем)
             Session::init('user', ['uniID' => strval($result['uniID'])]);
             Session::init('lang', 'ru');
             self::onRedirect($_ENV['REDIRECT_SIGN_USER']);
@@ -214,7 +236,7 @@ class Auth extends Network
      */
     public static function onLogout(): void
     {
-        Session::init(null);
+        Session::init(self::USER_KEYS, null);//выходит только пользователь (админка и язык живы)
         self::onRedirect($_ENV['REDIRECT_LOG_UNSIGN_USER']);
         exit();
     }

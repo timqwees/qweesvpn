@@ -11,6 +11,7 @@ $groups = new Groups();//вызываем класс
 
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;
 use Setting\Route\Function\Controllers\Gifts\Gifts;
+use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 use App\Config\Database;
 use App\Config\Session;
@@ -19,6 +20,7 @@ use Setting\Route\Function\Functions;
 $site = Functions::site();
 $admin = new AdminDatabase();
 $gifts = new Gifts();//пробные подписки
+$referCfg = ReferConfig::getAll();//настройки рефералки
 
 // Конфигурация тарифов (единый объект из PriceConfig)
 $tariffConfig = PriceConfig::getConfig();
@@ -112,11 +114,11 @@ $colors = [
         <!-- navbar -->
         <?php include_once 'includes/sidebar.php'; ?>
 
-        <main class="flex-1 px-4 pt-14 md:pt-0 md:px-6 lg:px-8 overflow-x-hidden">
+        <main class="flex-1 min-w-0 px-4 pt-14 md:pt-0 md:px-6 lg:px-8 overflow-x-hidden">
 
             <!-- Секция: Главная -->
             <?php if ($groups->isPermission($adminUsername,'main')): ?>
-            <section class="max-w-7xl mx-auto my-3" data-section="main">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6" data-section="main">
                 <?php
                 // Получаем всю статистику одним вызовом
                 $stats = Setting\Route\Function\Controllers\Admin\AdminDatabase::getClientStats();
@@ -352,7 +354,7 @@ $colors = [
 
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="main">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="main">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -363,7 +365,7 @@ $colors = [
 
             <!-- Секция: Графики -->
             <?php if ($groups->isPermission($adminUsername,'charts')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="charts">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="charts">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
@@ -437,7 +439,7 @@ $colors = [
                         <script defer>
                             const $plansCtx = $('#chart_plans');
                             if ($plansCtx.length) {
-                                const labels = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'subscription') : []) ?>;
+                                const labels = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'plan') : []) ?>;
                                 const data = <?= json_encode(isset($financialStats['revenueByPlan']) ? array_column($financialStats['revenueByPlan'], 'revenue') : []) ?>;
 
                                 if (labels.length > 0 && data.length > 0) {
@@ -490,7 +492,7 @@ $colors = [
                 <?php endif; ?>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="charts">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="charts">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -501,7 +503,7 @@ $colors = [
 
             <!-- Секция: Цены -->
             <?php if ($groups->isPermission($adminUsername,'price')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="price">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="price">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row md:items-center justify-between gap-2">
                     <h1 class="text-2xl font-bold text-gray-800">
@@ -696,7 +698,77 @@ $colors = [
                 </script>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="price">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="charts">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <!-- Секция: ROI -->
+            <?php if ($groups->isPermission($adminUsername,'roi')): ?>
+            <?php $roi = \Setting\Route\Function\Controllers\Admin\Finance\Finance::calc(); ?>
+            <?php $roiCosts = \Setting\Route\Function\Controllers\Admin\Finance\Finance::getCosts(); ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="roi">
+                <div class="py-6 flex-col flex md:flex-row justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                        Калькулятор ROI
+                    </h1>
+                    <span class="text-sm font-semibold rounded-full px-3 py-1 <?= $roi['profit'] >= 0 ? 'text-green-700 bg-green-100' : 'text-red-700 bg-red-100' ?>">
+                        <?= $roi['profit'] >= 0 ? 'В плюсе' : 'В минусе' ?>: <?= number_format($roi['profit'], 0, ',', ' ') ?>₽/мес
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="text-sm text-gray-500 mb-1">Выручка, 30 дней</div>
+                        <div class="text-3xl font-bold text-gray-800"><?= number_format($roi['revenue'], 0, ',', ' ') ?>₽</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="text-sm text-gray-500 mb-1">Расходы, мес</div>
+                        <div class="text-3xl font-bold text-gray-800"><?= number_format($roi['costs'], 0, ',', ' ') ?>₽</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="text-sm <?= $roi['profit'] >= 0 ? 'text-green-600' : 'text-red-600' ?> mb-1">Прибыль, мес</div>
+                        <div class="text-3xl font-bold <?= $roi['profit'] >= 0 ? 'text-green-700' : 'text-red-700' ?>"><?= number_format($roi['profit'], 0, ',', ' ') ?>₽</div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="text-sm text-gray-500 mb-1">ROI</div>
+                        <div class="text-3xl font-bold <?= $roi['roi'] !== null && $roi['roi'] >= 0 ? 'text-green-700' : 'text-gray-600' ?>"><?= $roi['roi'] === null ? '—' : $roi['roi'] . '%' ?></div>
+                        <div class="text-xs text-gray-400 mt-1">маржа <?= $roi['margin'] === null ? '—' : $roi['margin'] . '%' ?><?= $roi['breakeven'] !== null ? ' · точка безубыточности: ' . $roi['breakeven'] . ' опл.' : '' ?></div>
+                    </div>
+                </div>
+
+                <form action="/admin/roi/save" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Расходы, ₽/мес</h3>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">Серверы</span>
+                            <input type="number" name="servers" min="0" step="0.01" value="<?= htmlspecialchars((string) ($roiCosts['servers'] ?? 0)) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-sm text-gray-500">Прочее</span>
+                            <input type="number" name="other" min="0" step="0.01" value="<?= htmlspecialchars((string) ($roiCosts['other'] ?? 0)) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                    </div>
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Как считается</h3>
+                        <div class="text-sm text-gray-500 flex flex-col gap-2">
+                            <div>Прибыль = выручка 30 дней − расходы за месяц.</div>
+                            <div>ROI = прибыль / расходы × 100%.</div>
+                            <div>Точка безубыточности = расходы / средний чек.</div>
+                        </div>
+                        <button type="submit" class="mt-4 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition-colors cursor-pointer">
+                            Сохранить
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <?php else: ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="roi">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -707,7 +779,7 @@ $colors = [
 
             <!-- Секция: Логи -->
             <?php if ($groups->isPermission($adminUsername,'logs')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="logs">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="logs">
                 <!-- Заголовок -->
                 <div class="py-6 flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
@@ -738,7 +810,7 @@ $colors = [
                                 $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
                                 $last_date = null;
                                 foreach ($lines as $line) {
-                                    if (str_starts_with($line, '[WRK ')) continue;//рабочие смотрят в Ролях
+                                    if (str_starts_with($line, '[WLC')) continue;//действия работников — только в Ролях
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 
                                     $color = 'text-white';
@@ -780,7 +852,7 @@ $colors = [
                 </div>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="logs">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="logs">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -791,7 +863,7 @@ $colors = [
 
             <!-- Секция: Чат поддержки -->
             <?php if ($groups->isPermission($adminUsername,'chat')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="chat">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="chat">
                 <div class="py-6 flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
                         Чат поддержки
@@ -800,7 +872,7 @@ $colors = [
                 <?php include_once __DIR__ . '/../../components/chat_admin.php'; ?>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="chat">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="chat">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -810,7 +882,8 @@ $colors = [
             <?php endif; ?>
 
             <!-- Секция: Пробная подписка -->
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="gifts">
+            <?php if ($groups->isPermission($adminUsername,'gifts')): ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="gifts">
                 <div class="py-6 flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
                         Пробная подписка
@@ -855,7 +928,7 @@ $colors = [
                         #gifts-list-wrap.gifts-closed { max-height:0; opacity:0; }
                         </style>
                         <div id="gifts-list-wrap" class="<?= ($gifts->data['mode'] ?? 'all') === 'list' ? '' : 'gifts-closed' ?>">
-                        <div class="flex flex-col gap-3">
+                        <div class="flex min-w-0 flex-col gap-3">
                             <div class="flex flex-col gap-2">
                                 <span class="text-sm text-gray-500">Быстрое добавление (поиск по клиентам)</span>
                                 <div class="flex gap-2">
@@ -943,12 +1016,95 @@ $colors = [
                             </button>
                         </div>
                     </form>
+            </section>
+            <?php else: ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="gifts">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
                 </div>
             </section>
-
+            <?php endif; ?>
+            
+            <!-- Секция: Реферальная система -->
+            <?php if ($groups->isPermission($adminUsername,'refer')): ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="refer">
+                <div class="py-6 flex md:flex-row justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
+                        Реферальная система
+                    </h1>
+                    <?php if (!empty($referCfg['enabled'])): ?>
+                        <span class="text-sm font-semibold text-green-700 bg-green-100 rounded-full px-3 py-1">Включена</span>
+                    <?php else: ?>
+                        <span class="text-sm font-semibold text-gray-500 bg-gray-100 rounded-full px-3 py-1">Выключена</span>
+                    <?php endif; ?>
+                </div>
+                <form action="/admin/refer/save" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Приглашённый (кто ввёл код)</h3>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">Дней в подарок</span>
+                            <input type="number" name="referral_days" min="0" value="<?= (int) ($referCfg['referral_days'] ?? 3) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">Скидка, %</span>
+                            <input type="number" name="referral_discount" min="0" max="100" value="<?= (int) ($referCfg['referral_discount'] ?? 10) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-sm text-gray-500">Скидка действует, покупок</span>
+                            <input type="number" name="discount_uses" min="1" max="100" value="<?= (int) ($referCfg['discount_uses'] ?? 5) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                            <span class="text-xs text-gray-400">1 — разовая (сгорит после первой оплаты), 5 — на пять покупок и т.д.</span>
+                        </label>
+                    </div>
+                    <div class="bg-white border border-border rounded-2xl p-4 sm:p-6">
+                        <h3 class="font-semibold text-gray-700 mb-4">Пригласивший (владелец кода)</h3>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">Дней за каждого приглашённого</span>
+                            <input type="number" name="referrer_days" min="0" value="<?= (int) ($referCfg['referrer_days'] ?? 3) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">% от дней покупки приглашённого — себе</span>
+                            <input type="number" name="referrer_percent" min="0" max="100" value="<?= (int) ($referCfg['referrer_percent'] ?? 5) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                            <span class="text-xs text-gray-400">5% от 30 дней = 2 дня сверху</span>
+                        </label>
+                        <label class="flex flex-col gap-1 mb-4">
+                            <span class="text-sm text-gray-500">Сколько покупок каждого приглашённого дают %</span>
+                            <input type="number" name="referrer_takes" min="1" max="100" value="<?= (int) ($referCfg['referrer_takes'] ?? 5) ?>" class="border border-gray-300 rounded-lg px-4 py-2 text-gray-800 focus:outline-none focus:border-green-500">
+                        </label>
+                        <label class="flex items-center justify-between gap-4 cursor-pointer">
+                            <span>
+                                <span class="block font-medium text-gray-800">Рефералка включена</span>
+                                <span class="block text-sm text-gray-500">Выкл — новые коды активировать нельзя</span>
+                            </span>
+                            <span class="relative inline-flex cursor-pointer items-center shrink-0">
+                                <input type="checkbox" name="enabled" value="on" class="peer sr-only" <?= !empty($referCfg['enabled']) ? 'checked' : '' ?>>
+                                <span class="h-6 w-11 rounded-full bg-gray-300 peer-checked:bg-green-500 transition-colors"></span>
+                                <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition-colors cursor-pointer">
+                            Сохранить
+                        </button>
+                    </div>
+                </form>
+            </section>
+            <?php else: ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="refer">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-800">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
+            
             <!-- Секция: Выдачи -->
             <?php if ($groups->isPermission($adminUsername,'give')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="give">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="give">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
@@ -957,7 +1113,7 @@ $colors = [
                 </div>
 
                 <!-- Выдача -->
-                <div class="flex flex-col gap-4">
+                <div class="flex min-w-0 flex-col gap-4">
 
                     <!-- Добавить клиента в днях -->
                     <div class="bg-white border border-border rounded-2xl p-4 sm:p-6 w-full">
@@ -1020,29 +1176,29 @@ $colors = [
                         <div data-user-find class="mt-6">
                             <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
                                 Информация об клиенте</h2>
-                            <div class="flex gap-6 mt-6">
+                            <div class="flex flex-col lg:flex-row gap-6 mt-6 min-w-0">
                                 <!-- Contact info -->
-                                <div class="flex flex-col gap-4">
+                                <div class="flex min-w-0 flex-col gap-4">
                                     <p class="text-gray-500"><span
                                             class="text-black uppercase border-solid border-r-2 border-black px-2"
                                             data-fuser-id></span> Ф.И: <span class="text-black uppercase"
                                             data-fuser-name></span></p>
                                     <p class="text-gray-500">UniID: <span
-                                            class="text-black bg-green-50 px-2 py-1 rounded-lg" data-fuser-uniID></span>
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg break-all" data-fuser-uniID></span>
                                     </p>
                                 </div>
                                 <!-- Subscription info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Статус подписки: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status></span></p>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-status></span></p>
                                     <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
                                             data-fuser-expires></span></p>
                                 </div>
                                 <!-- Subscription link info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Количество дней: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays></span></p>
-                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-countdays></span></p>
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg break-all"
                                             data-fuser-subscription></span>
                                         <button
                                             onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
@@ -1114,31 +1270,31 @@ $colors = [
                         <div data-user-find-hours class="mt-6">
                             <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
                                 Информация об клиенте</h2>
-                            <div class="flex gap-6 mt-6">
+                            <div class="flex flex-col lg:flex-row gap-6 mt-6 min-w-0">
                                 <!-- Contact info -->
-                                <div class="flex flex-col gap-4">
+                                <div class="flex min-w-0 flex-col gap-4">
                                     <p class="text-gray-500"><span
                                             class="text-black uppercase border-solid border-r-2 border-black px-2"
                                             data-fuser-id-hours></span> Ф.И: <span class="text-black uppercase"
                                             data-fuser-name-hours></span></p>
                                     <p class="text-gray-500">UniID: <span
-                                            class="text-black bg-green-50 px-2 py-1 rounded-lg"
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg break-all"
                                             data-fuser-uniID-hours></span>
                                     </p>
                                 </div>
                                 <!-- Subscription info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Статус подписки: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status-hours></span></p>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-status-hours></span></p>
                                     <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
                                             data-fuser-expires-hours></span></p>
                                 </div>
                                 <!-- Subscription link info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Количество дней: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays-hours></span>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-countdays-hours></span>
                                     </p>
-                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg break-all"
                                             data-fuser-subscription-hours></span>
                                         <button
                                             onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
@@ -1207,31 +1363,31 @@ $colors = [
                         <div data-user-find-minutes class="mt-6">
                             <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
                                 Информация об клиенте</h2>
-                            <div class="flex gap-6 mt-6">
+                            <div class="flex flex-col lg:flex-row gap-6 mt-6 min-w-0">
                                 <!-- Contact info -->
-                                <div class="flex flex-col gap-4">
+                                <div class="flex min-w-0 flex-col gap-4">
                                     <p class="text-gray-500"><span
                                             class="text-black uppercase border-solid border-r-2 border-black px-2"
                                             data-fuser-id-minutes></span> Ф.И: <span class="text-black uppercase"
                                             data-fuser-name-minutes></span></p>
                                     <p class="text-gray-500">UniID: <span
-                                            class="text-black bg-green-50 px-2 py-1 rounded-lg"
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg break-all"
                                             data-fuser-uniID-minutes></span>
                                     </p>
                                 </div>
                                 <!-- Subscription info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Статус подписки: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status-minutes></span></p>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-status-minutes></span></p>
                                     <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
                                             data-fuser-expires-minutes></span></p>
                                 </div>
                                 <!-- Subscription link info -->
-                                <div class="flex flex-col gap-3">
+                                <div class="flex min-w-0 flex-col gap-3">
                                     <p class="text-gray-500">Количество дней: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays-minutes></span>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-countdays-minutes></span>
                                     </p>
-                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg break-all"
                                             data-fuser-subscription-minutes></span>
                                         <button
                                             onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
@@ -1245,7 +1401,7 @@ $colors = [
                 </div>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="give">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="give">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -1256,7 +1412,7 @@ $colors = [
 
             <!-- Секция: Изьятие подписок -->
             <?php if ($groups->isPermission($adminUsername,'reduce')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="reduce">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="reduce">
                 <!-- Заголовок -->
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
@@ -1265,7 +1421,7 @@ $colors = [
                 </div>
 
                 <!-- Изьятие -->
-                <div class="flex flex-col gap-4">
+                <div class="flex min-w-0 flex-col gap-4">
 
                     <!-- Изьятие подписки -->
                     <div class="flex flex-col lg:flex-row gap-6 relative bg-white rounded-xl shadow-sm p-6">
@@ -1303,29 +1459,29 @@ $colors = [
                         <div data-user-find class="flex flex-col w-full">
                             <h2 class="text-lg sm:text-2xl font-semibold text-black/40 tracking-tight">
                                 Информация об клиенте</h2>
-                            <div class="flex gap-6 mt-6">
+                            <div class="flex flex-col lg:flex-row gap-6 mt-6 min-w-0">
                                 <!-- Contact info -->
-                                <div class="flex flex-1 flex-col gap-4">
+                                <div class="flex min-w-0 flex-1 flex-col gap-4">
                                     <p class="text-gray-500"><span
                                             class="text-black uppercase border-solid border-r-2 border-black px-2"
                                             data-fuser-id></span> Ф.И: <span class="text-black uppercase"
                                             data-fuser-name></span></p>
                                     <p class="text-gray-500">UniID: <span
-                                            class="text-black bg-green-50 px-2 py-1 rounded-lg" data-fuser-uniID></span>
+                                            class="text-black bg-green-50 px-2 py-1 rounded-lg break-all" data-fuser-uniID></span>
                                     </p>
                                 </div>
                                 <!-- Subscription info -->
-                                <div class="flex flex-1 flex-col gap-3">
+                                <div class="flex min-w-0 flex-1 flex-col gap-3">
                                     <p class="text-gray-500">Статус подписки: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-status></span></p>
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-status></span></p>
                                     <p class="text-gray-500">Активен до: <span class="text-black px-2 py-1 rounded-sm"
                                             data-fuser-expires></span></p>
                                 </div>
                                 <!-- Subscription link info -->
-                                <div class="flex flex-1 flex-col gap-3">
+                                <div class="flex min-w-0 flex-1 flex-col gap-3">
                                     <p class="text-gray-500">Количество дней: <span
-                                            class="text-black px-2 py-1 rounded-lg" data-fuser-countdays></span></p>
-                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg"
+                                            class="text-black px-2 py-1 rounded-lg break-all" data-fuser-countdays></span></p>
+                                    <p class="text-gray-500">Подписка: <span class="text-black px-2 py-1 rounded-lg break-all"
                                             data-fuser-subscription></span>
                                         <button
                                             onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
@@ -1338,7 +1494,7 @@ $colors = [
                 </div>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="reduce">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="reduce">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -1349,7 +1505,7 @@ $colors = [
 
             <!-- Секция: Добавление пользователей -->
             <?php if ($groups->isPermission($adminUsername,'add_user')): ?>
-                <section class="max-w-7xl mx-auto my-3 hidden" data-section="add_user">
+                <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="add_user">
                     <!-- Заголовок -->
                     <div class="py-6 flex-col flex md:flex-row justify-between items-center">
                         <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
@@ -1453,7 +1609,7 @@ $colors = [
                     </div>
                 </section>
             <?php else: ?>
-                <section class="max-w-7xl mx-auto my-3 hidden" data-section="add_user">
+                <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="add_user">
                     <div class="py-10 flex flex-col items-center gap-3 text-center">
                         <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                         <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -1464,7 +1620,7 @@ $colors = [
 
             <!-- Секция: Роли и права -->
             <?php if ($groups->isPermission($adminUsername, 'roles')): ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="roles">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="roles">
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">
                         Рабочие
@@ -1485,7 +1641,7 @@ $colors = [
                 
                     <div class="p-4">
                         <?php 
-                            $adminSession = Session::init();
+                            $adminSession = Session::init('admin');
                             
                             if (empty($adminSession)): 
                         ?>
@@ -1629,7 +1785,7 @@ $colors = [
                         $raw = file($rolesLog, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                         if (is_array($raw)) {
                             foreach ($raw as $line) {//берем только строки с WKL
-                                if (preg_match('/^\[WRK [^\]]+\]\s+\[[^\]]+\]\s+([^:]+):/', (string) $line, $m)) {
+                                if (preg_match('/^\[WLC[^\]]+\]\s+\[[^\]]+\]\s+([^:]+):/', (string) $line, $m)) {
                                     $wlines[] = ['wkl' => trim($m[1]), 'line' => $line];
                                 }
                             }
@@ -1665,7 +1821,7 @@ $colors = [
                 </script>
             </section>
             <?php else: ?>
-            <section class="max-w-7xl mx-auto my-3 hidden" data-section="roles">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="roles">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-800">Недоступно</div>
@@ -1696,6 +1852,21 @@ $colors = [
                     setTimeout(() => $element.addClass('translate-x-full'), 4100);
                     setTimeout(() => { $element.remove(); if (!$container.children().length) $container.remove(); }, 4400);
                 }
+
+                // Красный счётчик чата в меню: обновляем, даже когда раздел чата закрыт
+                setInterval(function () {
+                    if (!$('[data-chat-menu-badge]').length) return;
+                    $.getJSON('/api/chat/dialogs')
+                        .done(function (data) {
+                            if (data.status !== 'ok' || !Array.isArray(data.dialogs)) return;
+                            var total = 0;
+                            data.dialogs.forEach(function (d) { if (!d.closed) total += (d.unread | 0); });
+                            $('[data-chat-menu-badge]').each(function () {
+                                $(this).text(total);
+                                $(this).toggleClass('hidden', !total).toggleClass('inline-flex', !!total);
+                            });
+                        });
+                }, 20000);
 
                 function copyToClipboard(text, label = 'Текст') {
                     if (!text) {

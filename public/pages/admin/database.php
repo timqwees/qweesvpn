@@ -33,6 +33,7 @@ if (empty($table)) {
     \App\Models\Network\Network::onRedirect('/admin');
 }
 
+AdminDatabase::ensureSubscriptionUnique(); // убрать дубли подписок + уникальный индекс
 $columns = AdminDatabase::getColumns($table); // Получаем имена колонок
 $count = AdminDatabase::getCount($table); //колв записей
 
@@ -43,6 +44,18 @@ if (!empty($searchQuery)) {
 } elseif (!empty($filterColumn)) {
     // Фильтрация по колонке
     $data = AdminDatabase::filter($table, $filterColumn, $filterValue, 50, $filterCondition);
+} elseif ($table === 'qwees_subscriptions') {
+    // Подписки с почтой владельца (JOIN) + колонка email сразу после status
+    $data = AdminDatabase::getSubscriptionsWithEmail(50, $_GET['sort'] ?? 'id', $_GET['dir'] ?? 'ASC');
+    $columns = array_values(array_filter($columns, fn($c) => $c !== 'email'));
+    $pos = array_search('status', $columns, true);
+    array_splice($columns, $pos === false ? count($columns) : $pos + 1, 0, ['email']);
+} elseif ($table === 'qwees_users') {
+    // Пользователи со статусом подписки (JOIN) + колонка status сразу после email
+    $data = AdminDatabase::getUsersWithSubscription(50, $_GET['sort'] ?? 'id', $_GET['dir'] ?? 'ASC');
+    $columns = array_values(array_filter($columns, fn($c) => $c !== 'status'));
+    $pos = array_search('id', $columns, true);
+    array_splice($columns, $pos === false ? 0 : $pos + 1, 0, ['status']);
 } else {
     // Все данные с сортировкой
     $data = AdminDatabase::getData($table, 50, $_GET['sort'] ?? 'id', $_GET['dir'] ?? 'ASC');
@@ -273,30 +286,6 @@ $sortIcon = function ($col) {
                                 ]
                             ],
                         ];
-                    } elseif ($table === 'qwees_users') {
-                        $availableFilters = [
-                            'role' => [
-                                'name' => 'Роль пользователя',
-                                'icon' => 'fa-user-shield',
-                                'options' => [
-                                    ['value' => 'user', 'label' => 'Пользователь', 'condition' => '=', 'color' => 'green'],
-                                    ['value' => 'manager', 'label' => 'Менеджер', 'condition' => '=', 'color' => 'yellow'],
-                                    ['value' => 'admin', 'label' => 'Администратор', 'condition' => '=', 'color' => 'red'],
-                                ]
-                            ],
-                        ];
-                    } elseif ($table === 'qwees_payments') {
-                        $availableFilters = [
-                            'status' => [
-                                'name' => 'Статус платежа',
-                                'icon' => 'fa-money-bill',
-                                'options' => [
-                                    ['value' => 'completed', 'label' => 'Завершен', 'condition' => '=', 'color' => 'green'],
-                                    ['value' => 'pending', 'label' => 'В обработке', 'condition' => '=', 'color' => 'yellow'],
-                                    ['value' => 'failed', 'label' => 'Ошибка', 'condition' => '=', 'color' => 'red'],
-                                ]
-                            ],
-                        ];
                     }
                     ?>
 
@@ -357,7 +346,7 @@ $sortIcon = function ($col) {
             </div>
         </aside>
 
-        <main class="mx-auto container px-4 md:px-20 pt-14 md:pt-0 flex-grow bg-gray-100 overflow-auto">
+        <main class="mx-auto container px-4 md:px-20 pt-14 md:pt-0 flex-grow min-w-0 bg-gray-100 overflow-auto">
             <!-- Заголовок -->
             <div class="container mx-auto py-6">
                 <h1 class="text-2xl font-semibold text-gray-800">
@@ -377,7 +366,7 @@ $sortIcon = function ($col) {
                                             class="px-4 py-3 text-left font-medium text-gray-700 whitespace-nowrap cursor-pointer hover:bg-gray-100">
                                             <a href="<?= $sortUrl($col) ?>"
                                                 class="flex items-center gap-1 text-gray-700 hover:text-green-600">
-                                                <?= htmlspecialchars($col) ?>
+                                                <?= htmlspecialchars($table === 'qwees_users' && $col === 'status' ? 'статус подписки' : $col) ?>
                                                 <span class="text-xs text-gray-400"><?= $sortIcon($col) ?></span>
                                             </a>
                                         </th>
@@ -396,6 +385,18 @@ $sortIcon = function ($col) {
                                                             class="text-green-600 hover:underline font-medium">
                                                             <?= htmlspecialchars((string) $row[$col]) ?>
                                                         </a>
+                                                        <?php if ($table === 'qwees_users'): ?>
+                                                        <form action="/admin/delete" method="POST" class="inline"
+                                                            onsubmit="return confirm('Удалить пользователя вместе с подписками?');">
+                                                            <input type="hidden" name="table" value="<?= htmlspecialchars($table) ?>">
+                                                            <input type="hidden" name="id" value="<?= htmlspecialchars((string) $row[$col]) ?>">
+                                                            <input type="hidden" name="url" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+                                                            <button type="submit" title="Удалить пользователя"
+                                                                class="text-red-400 hover:text-red-600 transition-colors">
+                                                                <i class="fa-solid fa-trash text-xs"></i>
+                                                            </button>
+                                                        </form>
+                                                        <?php endif; ?>
                                                     </div>
                                                 <?php elseif ($col === 'status' && isset(AdminDatabase::USER_STATUSES[$row[$col]])): ?>
                                                     <span

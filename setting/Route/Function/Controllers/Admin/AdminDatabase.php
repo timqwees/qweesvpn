@@ -157,6 +157,9 @@ class AdminDatabase
      */
     public static function getColumns(string $table): array
     {
+        if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+            return [];
+        }
         // Берем первую строку и используем её ключи как названия колонок
         $data = Database::send("SELECT * FROM {$table} LIMIT 1");
 
@@ -172,8 +175,9 @@ class AdminDatabase
                 return array_column($info, 'Field');
             }
         } else {
-            // SQLite: используем PRAGMA
-            $info = Database::send("PRAGMA table_info({$table})");
+            // SQLite: PRAGMA через Database::send не вернуть (не SELECT) —
+            // читаем колонки табличной pragma-функцией обычным SELECT
+            $info = Database::send("SELECT name FROM pragma_table_info('{$table}')");
             if (is_array($info) && !empty($info)) {
                 return array_column($info, 'name');
             }
@@ -207,6 +211,87 @@ class AdminDatabase
     {
         $result = Database::send("SELECT * FROM $table WHERE id = ? LIMIT 1", [$id]);
         return (is_array($result) && !empty($result)) ? $result[0] : null;
+    }
+
+    /**
+     * Подписки с почтой владельца (JOIN по uniID) — для таблицы в админке.
+     * @return array строки qwees_subscriptions + поле email
+     */
+    public static function getSubscriptionsWithEmail(int $limit = 50, string $orderBy = 'id', string $orderDir = 'ASC'): array
+    {
+        $orderBy = preg_match('/^[A-Za-z0-9_]+$/', $orderBy) ? $orderBy : 'id';
+        $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
+        $limit = max(1, min(200, $limit));
+        $order = $orderBy === 'email' ? 'u.email' : 's.' . $orderBy;
+        $result = Database::send(
+            "SELECT s.*, u.email AS email FROM qwees_subscriptions s
+             LEFT JOIN qwees_users u ON u.uniID = s.uniID
+             ORDER BY {$order} {$orderDir} LIMIT {$limit}"
+        );
+        return is_array($result) ? $result : [];
+    }
+
+    private static bool $subUniqueEnsured = false;
+
+    /**
+     * Чистка дублей подписок (наследие таблиц без UNIQUE) + уникальный индекс,
+     * чтобы дубли больше не появлялись. Держим одну строку на uniID —
+     * с максимальным expiry. Идемпотентно (один раз за процесс).
+     */
+    public static function ensureSubscriptionUnique(): void
+    {
+        if (self::$subUniqueEnsured) {
+            return;
+        }
+        self::$subUniqueEnsured = true;
+        $dupes = Database::send('SELECT uniID, COUNT(*) AS c FROM qwees_subscriptions GROUP BY uniID HAVING c > 1');
+        if (\is_array($dupes)) {
+            foreach ($dupes as $d) {
+                $rows = Database::send('SELECT id FROM qwees_subscriptions WHERE uniID = ? ORDER BY expiry DESC, id DESC', [$d['uniID']]);
+                if (\is_array($rows) && \count($rows) > 1) {
+                    foreach (\array_slice($rows, 1) as $r) {
+                        Database::send('DELETE FROM qwees_subscriptions WHERE id = ?', [(int) $r['id']]);
+                    }
+                    file_put_contents(
+                        $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                        \sprintf("[%s] [АДМИН ПАНЕЛЬ - ИСПРАВЛЕНИЕ] qwees_subscriptions %s: убрано дублей %d, оставлен id %d\n", date('Y-m-d H:i:s'), $d['uniID'], \count($rows) - 1, (int) $rows[0]['id']),
+                        FILE_APPEND
+                    );
+                }
+            }
+        }
+        if (Database::isMysql()) {
+            $idx = Database::send("SHOW INDEX FROM qwees_subscriptions WHERE Column_name = 'uniID' AND Non_unique = 0");
+            if (!\is_array($idx) || $idx === []) {
+                Database::send('CREATE UNIQUE INDEX idx_subscriptions_uniID ON qwees_subscriptions (uniID)');
+            }
+        } else {
+            $rows = Database::send("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'qwees_subscriptions'");
+            $sql = (\is_array($rows) && isset($rows[0])) ? (string) ($rows[0]['sql'] ?? '') : '';
+            $idx = Database::send("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'qwees_subscriptions' AND sql LIKE '%UNIQUE%'");
+            if (strpos($sql, 'UNIQUE') === false && (!\is_array($idx) || $idx === [])) {
+                Database::send('CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_uniID ON qwees_subscriptions (uniID)');
+            }
+        }
+    }
+
+    /**
+     * Пользователи со статусом подписки (JOIN) — для таблицы в админке.
+     * Без подписки — 'off'. Бейдж рисует сама database.php по USER_STATUSES.
+     * @return array строки qwees_users + поле status
+     */
+    public static function getUsersWithSubscription(int $limit = 50, string $orderBy = 'id', string $orderDir = 'ASC'): array
+    {
+        $orderBy = preg_match('/^[A-Za-z0-9_]+$/', $orderBy) ? $orderBy : 'id';
+        $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
+        $limit = max(1, min(200, $limit));
+        $order = $orderBy === 'status' ? 's.status' : 'u.' . $orderBy;
+        $result = Database::send(
+            "SELECT u.*, COALESCE(s.status, 'off') AS status FROM qwees_users u
+             LEFT JOIN qwees_subscriptions s ON s.uniID = u.uniID
+             ORDER BY {$order} {$orderDir} LIMIT {$limit}"
+        );
+        return is_array($result) ? $result : [];
     }
 
     /**
@@ -292,11 +377,18 @@ class AdminDatabase
         if (empty($data)) {
             return false;
         }
+        // Имена таблицы/колонок в prepare не подставишь — проверяем шаблоном
+        if (!preg_match('/^[A-Za-z0-9_]+$/', (string) $table)) {
+            return false;
+        }
 
         $col = [];
         $params = [];
 
         foreach ($data as $column => $value) {
+            if (!preg_match('/^[A-Za-z0-9_]+$/', (string) $column)) {
+                return false;
+            }
             $col[] = "$column = ?"; //sql запрос prepare column
             $params[] = $value; //sql запрос prepare value
         }
@@ -305,7 +397,12 @@ class AdminDatabase
         $sql = "UPDATE {$table} SET " . implode(', ', $col) . " WHERE id = ?";
 
         $result = Database::send($sql, $params);
-        return is_array($result) || $result === [];
+        if ($result !== false) {
+            return true;
+        }
+        // send() возвращает false и при «0 строк» (значения те же) — это не ошибка
+        $err = Database::lastError();
+        return $err === '' || strpos($err, 'WARNING') === 0;
     }
 
     // Константы для choices (аналог Django choices)
@@ -370,6 +467,44 @@ class AdminDatabase
         } else {
             Network::onRedirect($url ?: '/admin');
         }
+    }
+
+    /**
+     * Удаление пользователя целиком (только qwees_users):
+     * сам юзер + его подписки + его строки в истории рефералов.
+     * Для чистки тестовых профилей.
+     */
+    public function onAdminDelete(): void
+    {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::auth();
+        $table = $_POST['table'] ?? '';
+        $id = $_POST['id'] ?? '';
+        $url = $_POST['url'] ?? '';
+
+        if ($table !== 'qwees_users' || $id === '') {
+            Network::onRedirect('/admin');
+        }
+
+        $row = self::getRow($table, $id);
+        if ($row === null) {
+            Network::onRedirect('/admin/database?table=' . urlencode($table));
+        }
+        $uniID = (string) ($row['uniID'] ?? '');
+        $email = (string) ($row['email'] ?? '');
+
+        $success = Database::transaction(function () use ($uniID, $id) {
+            if ($uniID !== '') {
+                Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [$uniID]);
+                Database::send('DELETE FROM qwees_refer WHERE referral_uniID = ? OR referrer_uniID = ?', [$uniID, $uniID]);
+            }
+            return Database::send('DELETE FROM qwees_users WHERE id = ?', [$id]) !== false;
+        });
+
+        if ($success) {
+            (new Admin())->LoggerCRM("удалил пользователя {$email} ({$uniID})");
+        }
+        $separator = strpos($url, '?') !== false ? '&' : '?';
+        Network::onRedirect(($url ?: '/admin/database?table=' . urlencode($table)) . $separator . 'message_status=' . ($success ? 'success' : 'error') . '&message_msg=' . urlencode($success ? 'Пользователь удалён' : 'Не удалось удалить'));
     }
 
     /**
@@ -455,7 +590,7 @@ class AdminDatabase
         $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
         file_put_contents(
             $logFile,
-            sprintf("[%s] [SUCCESS] Изменены цены: %s\n", date('Y-m-d H:i:s'), implode('; ', $changed)),
+            \sprintf("[%s] [АДМИН ПАНЕЛЬ - ЦЕНЫ] Изменены цены: %s\n", date('Y-m-d H:i:s'), implode('; ', $changed)),
             FILE_APPEND
         );
 
@@ -738,12 +873,18 @@ class AdminDatabase
      */
     private static function getRevenueByPlan(): array
     {
-        $sql = "SELECT 
-                    subscription,
-                    SUM(amount) as revenue,
+        // В subscription лежат URL/метки, а не названия — группируем в читаемые корзины
+        $sql = "SELECT
+                    CASE
+                        WHEN subscription = 'trial' THEN 'Пробные'
+                        WHEN subscription = 'bonus' THEN 'Бонусные'
+                        WHEN subscription LIKE 'pending_%' OR subscription = '' OR subscription IS NULL THEN 'Ожидающие'
+                        ELSE 'Оплаченные'
+                    END AS plan,
+                    COALESCE(SUM(amount), 0) as revenue,
                     COUNT(*) as count
-                FROM qwees_subscriptions 
-                GROUP BY subscription
+                FROM qwees_subscriptions
+                GROUP BY plan
                 ORDER BY revenue DESC";
 
         $result = Database::send($sql);
@@ -771,8 +912,8 @@ class AdminDatabase
             $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
             file_put_contents(
                 $logFile,
-                sprintf(
-                    "[%s] [ADMIN] Ошибка добавления пользователя: %s\n",
+                \sprintf(
+                    "[%s] [АДМИН ПАНЕЛЬ - ДОБАВЛЕНИЕ] Ошибка добавления пользователя: %s\n",
                     date('Y-m-d H:i:s'),
                     $result['message']
                 ),
@@ -786,8 +927,8 @@ class AdminDatabase
         $logFile = $_ENV['LOG_FILE_NAME'] ?? 'app.log';
         file_put_contents(
             $logFile,
-            sprintf(
-                "[%s] [ADMIN] Добавлен новый пользователь: %s (%s), uniID: %s\n",
+            \sprintf(
+                "[%s] [АДМИН ПАНЕЛЬ - ДОБАВЛЕНИЕ] Добавлен новый пользователь: %s (%s), uniID: %s\n",
                 date('Y-m-d H:i:s'),
                 $userData['first_name'] . ' ' . ($userData['last_name'] ?? ''),
                 $userData['email'],

@@ -10,20 +10,26 @@ CREATE TABLE IF NOT EXISTS qwees_users (
     refer_id INTEGER NOT NULL DEFAULT 0,
     refer_count INTEGER NOT NULL DEFAULT 0,
     discount_percent INTEGER NOT NULL DEFAULT 0,
+    discount_uses INTEGER NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    bonus_percent INTEGER NOT NULL DEFAULT 0,
     UNIQUE (uniID),
     UNIQUE (email)
 );
 
--- Таблица рефералов
+-- Таблица рефералов (история: кто кого пригласил + какие бонусы выданы)
 CREATE TABLE IF NOT EXISTS qwees_refer (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    uniID TEXT NOT NULL DEFAULT '',
-    refer TEXT NOT NULL DEFAULT '',
-    me TEXT NOT NULL DEFAULT '',
-    count TEXT NOT NULL DEFAULT '',
-    UNIQUE (uniID)
+    referrer_id INTEGER NOT NULL DEFAULT 0,
+    referrer_uniID TEXT NOT NULL DEFAULT '',
+    referral_id INTEGER NOT NULL DEFAULT 0,
+    referral_uniID TEXT NOT NULL DEFAULT '',
+    code TEXT NOT NULL DEFAULT '',
+    days_to_referral INTEGER NOT NULL DEFAULT 0,
+    days_to_referrer INTEGER NOT NULL DEFAULT 0,
+    discount_percent INTEGER NOT NULL DEFAULT 0,
+    takes_left INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (referral_uniID)
 );
 
 -- Таблица подписок

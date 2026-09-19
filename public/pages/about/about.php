@@ -337,53 +337,38 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                         </div>
 
                         <!-- Studio Card -->
-                        <div class="glow-card relative p-6 rounded-2xl overflow-hidden group">
-                            <div
-                                class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                            </div>
-                            <div
-                                class="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-2xl">
-                            </div>
 
+                        <div class="glow-card relative p-6 rounded-2xl overflow-hidden group bg-gray-900">
+                            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-full blur-2xl"></div>
+                        
                             <div class="relative z-10">
                                 <div class="flex items-center gap-3 mb-4">
-                                    <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 flex items-center justify-center ring-1 ring-cyan-400/40 overflow-hidden p-2">
-                                        <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg"
-                                            alt="<?= htmlspecialchars($site['ООО']) ?>"
-                                            class="w-full h-full object-contain ">
+                                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/30 to-pink-600/30 flex items-center justify-center ring-1 ring-purple-400/40 overflow-hidden">
+                                        <img src="<?= $site['baseUrl'] ?>/public/assets/images/icons/logo/qweesvpn.svg" alt="Руслан Шафиков" class="w-8 h-8 object-contain" />
                                     </div>
                                     <div>
-                                        <h2 class="text-lg font-bold text-white">
-                                            <?= htmlspecialchars($site['ООО']) ?> Studio
-                                        </h2>
-                                        <p class="text-cyan-400 text-xs"><?= htmlspecialchars($site['студия']) ?></p>
+                                        <h2 class="text-lg font-bold text-white">Руслан Шафиков</h2>
+                                        <p class="text-purple-400 text-xs">Директор &amp; Лидер</p>
                                     </div>
                                 </div>
-                                <p class="text-gray-400 text-sm leading-relaxed mb-4">
-                                    <?= $t('elite_lab') ?> <span
-                                        class="text-cyan-400 font-semibold"><?= $t('future_tech') ?></span>.
-                                    <?= $t('follow_no_trends') ?>
+                                <p class="text-gray-400 text-sm leading-relaxed mb-3">
+                                    <span class="text-purple-400 font-bold">Руслан</span> — профессионал, который заботится о клиентах и обеспечивает развитие компании. Его миссия — делать сервис лучше и надежнее.
                                 </p>
-                                <div class="grid grid-cols-2 gap-2 mb-3">
-                                    <div class="text-center p-2 bg-white/[0.05] rounded-lg">
-                                        <span class="text-cyan-400 font-bold text-lg">1</span>
-                                        <span class="text-gray-400 text-xs block"><?= $t('server') ?></span>
-                                        <span class="text-cyan-400/70 text-[10px] block"><?= $t('netherlands') ?></span>
-                                    </div>
-                                    <div class="text-center p-2 bg-white/[0.05] rounded-lg">
-                                        <span class="text-blue-400 font-bold text-lg">99.9%</span>
-                                        <span class="text-gray-400 text-xs block">Uptime</span>
-                                    </div>
+                                <div class="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-3 rounded-xl border-l-4 border-purple-400 mb-3">
+                                    <p class="text-gray-400 text-sm italic">
+                                        "Для меня главное — доверие клиентов и качество сервиса." 
+                                    </p>
                                 </div>
-                                <div class="flex flex-wrap gap-2 pt-3 border-t border-white/10">
-                                    <span
-                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-400 text-xs border border-red-500/30"><?= $t('premium_vpn') ?></span>
-                                    <span
-                                        class="px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 text-xs border border-cyan-500/30"><?= $t('top_2026') ?></span>
+                                <div class="flex items-center gap-4 pt-3 border-t border-white/10">
+                                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                                        T
+                                    </div>
+                                    <span class="text-gray-400 text-xs">Руководитель</span>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
                     <!-- Quote Section -->
@@ -411,11 +396,6 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
                     <!-- Stats Section -->
                     <div class="grid grid-cols-4 gap-4 mt-4">
-                        <div
-                            class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
-                            <span class="text-3xl font-bold text-green-400">NL</span>
-                            <span class="text-gray-400 text-xs mt-1"><?= $t('netherlands') ?></span>
-                        </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-4 rounded-xl bg-white/[0.03]">
                             <span class="text-3xl font-bold text-emerald-400">AES-256</span>
@@ -621,11 +601,6 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
                     <!-- Stats -->
                     <div class="grid grid-cols-2 gap-3 mt-2">
-                        <div
-                            class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">
-                            <span id="1" class="text-2xl font-bold text-green-400">NL</span>
-                            <span class="text-gray-400 text-xs"><?= $t('netherlands') ?></span>
-                        </div>
                         <div
                             class="gradient-border flex flex-col items-center justify-center p-3 rounded-xl bg-white/[0.03]">
                             <span class="text-2xl font-bold text-emerald-400">AES-256</span>

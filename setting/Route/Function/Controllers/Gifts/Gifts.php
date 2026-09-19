@@ -48,7 +48,7 @@ use Setting\Route\Function\Controllers\Admin\Admin;
 
 class Gifts implements InterfaceGifts
 {
-	public static string $file = 'setting/Route/Function/Controllers/Gifts/Config/gifts.json';
+	public static string $file = __DIR__ . '/Config/gifts.json';//абсолютный путь: относительный ломался при другом CWD и плодил копии
 	public array $data;
 
 	public function __construct()
@@ -152,14 +152,31 @@ class Gifts implements InterfaceGifts
 		if ($uniID === '') return false;//пустого не берем
 		$days = $this->getDays();
 		if ($days < 1) return false;//срок не настроен
-		$expiry = (time() + $days * 86400) * 1000;//мс как везде
-		$has = Database::send("SELECT status FROM qwees_subscriptions WHERE uniID = ? LIMIT 1", [$uniID]);
-		if (!empty($has) && ($has[0]['status'] ?? '') === 'on') return false;//подписка уже есть, пробную не даем
-		if (!empty($has)) {//строка есть, но выключена — включаем пробную
-			Database::send("UPDATE qwees_subscriptions SET status = 'on', count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [$days, $expiry, $uniID]);
+		$nowMs = time() * 1000;//мс как везде
+		$row = Database::send('SELECT status, subscription, expiry, count_days FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+		$cur = (\is_array($row) && isset($row[0])) ? $row[0] : null;
+		if ($cur !== null) {
+			$status = (string) ($cur['status'] ?? '');
+			$sub = (string) ($cur['subscription'] ?? '');
+			$expiry = (int) ($cur['expiry'] ?? 0);
+			if ($status === 'pending_vpn') return false;//оплачено, ждёт VPN — триалом не перекрываем
+			if ($status === 'on' && $expiry > $nowMs && !\in_array($sub, ['trial', 'bonus', ''], true)) {
+				return false;//активная платная подписка уже есть, пробную не даем
+			}
+			if ($status === 'on' && $expiry > $nowMs) return false;//активный триал/бонус уже идёт, повторно не даем
+			// Триал ДОБАВЛЯЕМ поверх остатка (в т.ч. bonus-дней рефералки), а не затираем
+			$newExpiry = max($nowMs, $expiry) + $days * 86400000;
+			$newCount = (int) ($cur['count_days'] ?? 0) + $days;
+			Database::send("UPDATE qwees_subscriptions SET status = 'on', subscription = 'trial', count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [$newCount, $newExpiry, $uniID]);
 		} else {//первый раз
-			Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', 'trial', ?, ?)", [$uniID, $days, $expiry]);
+			$newExpiry = $nowMs + $days * 86400000;
+			Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', 'trial', ?, ?)", [$uniID, $days, $newExpiry]);
 		}
+		file_put_contents(
+			$_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+			\sprintf("[%s] [ПРОБНАЯ ПОДПИСКА - ВЫДАЧА] %s: выдано %d дней\n", date('Y-m-d H:i:s'), $uniID, $days),
+			FILE_APPEND
+		);
 		return true;//ключ VPN докинем при выкате через Xray
 	}
 

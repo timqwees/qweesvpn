@@ -46,7 +46,7 @@ use Setting\Route\Function\Controllers\Admin\{AdminInterface\InterfaceGroup, Gro
 
 class Groups implements InterfaceGroup
 {
-	public static string $file = 'setting/Route/Function/Controllers/Admin/Group/Permissions/permissions.json';
+	public static string $file = __DIR__ . '/Permissions/permissions.json';//абсолютный путь: относительный ломался при другом CWD и плодил копии
 	public array $data;
 
 	public function __construct()

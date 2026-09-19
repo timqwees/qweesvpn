@@ -7,165 +7,240 @@ namespace Setting\Route\Function\Controllers\Refer;
 use App\Config\Database;
 use App\Config\Session;
 use App\Models\Network\Network;
-use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
+use Setting\Route\Function\Controllers\Admin\Admin;
 use Setting\Route\Function\Controllers\Refer\Bonus\Bonus;
+use Setting\Route\Function\Controllers\Refer\Config\ReferConfig;
+use Setting\Route\Function\Controllers\Refer\ReferInterface\{InterfaceRefer, InterfaceReferLog};
+use Setting\Route\Function\Controllers\Refer\Tools\{ReferLog, ReferRepository};
 use Setting\Route\Function\Controllers\Client\GetUser;
 
-/**
- * Refer - Корневой файл реферальной системы (как главный класс плагина)
- * 
- * Логика:
- * 1. Через ввод кода → activateRefer() POST /api/referral/activate
- * 2. Через ссылку /reflink={code} → GET маршрут вызывает тот же activateRefer()
- */
-class Refer
+//SOLID: фасад реферальной системы (как Groups в Admin/Group).
+//Вся SQL — в ReferRepository, бонусы — в Bonus, логи — в ReferLog.
+//Здесь только проверки и orchestration. Один путь активации для API и регистрации.
+
+class Refer implements InterfaceRefer
 {
+    private ReferRepository $repo;
+    private InterfaceReferLog $log;
+    private Bonus $bonus;
+
+    public function __construct(?ReferRepository $repo = null, ?InterfaceReferLog $log = null, ?Bonus $bonus = null)
+    {
+        $this->log = $log ?? new ReferLog();
+        $this->repo = $repo ?? new ReferRepository($this->log);
+        $this->bonus = $bonus ?? new Bonus($this->repo, $this->log);
+    }
 
     /**
-     * Внутренняя логика активации (используется API и handleReferLink)
+     * Единый путь активации чужого кода (API и регистрация идут сюда).
+     * @return array{status:bool,message?:string,error?:string}
      */
-    private static function doActivate(string $code, int $userId, GetUser $user): array
+    public function activate(string $code, int $userId): array
     {
+        if (!ReferConfig::isEnabled()) {
+            return ['status' => false, 'error' => 'Реферальная система отключена'];
+        }
+
         $code = trim(strtoupper($code));
 
-        if (empty($code)) {
+        if ($code === '') {
             return ['status' => false, 'error' => 'Пожалуйста, введите код'];
         }
 
-        if (!empty($user->getRefer())) {
+        $me = $this->repo->findUserById($userId);
+        if ($me === null) {
+            return ['status' => false, 'error' => 'Пользователь не найден'];
+        }
+
+        if (!empty($me['refer'])) {
             return ['status' => false, 'error' => 'Реферальный код уже активирован'];
         }
 
-        if ($code === $user->getMyRefer()) {
-            return ['status' => false, 'error' => 'Заприщено использовать свою реферальную ссылку!'];
+        if ($code === (string) ($me['myrefer'] ?? '')) {
+            return ['status' => false, 'error' => 'Запрещено использовать свою реферальную ссылку!'];
         }
 
-        $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
-        if (!\is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
+        $referrer = $this->repo->findUserByCode($code);
+        if ($referrer === null) {
+            $this->log->log('АКТИВАЦИЯ-ОШИБКА', ['user_id' => $userId, 'code' => $code, 'reason' => 'код не найден']);
             return ['status' => false, 'error' => 'Реферальный код не найден!'];
         }
 
-        $referrerId = (int) $referrer[0]['id'];
+        $referrerId = (int) $referrer['id'];
         if ($referrerId === $userId) {
             return ['status' => false, 'error' => 'Нельзя использовать свой реферальный код!'];
         }
 
-        Database::send("UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
+        // Вся привязка — одним коммитом: либо всё записалось, либо ничего
+        $result = Database::transaction(function () use ($userId, $code, $referrerId, $me, $referrer) {
+            if (!$this->repo->bindReferral($userId, $code, $referrerId)) {
+                $this->log->log('АКТИВАЦИЯ-ОШИБКА', ['user_id' => $userId, 'code' => $code, 'reason' => 'привязка не подтверждена']);
+                return ['status' => false, 'error' => 'Не удалось привязать код, попробуйте позже'];
+            }
 
-        $bonus = new Bonus();
-        $bonus->giveToNewReferral($userId, $referrerId);
-        $bonus->giveToReferrer($referrerId, $userId);
+            $newBonus = $this->bonus->giveToNewReferral($userId, $referrerId);
+            $refBonus = $this->bonus->giveToReferrer($referrerId, $userId);
 
-        return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
+            $takes = ReferConfig::getReferrerBonus()['takes'];
+            if (!$this->repo->recordReferral([
+                'referrer_id' => $referrerId,
+                'referrer_uniID' => (string) ($referrer['uniID'] ?? ''),
+                'referral_id' => $userId,
+                'referral_uniID' => (string) ($me['uniID'] ?? ''),
+                'code' => $code,
+                'days_to_referral' => $newBonus['days'],
+                'days_to_referrer' => $refBonus['days'],
+                'discount_percent' => $newBonus['discount'],
+                'takes_left' => $takes,
+            ])) {
+                $this->log->log('АКТИВАЦИЯ-ОШИБКА', ['user_id' => $userId, 'code' => $code, 'reason' => 'история не записалась']);
+                return false;//откат всей привязки
+            }
+            $this->repo->backfillHistory($takes);
+
+            $this->log->log('АКТИВАЦИЯ', [
+                'user_id' => $userId,
+                'referral_uniID' => (string) ($me['uniID'] ?? ''),
+                'code' => $code,
+                'referrer_id' => $referrerId,
+                'referrer_uniID' => (string) ($referrer['uniID'] ?? ''),
+            ]);
+
+            return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
+        });
+        if ($result === false) {
+            return ['status' => false, 'error' => 'Не удалось записать, попробуйте позже'];
+        }
+        return $result;
     }
 
     /**
-     * Генерация уникального реферального кода для нового пользователя
+     * Установка реферального кода для нового пользователя (после регистрации).
+     * Работает напрямую с БД, не требует авторизации.
      */
-    public function generationRefer(): string
+    public function setRefer(string $uniID, string $code): array
     {
-        $pattern = ReferConfig::getCodePattern();//QWE#####
+        $user = $this->repo->findUserByUniID($uniID);
+        if ($user === null) {
+            return ['status' => false, 'error' => 'Пользователь не найден'];
+        }
+        return $this->activate($code, (int) $user['id']);
+    }
+
+    public function generateCode(): string
+    {
+        $prefix = ReferConfig::getCodePrefix();
+        $alphabet = ReferConfig::getCodeAlphabet();
+        $alphabetLen = strlen($alphabet);
+        $tailLen = max(1, ReferConfig::getCodeLength() - strlen($prefix));
 
         do {
-            $code = '';
-            for ($i = 0; $i < strlen($pattern); $i++) {
-                $code .= $pattern[$i] === '#' ? chr(mt_rand(48, 90)) : $pattern[$i];//0-9/A-Z/<=>:;?@
+            $code = $prefix;
+            for ($i = 0; $i < $tailLen; $i++) {
+                $code .= $alphabet[random_int(0, $alphabetLen - 1)];
             }
-        } while (Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]));
+        } while ($this->repo->findUserByCode($code) !== null);
 
         return $code;
     }
 
-    /**
-     * Установка реферального кода для нового пользователя (после регистрации)
-     * Работает напрямую с БД, не требует авторизации
-     */
-    public function setRefer(string $uniID, string $code, bool $silent = true): array
+    public function getMyReferrals(int $userId, int $limit = 50): array
     {
-        // получаем свой id и refer
-        $user = Database::send("SELECT id, refer FROM qwees_users WHERE uniID = ?", [$uniID]);
-
-        if (!\is_array($user) || $user === [] || !isset($user[0]['id'])) {
-            return ['status' => false, 'error' => 'Пользователь не найден'];
+        $rows = $this->repo->listReferrals($userId, $limit);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'name' => trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? '')),
+                'email' => self::maskEmail((string) ($row['email'] ?? '')),
+                'date' => (string) ($row['created_at'] ?? ''),
+            ];
         }
-
-        if (!empty($user[0]['refer'])) {
-            return ['status' => false, 'error' => 'Реферальный код уже активирован'];
-        }
-
-        $code = trim(strtoupper($code));
-        // получаем id реферала
-        $referrer = Database::send("SELECT id FROM qwees_users WHERE myrefer = ?", [$code]);
-
-        // если не нашли такого реферала
-        if (!\is_array($referrer) || $referrer === [] || !isset($referrer[0]['id'])) {
-            return ['status' => false, 'error' => 'Реферальный код не найден'];
-        }
-
-        // итоговые данные
-        $userId = (int) $user[0]['id'];//свой id
-        $referrerId = (int) $referrer[0]['id']; //реферала id
-
-        // записываем реферала
-        Database::send("UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ?", [$code, $referrerId, $userId]);
-
-        // начисляем бонусы
-        $bonus = new Bonus();
-        $bonus->giveToNewReferral($userId, $referrerId);//для себя бонус
-        $bonus->giveToReferrer($referrerId, $userId);//для реферела бонус
-
-        return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
+        return $out;
     }
 
     /**
-     * Обработка перехода по реферальной ссылке /reflink={code}
-     * Маршрутизатор перехватывает и вызывает эту функцию с параметром code
+     * Начислить пригласившему % с покупки приглашённого.
+     * Вызывается из Kassa после успешной выдачи подписки.
      */
-    public function onValidateCode(string|null $code = null, string|null $online = null)
+    public function rewardReferrerFromPurchase(string $buyerUniID, int $boughtDays): array
     {
+        return $this->bonus->grantPercentDays($buyerUniID, $boughtDays);
+    }
+
+    /**
+     * Обработка перехода по реферальной ссылке /reflink={code}.
+     * Тонкий web-адаптер: HTTP — здесь, бизнес-логика — в activate().
+     */
+    public function onValidateCode(?string $code = null, ?string $online = null): void
+    {
+        $isOnline = ($online === 'on');
+
         if (empty($code)) {
-            if (!($online === 'on')) {
+            if (!$isOnline) {
                 Network::onRedirect('/');
             }
-            header('Content-Type: application/json');
-            echo json_encode([
-                'status' => false,
-                'message' => 'Пожалуйста, введите код'
-            ]);
-            exit;
+            self::json(false, 'Пожалуйста, введите код');
         }
 
+        $code = trim(strtoupper((string) $code));
         Session::init('pending_refer_code', $code);
 
         // Если пользователь уже авторизован - активируем сразу
         $user = new GetUser();
         if ($user->getID() > 0) {
-            $result = self::doActivate($code, $user->getID(), $user);
-            $status = $result['status'] ? 'success' : 'error';
-            $msg = $result['error'] ?? $result['message'] ?? '';
-            if (!($online === 'on')) {
-                Network::onRedirect("/?ref_status={$status}&ref_msg={$msg}");
-            } else {
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'status' => $result['status'],
-                    'message' => $msg
-                ]);
-                exit;
+            $result = $this->activate($code, $user->getID());
+            $msg = (string) ($result['error'] ?? $result['message'] ?? '');
+            if (!$isOnline) {
+                Network::onRedirect('/?ref_status=' . ($result['status'] ? 'success' : 'error') . '&ref_msg=' . urlencode($msg));
             }
+            self::json((bool) $result['status'], $msg);
         }
 
         // Если не авторизован - редиректим на регистрацию
         // Код уже в сессии, активируется после регистрации
-        if (!($online === 'on')) {
+        if (!$isOnline) {
             Network::onRedirect('/auth/regist');
         }
+        self::json(false, 'Требуется авторизация для активации реферального кода');
+    }
 
-        header('Content-Type: application/json');
-        echo json_encode([
-            'status' => false,
-            'message' => 'Требуется авторизация для активации реферального кода'
+    /**
+     * Сохранение настроек из админки (POST /admin/refer/save, как Gifts::onSave).
+     */
+    public function onSave(): void
+    {
+        $url = (string) ($_POST['url'] ?? '/admin');
+        ReferConfig::save([
+            'enabled' => ($_POST['enabled'] ?? '') === 'on',
+            'referral_days' => $_POST['referral_days'] ?? null,
+            'referral_discount' => $_POST['referral_discount'] ?? null,
+            'discount_uses' => $_POST['discount_uses'] ?? null,
+            'referrer_days' => $_POST['referrer_days'] ?? null,
+            'referrer_percent' => $_POST['referrer_percent'] ?? null,
+            'referrer_takes' => $_POST['referrer_takes'] ?? null,
         ]);
+        $c = ReferConfig::getAll();
+        (new Admin())->LoggerCRM(
+            'сохранил рефералку: ' . ($c['enabled'] ? 'вкл' : 'выкл')
+            . ', приглашённый +' . $c['referral_days'] . ' дн / -' . $c['referral_discount'] . '% на ' . $c['discount_uses'] . ' пок.'
+            . ', реферер +' . $c['referrer_days'] . ' дн / ' . $c['referrer_percent'] . '% с покупки ×' . $c['referrer_takes'] . ' раз'
+        );
+        Network::onRedirect($url);
+    }
+
+    private static function json(bool $status, string $message): void
+    {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => $status, 'message' => $message], JSON_UNESCAPED_UNICODE);
         exit;
+    }
+
+    private static function maskEmail(string $email): string
+    {
+        $parts = explode('@', $email);
+        if (count($parts) !== 2 || $parts[0] === '') {
+            return '';
+        }
+        return mb_substr($parts[0], 0, 1) . '***@' . $parts[1];
     }
 }

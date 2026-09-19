@@ -2,6 +2,7 @@
 
 use Setting\Route\Function\Functions;
 use Setting\Route\Function\Controllers\Auth\Auth;
+use Setting\Route\Function\Controllers\Client\GetUser;
 use Setting\Route\Function\Controllers\Kassa\PriceConfig;
 use Setting\Route\Function\Controllers\Language\Language;
 
@@ -12,9 +13,25 @@ $translations = Language::getTranslations($currentLanguage);
 $t = fn(string $key): string => $translations[$key] ?? $key;
 
 // === Формирование цен из единого объекта тарифов (PriceConfig) ===
-$hasReferral = PriceConfig::hasReferralDiscount();
+$payUser = new GetUser();//один запрос на страницу
+$discountPercent = $payUser->getDiscountPercent();
+$hasReferral = $discountPercent > 0;
 $prices = PriceConfig::getPrices($hasReferral);   // [1 => ['basic'=>150,...], 3 => [...], 6 => [...], 12 => [...]]
+$fullPrices = PriceConfig::getPrices(false);      // цены без скидки (для зачёркивания)
 $tariffMeta = PriceConfig::getTariffMeta();
+
+// Цена с зачёркнутой старой, если есть реферальная скидка; иначе просто цена
+$refPrice = function ($new, $old) use ($hasReferral) {
+    $new = (int) $new;
+    $old = (int) $old;
+    if (!$hasReferral || $old <= $new) {
+        return (string) $new;
+    }
+    return '<s class="text-white/40 font-normal text-[0.65em] mr-1">' . $old . '</s>' . $new;
+};
+$discountBadge = $hasReferral
+    ? str_replace('{p}', (string) $discountPercent, $t('discount_applied'))
+    : '';
 
 // desc в конфиге — ключ перевода (device_1/device_4/device_10)
 foreach ($tariffMeta as &$meta) {
@@ -43,6 +60,16 @@ $t1  = array_map(fn($price) => $price * 1,  $p1);
 $t3  = array_map(fn($price) => $price * 3,  $p3);
 $t6  = array_map(fn($price) => $price * 6,  $p6);
 $t12 = array_map(fn($price) => $price * 12, $p12);
+
+// Те же переменные без скидки (старые цены для зачёркивания)
+$f1  = $fullPrices[1]  ?? [];
+$f3  = $fullPrices[3]  ?? [];
+$f6  = $fullPrices[6]  ?? [];
+$f12 = $fullPrices[12] ?? [];
+$ft1  = array_map(fn($price) => $price * 1,  $f1);
+$ft3  = array_map(fn($price) => $price * 3,  $f3);
+$ft6  = array_map(fn($price) => $price * 6,  $f6);
+$ft12 = array_map(fn($price) => $price * 12, $f12);
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLanguage ?>" class="dark">
@@ -108,6 +135,9 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                         <div class="flex flex-col items-center justify-center">
                             <h3 class="text-xl font-bold font-sans"><?= $t('choose_subscription') ?></h3>
                             <div class="text-center text-white/70"><?= $t('pay_desc') ?></div>
+                            <?php if ($hasReferral): ?>
+                            <div class="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 ring-1 ring-green-400/40 text-green-300 text-sm font-semibold"><i class="fa fa-percent"></i><?= htmlspecialchars($discountBadge) ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <!-- grid -->
@@ -159,13 +189,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p1['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p1['basic'], $f1['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($p1['pro'], $f1['pro']) ?></span>
                                         <p class="text-sm"><?= $t('per_month') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -183,13 +213,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p3['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p3['basic'], $f3['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t3['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t3['basic'], $ft3['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_3m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -206,13 +236,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p6['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p6['basic'], $f6['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t6['basic'], $ft6['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_6m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -230,13 +260,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p12['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p12['basic'], $f12['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t12['basic'], $ft12['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_12m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -298,7 +328,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['basic'], $f1['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -323,7 +353,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['basic'], $ft1['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -339,7 +369,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['clasic'], $f1['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -364,7 +394,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['clasic'], $ft1['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -380,7 +410,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['pro'], $f1['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -405,7 +435,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['pro'], $ft1['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -457,7 +487,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['basic'], $f3['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -482,7 +512,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['basic'], $ft3['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -498,7 +528,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['clasic'], $f3['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -523,7 +553,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['clasic'], $ft3['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -539,7 +569,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['pro'], $f3['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -564,7 +594,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['pro'], $ft3['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -615,7 +645,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['basic'], $f6['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -640,7 +670,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['basic'], $ft6['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -656,7 +686,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['clasic'], $f6['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -681,7 +711,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['clasic'], $ft6['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -697,7 +727,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['pro'], $f6['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -722,7 +752,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['pro'], $ft6['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -774,7 +804,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['basic'], $f12['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -799,7 +829,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['basic'], $ft12['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -815,7 +845,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['clasic'], $f12['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -840,7 +870,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['clasic'], $ft12['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -856,7 +886,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['pro'], $f12['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -881,7 +911,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['pro'], $ft12['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -913,6 +943,9 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                             <h3 class="text-xl font-bold font-sans"><?= $t('finish_title') ?></h3>
                             <div class="text-center text-white/70"><?= $t('finish_desc') ?>
                             </div>
+                            <?php if ($hasReferral): ?>
+                            <div class="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 ring-1 ring-green-400/40 text-green-300 text-sm font-semibold"><i class="fa fa-percent"></i><?= htmlspecialchars($discountBadge) ?></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <!-- select tarif -->
@@ -1045,6 +1078,9 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                     <div class="flex flex-col items-center justify-center">
                         <h3 class="text-xl font-bold font-sans"><?= $t('choose_subscription') ?></h3>
                         <div class="text-center text-white/70"><?= $t('pay_desc') ?></div>
+                        <?php if ($hasReferral): ?>
+                        <div class="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 ring-1 ring-green-400/40 text-green-300 text-sm font-semibold"><i class="fa fa-percent"></i><?= htmlspecialchars($discountBadge) ?></div>
+                        <?php endif; ?>
                     </div>
                     <!-- grid -->
                     <div class="grid grid-cols-2 grid-rows-2 gap-2">
@@ -1095,13 +1131,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_1') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p1['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p1['basic'], $f1['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($p1['pro'], $f1['pro']) ?></span>
                                         <p class="text-sm"><?= $t('per_month') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -1119,13 +1155,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_3') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p3['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p3['basic'], $f3['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t3['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t3['basic'], $ft3['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_3m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -1142,13 +1178,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_6') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p6['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p6['basic'], $f6['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t6['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t6['basic'], $ft6['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_6m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -1166,13 +1202,13 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                 <!-- titile -->
                                 <div class="flex flex-col justify-center">
                                     <h5 class="text-xl font-bold"><?= $t('month_12') ?></h5>
-                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $p12['basic'] ?>₽</p>
+                                    <p class="text-white/70 font-light"><?= $t('monthly_from') ?> <?= $refPrice($p12['basic'], $f12['basic']) ?>₽</p>
                                 </div>
                                 <!-- part 2 -->
                                 <div class="flex items-center justify-center gap-4">
                                     <!-- price -->
                                     <div class="flex flex-col text-center">
-                                        <span class="text-3xl font-bold"><?= $t12['basic'] ?></span>
+                                        <span class="text-3xl font-bold"><?= $refPrice($t12['basic'], $ft12['basic']) ?></span>
                                         <p class="text-sm"><?= $t('per_12m') ?></p>
                                     </div>
                                     <!-- radio button -->
@@ -1230,7 +1266,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['basic'], $f1['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1255,7 +1291,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['basic'], $ft1['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1271,7 +1307,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['clasic'], $f1['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1296,7 +1332,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['clasic'], $ft1['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1312,7 +1348,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p1['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p1['pro'], $f1['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1337,7 +1373,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t1['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t1['pro'], $ft1['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1389,7 +1425,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['basic'], $f3['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1414,7 +1450,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['basic'], $ft3['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1430,7 +1466,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['clasic'], $f3['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1455,7 +1491,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['clasic'], $ft3['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1471,7 +1507,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p3['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p3['pro'], $f3['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1496,7 +1532,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t3['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t3['pro'], $ft3['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1547,7 +1583,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['basic'], $f6['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1572,7 +1608,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['basic'], $ft6['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1588,7 +1624,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['clasic'], $f6['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1613,7 +1649,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['clasic'], $ft6['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1629,7 +1665,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p6['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p6['pro'], $f6['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1654,7 +1690,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t6['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t6['pro'], $ft6['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1706,7 +1742,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['basic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['basic'], $f12['basic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1731,7 +1767,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_1') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['basic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['basic'], $ft12['basic']) ?>₽</span></p>
                             </label>
                             <!-- input 2 -->
                             <label
@@ -1747,7 +1783,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['clasic'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['clasic'], $f12['clasic']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1772,7 +1808,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_4') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['clasic'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['clasic'], $ft12['clasic']) ?>₽</span></p>
                             </label>
                             <!-- input 3 -->
                             <label
@@ -1788,7 +1824,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <div class="flex items-center justify-center gap-4">
                                         <!-- price -->
                                         <div class="flex flex-col text-center">
-                                            <span class="text-3xl font-bold"><?= $p12['pro'] ?></span>
+                                            <span class="text-3xl font-bold"><?= $refPrice($p12['pro'], $f12['pro']) ?></span>
                                             <p class="text-sm"><?= $t('per_month') ?></p>
                                         </div>
                                         <!-- radio button -->
@@ -1813,7 +1849,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                                     <p class="text-white/70 font-light"><?= $t('device_10') ?></p>
                                 </div>
                                 <p class="absolute bottom-2 right-4 text-sm"><?= $t('total') ?> <span
-                                        class="text-white/70"><?= $t12['pro'] ?>₽</span></p>
+                                        class="text-white/70"><?= $refPrice($t12['pro'], $ft12['pro']) ?>₽</span></p>
                             </label>
                         </div>
                         <!-- button next to -->
@@ -1846,6 +1882,9 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                         <h3 class="text-xl font-bold font-sans"><?= $t('finish_title') ?></h3>
                         <div class="text-center text-white/70"><?= $t('finish_desc') ?>
                         </div>
+                        <?php if ($hasReferral): ?>
+                        <div class="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/15 ring-1 ring-green-400/40 text-green-300 text-sm font-semibold"><i class="fa fa-percent"></i><?= htmlspecialchars($discountBadge) ?></div>
+                        <?php endif; ?>
                     </div>
                     <!-- select tarif -->
                     <div class="flex flex-col gap-4">
@@ -1964,6 +2003,7 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
         </main>
         <script>
             const PRICES = <?= json_encode($prices, JSON_UNESCAPED_UNICODE) ?>;
+            const PRICES_FULL = <?= json_encode($fullPrices, JSON_UNESCAPED_UNICODE) ?>;
             const TARIFF_META = <?= json_encode($tariffMeta, JSON_UNESCAPED_UNICODE) ?>;
             const HAS_REFERRAL = <?= $hasReferral ? 'true' : 'false' ?>;
 
@@ -1987,9 +2027,16 @@ $t12 = array_map(fn($price) => $price * 12, $p12);
                 var $layout = $('[data-pay-layout="' + layoutKey + '"]');
                 $layout.find('#finish-period' + suffix).text(data.periodLabel);
                 $layout.find('#finish-tariff' + suffix).text(<?= json_encode($t('tariff_short')) ?> + meta.label);
-                $layout.find('#finish-price-per-month' + suffix).text(pricePerMonth);
+                if (HAS_REFERRAL) {
+                    var fullPerMonth = PRICES_FULL[data.period][data.tariff];
+                    var fullTotal = fullPerMonth * data.period;
+                    $layout.find('#finish-price-per-month' + suffix).html('<s class="text-white/40 font-normal text-[0.65em]">' + fullPerMonth + '</s> ' + pricePerMonth);
+                    $layout.find('#finish-total' + suffix).html('<s class="text-white/40 font-normal">' + fullTotal + '₽</s> ' + total + '₽');
+                } else {
+                    $layout.find('#finish-price-per-month' + suffix).text(pricePerMonth);
+                    $layout.find('#finish-total' + suffix).text(total + '₽');
+                }
                 $layout.find('#finish-devices' + suffix).text(meta.desc);
-                $layout.find('#finish-total' + suffix).text(total + '₽');
             }
 
             $(document).ready(function () {
