@@ -15,7 +15,7 @@ use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 use Setting\Route\Function\Controllers\Chat\Chat;
 use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Controllers\Refer\Refer;
-use Setting\Route\Function\Controllers\Finance\Finance;
+use Setting\Route\Function\Controllers\Admin\Finance\Finance;
 
 //=============================================//MAIN
 Routes::get('/', 'on_Main');
@@ -157,6 +157,8 @@ Routes::get('/api/chat/photo', function () {
 });
 //=============================================//GIFTS (пробные, пока не выкатываем)
 Routes::post('/admin/gifts/save', [Gifts::class, 'onSave']);
+//=============================================//GIFTS (выдача подарочной подписки)
+Routes::post('/api/gifts/give', [Gifts::class, 'giveGifts']);
 //=============================================//REFERRAL (настройки из админки)
 Routes::post('/admin/refer/save', [Refer::class, 'onSave']);
 //=============================================//ROI (расходы из админки)

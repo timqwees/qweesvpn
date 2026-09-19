@@ -810,7 +810,7 @@ $colors = [
                                 $lines = array_reverse(file($logfile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: []);
                                 $last_date = null;
                                 foreach ($lines as $line) {
-                                    if (str_starts_with($line, '[WLC')) continue;//действия работников — только в Ролях
+                                    if (str_starts_with($line, 'WLC')) continue;//действия работников — только в Ролях
                                     $escaped = htmlspecialchars($line, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 
                                     $color = 'text-white';

@@ -416,7 +416,7 @@ class Xray
 
         $protocol = strtolower((string) ($inbound['protocol'] ?? ''));
         $rawSettings = $inbound['settings'] ?? '{}';
-        $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
+        $settings = \is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
         if (!\is_array($settings)) {
             $settings = [];
         }
@@ -428,7 +428,7 @@ class Xray
             $device_limit = isset($_ENV['XUI_DEVICE_LIMIT']) ? (int) $_ENV['XUI_DEVICE_LIMIT'] : 1;
         }
 
-        $needsUuid = in_array($protocol, ['vless', 'vmess'], true);
+        $needsUuid = \in_array($protocol, ['vless', 'vmess'], true);
 
         // Ищем клиента по subId (= uniID) — надёжнее имени, т.к. имя может совпадать у разных юзеров
         $existingIndex = null;
@@ -594,7 +594,7 @@ class Xray
         }
 
         $rawSettings = $inbound['settings'] ?? '{}';
-        $settings = is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
+        $settings = \is_array($rawSettings) ? $rawSettings : json_decode((string) $rawSettings, true);
         if (!\is_array($settings)) {
             $settings = [];
         }
@@ -626,7 +626,7 @@ class Xray
         if (!$found) {
             $lim = isset($_ENV['XUI_DEVICE_LIMIT']) ? (int) $_ENV['XUI_DEVICE_LIMIT'] : 1;
             $add = $this->addClientPanelApi($bonusDays, $uniID, $lim);
-            if (is_array($add) && ($add['success'] ?? false) === true) {
+            if (\is_array($add) && ($add['success'] ?? false) === true) {
                 self::syncUserExpiryByUniID($uniID, (int) ($add['client_data']['expiryTime'] ?? 0));
                 return ['status' => 'ok', 'message' => 'Клиент создан, бонусные дни начислены'];
             }

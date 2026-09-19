@@ -12,6 +12,13 @@ trait Users {
     'password' => 'timqwees1220066$',
     'role' => 'admin',
   ),
+  1 => 
+  array (
+    'id' => 2,
+    'username' => 'ruslan',
+    'password' => 'ruslan1220066$',
+    'role' => 'admin',
+  ),
 );
 }
 

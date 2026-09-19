@@ -44,7 +44,7 @@ namespace Setting\Route\Function\Controllers\Gifts;
 use App\Config\Database;
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\Gifts\{GiftsInterface\InterfaceGifts, Tools\Save, Tools\Load, Tools\GetGifts};
-use Setting\Route\Function\Controllers\Admin\Admin;
+use Setting\Route\Function\Controllers\{Server\Network as ServerNetwork, Client\GetUser, Admin\Admin, Vpn\V2ray\Xray};
 
 class Gifts implements InterfaceGifts
 {
@@ -135,49 +135,55 @@ class Gifts implements InterfaceGifts
 		return (int) ($this->data['days'] ?? 0);
 	}
 
-	public function canSee(string $uniID) : bool
+	public function isView() : bool
 	{
+		$uniID = (string) (new GetUser())->getUniID();
 		if ($uniID === '') return false;//пустого не берем
 		if (!$this->isEnabled()) return false;//выключено
-		if (($this->data['mode'] ?? 'all') === 'all') return true;//всем сразу
 		$users = $this->data['users'] ?? [];
 		if (!\is_array($users)) return false;
-		return in_array($uniID, $users, true);//только списку
+		return (!\in_array($uniID, $users, true));//только списку
 	}
 
 	// ==================== Выдача ====================
 
-	public function giveTrial(string $uniID) : bool
+	public function giveGifts() : void
 	{
-		if ($uniID === '') return false;//пустого не берем
+		$uniID = (string) (new GetUser())->getUniID();//получаем ID
+		if ($uniID === '') Network::onRedirect('/');//пустого не берем
 		$days = $this->getDays();
-		if ($days < 1) return false;//срок не настроен
+		if ($days < 1) Network::onRedirect('/');;//срок беплатной подписки не настроен корректно
 		$nowMs = time() * 1000;//мс как везде
+		$newExpiry = $nowMs + $days * 86400000;
+		$users = $this->data['users'] ?? [];//получаем заранее данные, чтобы провреять был он уже или нет
+		$xray = new Xray();//xnтбы выдавать в панель
+		
 		$row = Database::send('SELECT status, subscription, expiry, count_days FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
 		$cur = (\is_array($row) && isset($row[0])) ? $row[0] : null;
-		if ($cur !== null) {
-			$status = (string) ($cur['status'] ?? '');
-			$sub = (string) ($cur['subscription'] ?? '');
-			$expiry = (int) ($cur['expiry'] ?? 0);
-			if ($status === 'pending_vpn') return false;//оплачено, ждёт VPN — триалом не перекрываем
-			if ($status === 'on' && $expiry > $nowMs && !\in_array($sub, ['trial', 'bonus', ''], true)) {
-				return false;//активная платная подписка уже есть, пробную не даем
-			}
-			if ($status === 'on' && $expiry > $nowMs) return false;//активный триал/бонус уже идёт, повторно не даем
-			// Триал ДОБАВЛЯЕМ поверх остатка (в т.ч. bonus-дней рефералки), а не затираем
-			$newExpiry = max($nowMs, $expiry) + $days * 86400000;
-			$newCount = (int) ($cur['count_days'] ?? 0) + $days;
-			Database::send("UPDATE qwees_subscriptions SET status = 'on', subscription = 'trial', count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [$newCount, $newExpiry, $uniID]);
+		if ($cur !== null) {//пользователь имеет данные в таблице подписок
+			$status = (string) ($cur['status'] ?? '');//статус получаем
+			if ($status === 'on') Network::onRedirect('/');;//получить пробную нельзя есть есть уже подписка
+			if (\in_array($uniID, $users, true)) Network::onRedirect('/');
+      $vpnResult = $xray->addClient((int) $days, $uniID, 0);
+      if(\is_array($vpnResult)){//при успехе
+   			Database::send("UPDATE qwees_subscriptions SET status = 'on', subscription = ?, count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [(string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry, $uniID]);
+				$this->addUser($uniID);//добавляю пользователя в список
+      }
 		} else {//первый раз
-			$newExpiry = $nowMs + $days * 86400000;
-			Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', 'trial', ?, ?)", [$uniID, $days, $newExpiry]);
+			//а если его в списке не было то выдаем так как это може быть пользователь который просто не оплатил и получил статус off
+			if (\in_array($uniID, $users, true)) Network::onRedirect('/');;//уже в списке
+      $vpnResult = $xray->addClient((int) $days, $uniID, 0);
+      if(\is_array($vpnResult)){//при успехе
+        Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', ?, ?, ?)", [$uniID, (string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry]);
+				$this->addUser($uniID);//добавляю пользователя в список
+      }
 		}
 		file_put_contents(
 			$_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
 			\sprintf("[%s] [ПРОБНАЯ ПОДПИСКА - ВЫДАЧА] %s: выдано %d дней\n", date('Y-m-d H:i:s'), $uniID, $days),
 			FILE_APPEND
 		);
-		return true;//ключ VPN докинем при выкате через Xray
+		Network::onRedirect('/');;//ключ VPN докинем при выкате через Xray
 	}
 
 	// ==================== Админка ====================
@@ -191,7 +197,7 @@ class Gifts implements InterfaceGifts
 		if ($days > 0) $this->data['days'] = $days;
 		$mode = $_POST['mode'] ?? 'all';
 		if ($mode === 'all' || $mode === 'list') $this->data['mode'] = $mode;
-		if (array_key_exists('users', $_POST)) {
+		if (\array_key_exists('users', $_POST)) {
 			$users = preg_split('/[\r\n,;]+/', (string) $_POST['users']);
 			$this->data['users'] = array_values(array_unique(array_filter(array_map('trim', $users ?: []))));
 		}

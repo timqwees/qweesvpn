@@ -1002,6 +1002,23 @@ html {
     transform: translateY(-1px);
 }
 
+/* Бесплатная подписка*/
+.free-btn {
+    position: relative;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    transition: all 0.4s ease;
+    overflow: hidden;
+}
+
+.free-btn:hover {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow:
+        0 6px 24px rgba(255, 255, 255, 0.15),
+        0 0 12px rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
 /* effect text - AI loading animation */
 .loader-letter {
     display: inline-block;

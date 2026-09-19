@@ -59,7 +59,7 @@ interface InterfaceGifts {
 
 	public function getDays(): int;
 
-	public function canSee(string $uniID): bool;
+	public function isView(): bool;
 
-	public function giveTrial(string $uniID): bool;
+	public function giveGifts(): void;
 }

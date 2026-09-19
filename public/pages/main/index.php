@@ -15,7 +15,7 @@ if ($user->onPaymantStatus())//если в сесии есть payment_id, то 
 //===================================================================================
 $site = Functions::site();//после всех провроек получем уже данные сервиса
 $gifts = new Gifts();//пробные
-$trialShow = $gifts->isEnabled() && $gifts->canSee($user->getUniID()) && $user->getStatus() !== 'on';//вкл + положено + нет активной подписки
+$giftShow = $gifts->isView() && $user->getStatus() !== 'on';//положено + нет активной подписки
 
 // язык
 $currentLanguage = Language::getCurrent();
@@ -418,7 +418,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                                 class="elite-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
-                                                    alt="buy" loading="lazy" decoding="async"
+                                                    alt="buy" loading="lazy"
                                                     class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
                                                 <div class="flex flex-col items-center justify-start">
                                                     <span
@@ -427,18 +427,37 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                                 </div>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
-                                                    alt="" loading="lazy" decoding="async"
+                                                    alt="" loading="lazy"
                                                     class="h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                                             </li>
                                         </a>
                                     <?php endif; ?>
+
+                                    <!-- Пробрная подписка -->
+                                    <?php if ($giftShow): ?>
+                                    
+                                    <li class="w-full"> 
+                                      <form action="/api/gifts/give" method="post">
+                                        <button type="submit" class="block w-full free-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
+                                                <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/free.svg"
+                                                  alt="buy" loading="lazy" decoding="async"
+                                                  class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                                    
+                                                <div class="flex flex-col items-center justify-start">
+                                                    <span class="text-black"><?= $t('trial') ?></span>
+                                                </div>
+                                                
+                                                <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
+                                                  alt="" loading="lazy" decoding="async"
+                                                  class="invert h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                        </button>
+                                       </form>
+                                    </li>
+                                   
+                                    <?php endif; ?>
+                                    
                                 </ul>
-                                <?php if ($trialShow): ?><!-- TRIAL -->
-                                <button onclick="showNotification(<?= json_encode($t('trial_soon')) ?>, 'info')"
-                                    class="mt-3 w-full py-3 rounded-xl border border-green-400/40 text-green-300 text-sm font-medium hover:bg-green-400/10 transition-colors cursor-pointer">
-                                    <i class="fa-solid fa-gift mr-2"></i><?= $t('trial') ?>
-                                </button>
-                                <?php endif; ?>
+    
                             </div>
 
                         </div>
@@ -844,8 +863,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <span class="text-sm font-medium"><?= $t('refer_for_invited'); ?></span>
                                     </div>
                                     <ul class="flex flex-col gap-1.5 text-[white] text-sm">
-                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['invited_days']) ?></li>
-                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['invited_discount']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars((string) $referWhat['invited_days']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars((string) $referWhat['invited_discount']) ?></li>
                                     </ul>
                                 </div>
                                 <div class="flex flex-col gap-3 p-5 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08]">
@@ -854,8 +873,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <span class="text-sm font-medium"><?= $t('refer_for_inviter'); ?></span>
                                     </div>
                                     <ul class="flex flex-col gap-1.5 text-[white] text-sm">
-                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['inviter_each']) ?></li>
-                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars($referWhat['inviter_percent']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars((string) $referWhat['inviter_each']) ?></li>
+                                        <li class="flex items-center gap-2"><i class="fa fa-check text-green-400 text-xs"></i><?= htmlspecialchars((string) $referWhat['inviter_percent']) ?></li>
                                     </ul>
                                 </div>
                             </div>
@@ -1051,6 +1070,30 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         alt="" loading="lozy" decoding="async" class="h-6">
                                 <?php endif; ?>
                             </li>
+
+                            <!-- Пробрная подписка -->
+                            <?php if ($giftShow): ?>
+                            
+                              <li class="w-full"> 
+                                <form action="/api/gifts/give" method="post">
+                                  <button type="submit" class="block w-full free-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
+                                          <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/free.svg"
+                                            alt="buy" loading="lazy" decoding="async"
+                                            class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                              
+                                          <div class="flex flex-col items-center justify-start">
+                                              <span class="text-black"><?= $t('trial') ?></span>
+                                          </div>
+                                          
+                                          <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
+                                            alt="" loading="lazy" decoding="async"
+                                            class="invert h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                  </button>
+                                 </form>
+                              </li>
+                           
+                            <?php endif; ?>
+                            
                             <!-- block 2 -->
                             <li class="glow-card_mobile relative w-full p-[15px] bg-[rgb(255,255,255,0.1)] rounded-xl">
                                 <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
@@ -1072,10 +1115,10 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <a href="/pay" class="z-10 flex justify-between items-center">
                                         <img decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
-                                            alt="" loading="lozy" decoding="async" class="h-6 invert">
+                                            alt="" class="h-6">
                                         <div class="flex flex-col items-center justify-start text-lg text-white">
                                             <!-- no -->
-                                            <span href="/pay" class="z-10 uppercase text-center flex gap-2"><?= $t('buy') ?> <span
+                                            <span class="z-10 text-center flex gap-2"><?= $t('buy') ?> <span
                                                     class="word_hidden"><?= $t('subscription') ?></span>
                                             </span>
                                             <!-- yes -->
@@ -1086,14 +1129,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     </a>
                                 <?php endif; ?>
                             </li>
-                            <?php if ($trialShow): ?><!-- TRIAL -->
-                            <li class="relative w-full">
-                                <button onclick="showNotification(<?= json_encode($t('trial_soon')) ?>, 'info')"
-                                    class="w-full py-3 rounded-xl border border-green-400/40 text-green-300 text-sm font-medium hover:bg-green-400/10 transition-colors cursor-pointer">
-                                    <i class="fa-solid fa-gift mr-2"></i><?= $t('trial') ?>
-                                </button>
-                            </li>
-                            <?php endif; ?>
+                            
                             <!-- block 3 -->
                             <li class="relative w-full flex justify-between gap-2 py-3 rounded-xl text-sm">
                                 <!-- 1 -->
@@ -1215,10 +1251,9 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <!-- info -->
                                         <div class="flex flex-col justify-center w-[150px] gap-1">
                                             <h4 class="text-white text-sm font-semibold"><?= $t('vpn_key') ?></h4>
-                                            <code id="vpn-key"
-                                                class="overflow-hidden h-8 break-all text-[12px] text-white/50">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <?php echo htmlspecialchars($user->getSubscription()); ?>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </code>
+                                            <code id="vpn-key" class="overflow-hidden h-8 break-all text-[12px] text-white/50">
+                                                   <?php echo htmlspecialchars($user->getSubscription()); ?>
+                                            </code>
                                         </div>
                                         <!-- button -->
                                         <div class="flex gap-2 justify-end items-center">
@@ -1491,8 +1526,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <span class="text-xs font-medium"><?= $t('refer_for_invited'); ?></span>
                                 </div>
                                 <div class="flex flex-col gap-1.5 text-sm text-white">
-                                    <div><?= htmlspecialchars($referWhat['invited_days']) ?></div>
-                                    <div><?= htmlspecialchars($referWhat['invited_discount']) ?></div>
+                                    <div><?= htmlspecialchars((string) $referWhat['invited_days']) ?></div>
+                                    <div><?= htmlspecialchars((string) $referWhat['invited_discount']) ?></div>
                                 </div>
                             </div>
                             <div class="glow-card_mobile p-4 rounded-xl flex flex-col gap-3">
@@ -1501,8 +1536,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <span class="text-xs font-medium"><?= $t('refer_for_inviter'); ?></span>
                                 </div>
                                 <div class="flex flex-col gap-1.5 text-sm text-white">
-                                    <div><?= htmlspecialchars($referWhat['inviter_each']) ?></div>
-                                    <div><?= htmlspecialchars($referWhat['inviter_percent']) ?></div>
+                                    <div><?= htmlspecialchars((string) $referWhat['inviter_each']) ?></div>
+                                    <div><?= htmlspecialchars((string) $referWhat['inviter_percent']) ?></div>
                                 </div>
                             </div>
                         </div>
