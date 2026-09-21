@@ -221,10 +221,11 @@ class Auth extends Network
         $result = (array) self::registerUser($userData);
 
         if ($result['success']) {
-            Session::init(self::USER_KEYS, null);//очищяем пользовательское для обходов и иньекций (админку не трогаем)
-            Session::init('user', ['uniID' => strval($result['uniID'])]);
-            Session::init('lang', 'ru');
-            self::onRedirect($_ENV['REDIRECT_SIGN_USER']);
+		        $user = Database::send('SELECT uniID FROM qwees_users WHERE email = ?', [$email]);
+		        Session::init(self::USER_KEYS, null);//чистим только пользовательское (админку не трогаем)
+		        Session::init('user', $user[0]);// user => ['uniID' => ....]
+		        Session::init('lang', 'ru');
+		        self::onRedirect('/');
         } else {
             self::onRedirect($_ENV['REDIRECT_REG_UNSIGN_USER']);
         }
