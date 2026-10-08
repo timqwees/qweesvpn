@@ -600,8 +600,8 @@ class Database extends Network
         $result = $stmt->execute($params);
       }
 
-      // Проверяем тип запроса (SELECT/SHOW/EXPLAIN)
-      $firstWord = strtok(ltrim($sql), " \t\n\r");
+      // Проверяем тип запроса (SELECT/SHOW/EXPLAIN), скобку в начале пропускаем (UNION-подзапросы)
+      $firstWord = strtok(ltrim($sql, " \t\n\r("), " \t\n\r");
       $queryType = $firstWord !== false ? strtoupper($firstWord) : '';
       if (in_array($queryType, ['SELECT', 'SHOW', 'EXPLAIN', 'DESCRIBE'])) {
         $data = $stmt->fetchAll(PDO::FETCH_ASSOC);

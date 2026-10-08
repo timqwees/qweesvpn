@@ -75,11 +75,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                                 <p class="text-gray-400 text-sm"><?= $t('requisites_desc') ?></p>
                             </div>
                         </div>
-                        <a href="/export/pdf?type=requisites"
-                            class="elite-btn glow-card group relative flex items-center gap-2 px-5 py-3 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105">
-                            <i class="fa-solid fa-file-pdf text-green-300 group-hover:text-white transition-colors"></i>
-                            <span class="text-[white] font-medium"><?= $t('export_pdf') ?></span>
-                        </a>
+
                     </div>
 
                     <!-- Content Cards Grid -->
@@ -331,11 +327,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                             </div>
                             <h1 class="text-xl font-bold text-white"><?= $t('requisites') ?></h1>
                         </div>
-                        <a href="/export/pdf?type=requisites"
-                            class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-green-500/80 to-green-600/80 text-[white] text-sm font-medium rounded-lg">
-                            <i class="fa-solid fa-file-pdf text-xs"></i>
-                            PDF
-                        </a>
+
                     </div>
 
                     <!-- Cards -->

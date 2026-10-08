@@ -19,8 +19,8 @@ use Setting\Route\Function\Controllers\Vpn\V2ray\Xray;
 class Network
 {
 
-    /** Реестр серверов: новый сервер = новая запись массива. */
-    private const SERVERS = [
+    /** Серверы по умолчанию (страховка). Живой реестр — servers.json рядом (правится из админки без деплоя). */
+    private const DEFAULT_SERVERS = [
         'gb' => [
             'country' => 'London',
             'flag' => 'london.svg',
@@ -41,28 +41,82 @@ class Network
     /** Код текущего выбранного сервера. */
     private static string $current = self::DEFAULT_SERVER;
 
+    private static ?array $serversCache = null;
+
+    /** Живой реестр: servers.json поверх дефолтов; битый файл — игнор с логом. */
+    private static function servers(): array
+    {
+        if (self::$serversCache !== null) return self::$serversCache;
+        $base = self::DEFAULT_SERVERS;
+        $file = __DIR__ . '/servers.json';
+        if (is_file($file)) {
+            $json = json_decode((string) @file_get_contents($file), true);
+            if (\is_array($json) && $json !== []) {
+                $valid = [];
+                foreach ($json as $code => $srv) {
+                    $code = (string) $code;
+                    if (!\is_array($srv) || ($srv['VLESS_SERVER'] ?? '') === '' || ($srv['XUI_URL_PANEL'] ?? '') === '') continue;
+                    $valid[$code] = $srv + ($base[$code] ?? []);
+                }
+                if ($valid !== []) $base = $valid;
+            }
+        }
+        return self::$serversCache = $base;
+    }
+
+    /** Эффективный реестр (файл поверх дефолтов) — для редактора в админке. */
+    public static function effectiveServers(): array
+    {
+        return self::servers();
+    }
+
+    /** Сырое содержимое servers.json для админки (редактирование). */
+    public static function serversJson(): array
+    {
+        $file = __DIR__ . '/servers.json';
+        if (!is_file($file)) return [];
+        $json = json_decode((string) @file_get_contents($file), true);
+        return \is_array($json) ? $json : [];
+    }
+
+    /** Сохранить реестр из админки (валидация + бэкап предыдущего). */
+    public static function saveServersJson(array $servers): array
+    {
+        foreach ($servers as $code => $srv) {
+            if (!\is_array($srv) || ($srv['VLESS_SERVER'] ?? '') === '' || ($srv['XUI_URL_PANEL'] ?? '') === '') {
+                return ['status' => 'error', 'message' => 'Сервер ' . $code . ': нужны VLESS_SERVER и XUI_URL_PANEL'];
+            }
+        }
+        $file = __DIR__ . '/servers.json';
+        if (is_file($file)) @copy($file, $file . '.bak');
+        $ok = @file_put_contents($file, json_encode($servers, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        self::$serversCache = null;
+        if ($ok === false) return ['status' => 'error', 'message' => 'Не удалось записать файл'];
+        return ['status' => 'ok', 'message' => 'Реестр сохранён'];
+    }
+
     /**
      * Выбрать сервер: по коду ('nl') или по подписке пользователя.
      * Без аргументов — сервер текущего пользователя сессии (или дефолтный).
      */
     public static function selectServer(?string $uniID = null, ?string $code = null): array
     {
-        if ($code !== null && isset(self::SERVERS[$code])) {
+        if ($code !== null && isset(self::servers()[$code])) {
             self::$current = $code;
-            return self::SERVERS[$code];
+            return self::servers()[$code];
         }
 
         $uniID = $uniID ?? self::sessionUniID();
         $sub = $uniID !== '' ? Database::send('SELECT subscription FROM qwees_subscriptions WHERE uniID = ?', [$uniID]) : [];
 
         self::$current = self::getServerCodeFromUrl((string) ($sub[0]['subscription'] ?? '')) ?: self::DEFAULT_SERVER;
-        return self::SERVERS[self::$current];
+        return self::servers()[self::$current];
     }
 
     /** Данные текущего сервера (после selectServer()). */
     public static function getServer(): array
     {
-        return self::SERVERS[self::$current];
+        return self::servers()[self::$current];
     }
 
     /** Код текущего сервера ('nl', 'fi', ...). */
@@ -74,7 +128,7 @@ class Network
     /** Коды всех серверов реестра (для перебора панелей). */
     public static function getServerCodes(): array
     {
-        return array_keys(self::SERVERS);
+        return array_keys(self::servers());
     }
 
     /**
@@ -83,7 +137,7 @@ class Network
     public static function getAvailableServers(): array
     {
         $list = [];
-        foreach (self::SERVERS as $code => $server) {
+        foreach (self::servers() as $code => $server) {
             $list[] = ['code' => $code, 'country' => $server['country'], 'flag' => $server['flag'], 'host' => $server['VLESS_SERVER']];
         }
         return $list;
@@ -94,7 +148,7 @@ class Network
     {
         $host = strtolower((string) (parse_url(trim($url), PHP_URL_HOST) ?: ''));
         $first = explode('.', $host)[0] ?? '';
-        return isset(self::SERVERS[$first]) ? $first : '';
+        return isset(self::servers()[$first]) ? $first : '';
     }
 
     /** Полный URL подписки пользователя на его сервере. */
@@ -115,7 +169,7 @@ class Network
         $uniID = trim($uniID);
         $newCode = strtolower(trim($newCode));
 
-        if (!isset(self::SERVERS[$newCode])) {
+        if (!isset(self::servers()[$newCode])) {
             return ['status' => 'error', 'message' => 'Сервер недоступен: ' . $newCode];
         }
 
@@ -136,8 +190,8 @@ class Network
             return ['status' => 'ok', 'message' => 'Этот сервер уже используется'];
         }
 
-        $oldUrl = rtrim(self::SERVERS[$oldCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
-        $newUrl = rtrim(self::SERVERS[$newCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
+        $oldUrl = rtrim(self::servers()[$oldCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
+        $newUrl = rtrim(self::servers()[$newCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
 
         // 1. удаляем клиента со старой панели (запись БД пока остаётся)
         $deleted = Xray::deleteClientFromPanel($uniID);
@@ -170,7 +224,7 @@ class Network
             FILE_APPEND
         );
 
-        return ['status' => 'ok', 'message' => 'Сервер изменён: ' . self::SERVERS[$newCode]['country']];
+        return ['status' => 'ok', 'message' => 'Сервер изменён: ' . self::servers()[$newCode]['country']];
     }
 
     /** uniID авторизованного пользователя сессии. */

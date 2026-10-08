@@ -49,8 +49,12 @@ $currentServerCode = ServerNetwork::getServerCode();
 
 // Оптимизированное формирование данных без лишних вызовов
 $vpnStatus = $vpnStatusObj->getStatus();
-$pingMs = $vpnStatusObj->getPingMs();
-$pingStatus = $vpnStatusObj->getPingStatus();
+$isActiveSub = $vpnStatus === 'active';
+// Пинг/DNS только при активной подписке: без неё результат всё равно
+// заменяется прочерками ниже, а fsockopen (до 0.5с) и gethostbyname
+// тормозили бы каждую загрузку главной.
+$pingMs = $isActiveSub ? $vpnStatusObj->getPingMs() : null;
+$pingStatus = $isActiveSub ? $vpnStatusObj->getPingStatus() : 'inactive';
 
 $formattedVpnStatus = [
     'status_text' => $t($vpnStatus === 'active' ? 'active' : 'inactive'),
@@ -59,8 +63,8 @@ $formattedVpnStatus = [
     'ping_class' => $pingStatus === 'good' ? 'text-green-400' : ($pingStatus === 'inactive' ? 'text-red-400' : 'text-gray-400'),
     'ping_icon' => $pingStatus === 'good' ? 'fa-arrow-up' : ($pingStatus === 'inactive' ? 'fa-arrow-down' : 'fa-minus'),
     'protocol' => $vpnStatusObj->getProtocol(),
-    'ip_address' => $vpnStatusObj->getIpAddress(),
-    'location' => $vpnStatusObj->getLocation(),
+    'ip_address' => $isActiveSub ? $vpnStatusObj->getIpAddress() : '—',
+    'location' => $isActiveSub ? $vpnStatusObj->getLocation() : '—',
     'background_world' => $vpnStatus === 'active' ? 'world_green.svg' : 'world_red.svg',
     'monoblock_image' => [
         'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.png' : 'layout_bg_red.png',
@@ -605,6 +609,20 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 </div>
                             </div>
                         <?php endif; ?>
+
+                        <!-- Payment History (id+дата+сумма из JSON, квитанция живьём из кассы) -->
+                        <div class="flex flex-col gap-4 mt-6">
+                            <h3 class="text-xl font-semibold text-gray-300"><?= $t('pay_history') ?></h3>
+                            <div class="glow-card p-4 rounded-xl">
+                                <div data-pay-history
+                                    data-empty="<?= htmlspecialchars($t('pay_empty')) ?>"
+                                    data-error="<?= htmlspecialchars($t('pay_error')) ?>"
+                                    data-receipt="<?= htmlspecialchars($t('pay_receipt')) ?>"
+                                    class="flex flex-col gap-2">
+                                    <span class="text-sm text-gray-500"><?= $t('pay_loading') ?></span>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Company Links & Logout -->
                         <div class="flex flex-col gap-4 mt-6">
@@ -1305,6 +1323,20 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 </div>
                             </div>
                         <?php endif; ?>
+
+                        <!-- Payment History (id+дата+сумма из JSON, квитанция живьём из кассы) -->
+                        <div class="flex flex-col gap-4 mt-6">
+                            <h3 class="text-xl font-semibold text-gray-300"><?= $t('pay_history') ?></h3>
+                            <div class="glow-card p-4 rounded-xl">
+                                <div data-pay-history
+                                    data-empty="<?= htmlspecialchars($t('pay_empty')) ?>"
+                                    data-error="<?= htmlspecialchars($t('pay_error')) ?>"
+                                    data-receipt="<?= htmlspecialchars($t('pay_receipt')) ?>"
+                                    class="flex flex-col gap-2">
+                                    <span class="text-sm text-gray-500"><?= $t('pay_loading') ?></span>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Company Links & Logout -->
                         <div class="mt-6 flex flex-col gap-4">

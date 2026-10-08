@@ -306,6 +306,57 @@ class AdminDatabase
     }
 
     /**
+     * Быстрый SQL-дамп данных (структура — из setting/Schema/schema*.sql).
+     * Таблицы по 2000 строк максимум, дальше пометка TRUNCATED.
+     */
+    public static function exportSqlData(int $perTable = 2000): string
+    {
+        $out = "-- QweesVPN data backup " . date('Y-m-d H:i:s') . "\n-- structure: setting/Schema/schema.sql\n\n";
+        foreach (self::getTables() as $table) {
+            if (!\is_string($table) || !preg_match('/^[a-zA-Z0-9_]+$/', $table)) continue;
+            $cnt = self::getCount($table);
+            $limit = max(0, min($perTable, $cnt));
+            $out .= "-- table `$table` ($cnt rows)\n";
+            if ($limit === 0) continue;
+            $rows = Database::send("SELECT * FROM `$table` LIMIT $limit");
+            if (!\is_array($rows) || $rows === []) continue;
+            $cols = array_keys($rows[0]);
+            $out .= "DELETE FROM `$table`;\n";
+            foreach (array_chunk($rows, 200) as $chunk) {
+                $vals = [];
+                foreach ($chunk as $r) {
+                    $v = [];
+                    foreach ($cols as $c) {
+                        $x = $r[$c] ?? null;
+                        $v[] = $x === null ? 'NULL' : ("'" . str_replace(["\\", "'"], ["\\\\", "\\'"], (string) $x) . "'");
+                    }
+                    $vals[] = '(' . implode(',', $v) . ')';
+                }
+                $out .= 'INSERT INTO `' . $table . '` (`' . implode('`,`', $cols) . '`) VALUES ' . implode(',', $vals) . ";\n";
+            }
+            if ($cnt > $limit) $out .= "-- TRUNCATED: $cnt total, $limit dumped\n";
+            $out .= "\n";
+        }
+        return $out;
+    }
+
+    /**
+     * Таблицы со счётчиками одним запросом (вместо N COUNT в цикле сайдбара).
+     * @return array<int,array{name:string,count:int}>
+     */
+    public static function getTablesWithCounts(): array
+    {
+        $tables = array_values(array_filter(self::getTables(), fn($t) => \is_string($t) && preg_match('/^[a-zA-Z0-9_]+$/', $t)));
+        if ($tables === []) return [];
+        $sel = implode(', ', array_map(fn($t) => "(SELECT COUNT(*) FROM `$t`) AS `$t`", $tables));
+        $row = Database::send("SELECT $sel");
+        $row = (\is_array($row) && !empty($row)) ? $row[0] : [];
+        $out = [];
+        foreach ($tables as $t) $out[] = ['name' => $t, 'count' => (int) ($row[$t] ?? 0)];
+        return $out;
+    }
+
+    /**
      * Фильтрация данных по колонке
      * @param string $table название таблицы
      * @param string $column название колонки
@@ -428,6 +479,12 @@ class AdminDatabase
     public function onAdminSave()
     {
         $table = $_POST['table'] ?? '';
+        // Право по разделу: цены — price, всё остальное (включая пользователей) — database
+        if ($table === 'price_config') {
+            \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('price');
+        } else {
+            \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('database');
+        }
         $id = $_POST['id'] ?? '';
         $url = $_POST['url'] ?? '';
         $action = $_POST['action'] ?? '';
@@ -476,7 +533,7 @@ class AdminDatabase
      */
     public function onAdminDelete(): void
     {
-        \Setting\Route\Function\Controllers\Admin\AdminAuth::auth();
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('database');
         $table = $_POST['table'] ?? '';
         $id = $_POST['id'] ?? '';
         $url = $_POST['url'] ?? '';
@@ -502,6 +559,8 @@ class AdminDatabase
 
         if ($success) {
             (new Admin())->LoggerCRM("удалил пользователя {$email} ({$uniID})");
+            // История чеков не стирается, а уезжает в архив индекса (финансы и споры целы)
+            if ($uniID !== '') \Setting\Route\Function\Controllers\Kassa\PaymentIndex::archive($uniID);
         }
         $separator = strpos($url, '?') !== false ? '&' : '?';
         Network::onRedirect(($url ?: '/admin/database?table=' . urlencode($table)) . $separator . 'message_status=' . ($success ? 'success' : 'error') . '&message_msg=' . urlencode($success ? 'Пользователь удалён' : 'Не удалось удалить'));

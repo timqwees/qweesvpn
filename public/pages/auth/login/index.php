@@ -78,7 +78,7 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                     <p class="font-sans text-white hidden p-2" id="message_status"></p>
                     <!-- BUTTON -->
                     <button data-button="email" onclick="return false"
-                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans" disabled><?= $t('continue') ?></button>
+                        class="bg-[#6BFF5B] p-2 py-3 text-center rounded-2xl font-sans text-black font-semibold disabled:opacity-40 disabled:cursor-not-allowed" disabled><?= $t('continue') ?></button>
 
                     <!-- OTHER -->
                     <div class="flex justify-center items-center gap-6">
@@ -98,12 +98,12 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
                         <label for="verefy" class="text-white/70 text-2xl font-sans"><?= $t('code_sent') ?></label>
                         <div class="flex flex-col md:flex-row justify-center items-center gap-4">
                             <div class="flex-1 relative w-full min-w-[160px]">
-                                <input type="text" id="verefy" placeholder="****" maxlength="4" required inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
+                                <input type="text" id="verefy" name="verefy" placeholder="****" maxlength="4" required inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code"
                                     class="w-full text-center tracking-[12px] pl-[12px] py-3 text-white border-b border-solid border-white/20 bg-transparent text-2xl font-[qwees-poppins-regular] outline-none">
                             </div>
                             <!-- BUTTON -->
                             <button data-button="verefy" type="submit"
-                                class="w-full flex-1 bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans"
+                                class="w-full flex-1 bg-[#6BFF5B] p-2 text-center rounded-2xl font-sans text-black font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                                 disabled><?= $t('login') ?></button>
                         </div>
                         <p class="font-sans text-white hidden p-2" id="verefy_status"></p>
@@ -113,6 +113,19 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
             </form>
 
         </div>
+
+        <?php $notify = \App\Models\Network\Message::getAll(); ?>
+        <?php if (!empty($notify['message'])): ?>
+            <script>
+                window.addEventListener('DOMContentLoaded', function () {
+                    var t = document.createElement('div');
+                    t.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:999;padding:12px 20px;border-radius:12px;color:#fff;font-family:sans-serif;background:' + ('<?= addslashes($notify['type'] ?? 'info') ?>' === 'error' ? '#ef4444' : '#22c55e');
+                    t.textContent = <?= json_encode($notify['message'], JSON_UNESCAPED_UNICODE) ?>;
+                    document.body.appendChild(t);
+                    setTimeout(function () { t.remove(); }, 5000);
+                });
+            </script>
+        <?php endif; ?>
 
         <!-- customized scripts -->
         <script defer src="<?= $site['baseUrl'] ?>/public/assets/scripts/auth/login/main.js<?= '?v=' . $site['versionApp'] ?>"></script>

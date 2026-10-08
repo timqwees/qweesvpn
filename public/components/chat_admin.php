@@ -4,29 +4,29 @@
 $base = $site['baseUrl'] ?? '';
 ?>
 <script src="<?= htmlspecialchars($base) ?>/public/assets/scripts/chat/photo.js<?= '?v=' . ($site['versionApp'] ?? '1') ?>"></script>
-<div data-admin-chat class="bg-white rounded-xl shadow-sm overflow-hidden"
+<div data-admin-chat class="bg-[#16181d] rounded-xl ring-1 ring-white/5 overflow-hidden"
     data-avatar-user="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/1.png') ?>"
     data-avatar-admin="<?= htmlspecialchars($base . '/public/assets/images/icons/services/avatar/2.png') ?>">
     <!-- Шапка -->
-    <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-gray-100">
+    <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-white/5">
         <div class="flex items-center gap-3 min-w-0">
             <div class="w-10 h-10 rounded-xl bg-green-600/10 flex items-center justify-center shrink-0">
-                <i class="fa-regular fa-comments text-green-700 text-lg"></i>
+                <i class="fa-regular fa-comments text-green-400 text-lg"></i>
             </div>
             <div class="min-w-0">
-                <h2 class="text-lg font-bold text-gray-800 leading-tight">Чат поддержки</h2>
+                <h2 class="text-lg font-bold text-gray-100 leading-tight">Чат поддержки</h2>
                 <p data-admin-stats class="text-xs text-gray-500 truncate">Загрузка...</p>
             </div>
         </div>
         <button type="button" data-admin-refresh title="Обновить"
-            class="p-2.5 rounded-lg text-gray-500 hover:text-green-700 hover:bg-green-50 transition-colors cursor-pointer shrink-0">
+            class="p-2.5 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer shrink-0">
             <i class="fa-solid fa-rotate-right"></i>
         </button>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-[300px_1fr]">
         <!-- Список диалогов -->
-        <div data-admin-dialogs class="flex flex-col gap-1.5 p-3 md:border-r md:border-gray-100 max-h-[300px] md:max-h-[560px] overflow-y-auto">
+        <div data-admin-dialogs class="flex flex-col gap-1.5 p-3 md:border-r md:border-white/5 max-h-[300px] md:max-h-[560px] overflow-y-auto">
             <div class="flex flex-col items-center justify-center gap-2 py-10 text-center">
                 <i class="fa-solid fa-circle-notch fa-spin text-2xl text-gray-300"></i>
                 <div class="text-sm text-gray-400">Загрузка диалогов...</div>
@@ -34,41 +34,41 @@ $base = $site['baseUrl'] ?? '';
         </div>
 
         <!-- Переписка -->
-        <div class="flex flex-col min-w-0 border-t md:border-t-0 border-gray-100">
+        <div class="flex flex-col min-w-0 border-t md:border-t-0 border-white/5">
             <!-- Панель диалога: кто + действия -->
-            <div class="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-gray-100 bg-white min-h-[52px]">
+            <div class="flex flex-wrap items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-[#16181d] min-h-[52px]">
                 <span data-admin-current class="font-mono text-xs text-gray-500 truncate">Диалог не выбран</span>
-                <span data-admin-closed class="hidden text-[11px] font-semibold text-gray-500 bg-gray-100 rounded-full px-2.5 py-1 shrink-0">завершён</span>
+                <span data-admin-closed class="hidden text-[11px] font-semibold text-gray-500 bg-white/10 rounded-full px-2.5 py-1 shrink-0">завершён</span>
                 <span class="flex-1"></span>
                 <button type="button" data-admin-profile-btn disabled title="Профиль пользователя"
-                    class="px-3 py-2 rounded-lg text-gray-600 hover:text-green-700 hover:bg-green-50 transition-colors cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1.5 text-xs font-semibold">
+                    class="px-3 py-2 rounded-lg text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-colors cursor-pointer disabled:opacity-40 shrink-0 flex items-center gap-1.5 text-xs font-semibold">
                     <i class="fa-regular fa-user"></i>
                     <span class="hidden sm:inline">Данные</span>
                 </button>
                 <button type="button" data-admin-close disabled title="Завершить диалог"
-                    class="px-3 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-40 shrink-0">
+                    class="px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-40 shrink-0">
                     Завершить
                 </button>
                 <button type="button" data-admin-clear disabled title="Очистить диалог (удалить с сервера)"
-                    class="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-40 shrink-0">
+                    class="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-40 shrink-0">
                     <i class="fa-regular fa-trash-can"></i>
                 </button>
             </div>
-            <div data-admin-thread class="flex-1 min-h-[280px] max-h-[360px] md:max-h-[420px] overflow-y-auto bg-gray-50/70 p-4">
+            <div data-admin-thread class="flex-1 min-h-[280px] max-h-[360px] md:max-h-[420px] overflow-y-auto bg-white/5/70 p-4">
                 <div class="flex flex-col items-center justify-center h-full min-h-[240px] gap-2 text-center">
                     <i class="fa-regular fa-comment-dots text-4xl text-gray-200"></i>
                     <div class="text-sm text-gray-400">Выберите диалог слева,<br>чтобы увидеть переписку</div>
                 </div>
             </div>
-            <div class="p-3 border-t border-gray-100 bg-white">
-                <div class="flex items-end gap-1.5 rounded-[28px] border border-gray-200 bg-gray-50 p-1.5 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
+            <div class="p-3 border-t border-white/5 bg-[#16181d]">
+                <div class="flex items-end gap-1.5 rounded-[28px] border border-white/10 bg-white/5 p-1.5 transition-all focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
                     <button type="button" data-admin-attach title="Прикрепить фото"
-                        class="w-10 h-10 shrink-0 rounded-full text-gray-400 hover:text-green-700 hover:bg-green-50 transition-colors flex items-center justify-center cursor-pointer">
+                        class="w-10 h-10 shrink-0 rounded-full text-gray-400 hover:text-green-400 hover:bg-green-500/10 transition-colors flex items-center justify-center cursor-pointer">
                         <i class="fa-regular fa-image"></i>
                     </button>
                     <input type="file" data-admin-file accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif" class="hidden">
                     <input type="text" data-admin-input disabled
-                        class="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
+                        class="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-400 focus:outline-none disabled:opacity-60"
                         placeholder="Сначала выберите диалог..." maxlength="2000" autocomplete="off">
                     <button type="button" data-admin-send disabled title="Отправить"
                         class="w-10 h-10 shrink-0 rounded-full bg-green-600 hover:bg-green-500 text-white transition-colors flex items-center justify-center cursor-pointer disabled:opacity-40">
@@ -82,20 +82,20 @@ $base = $site['baseUrl'] ?? '';
     <!-- Модалка: профиль пользователя -->
     <div data-admin-modal class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div data-admin-modal-bg class="absolute inset-0 bg-black/40"></div>
-        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[85vh] overflow-y-auto">
-            <div class="flex items-center gap-4 px-6 pt-6 pb-5 border-b border-gray-100">
+        <div class="relative bg-[#16181d] ring-1 ring-white/10 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center gap-4 px-6 pt-6 pb-5 border-b border-white/5">
                 <img data-admin-profile-avatar src="" alt=""
                     class="w-16 h-16 rounded-full object-cover ring-2 ring-green-100 shrink-0">
                 <div class="flex-1 min-w-0">
-                    <div data-admin-profile-name class="text-xl font-bold text-gray-900 truncate">...</div>
+                    <div data-admin-profile-name class="text-xl font-bold text-gray-100 truncate">...</div>
                     <div data-admin-profile-email class="text-sm text-gray-500 truncate">...</div>
                     <div class="mt-1.5">
                         <span data-admin-profile-status
-                            class="inline-block text-[11px] font-semibold rounded-full px-2.5 py-1 text-gray-500 bg-gray-100">...</span>
+                            class="inline-block text-[11px] font-semibold rounded-full px-2.5 py-1 text-gray-500 bg-white/10">...</span>
                     </div>
                 </div>
                 <button type="button" data-admin-modal-close
-                    class="self-start p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer shrink-0">
+                    class="self-start p-2 rounded-lg text-gray-400 hover:text-gray-300 hover:bg-white/10 transition-colors cursor-pointer shrink-0">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -103,6 +103,7 @@ $base = $site['baseUrl'] ?? '';
         </div>
     </div>
 </div>
+
 
 <script>
 $(function () {
@@ -218,21 +219,21 @@ $(function () {
                         ? '<span class="text-[11px] font-bold text-white bg-green-500 rounded-full min-w-[20px] h-5 px-1.5 flex items-center justify-center shrink-0">' + d.unread + '</span>'
                         : '';
                     const closedBadge = d.closed
-                        ? '<span class="text-[11px] font-semibold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5 shrink-0">закрыт</span>'
+                        ? '<span class="text-[11px] font-semibold text-gray-500 bg-white/10 rounded-full px-2 py-0.5 shrink-0">закрыт</span>'
                         : '';
                     const sub = d.online
-                        ? '<span class="text-xs font-medium text-green-600 truncate flex-1">online</span>'
+                        ? '<span class="text-xs font-medium text-green-400 truncate flex-1">online</span>'
                         : '<span class="text-xs text-gray-500 truncate flex-1">' + esc(d.last_message || '—') + '</span>';
                     return '<button type="button" data-dialog="' + esc(d.uniID) + '" title="' + esc(d.uniID) + '"'
                         + ' class="w-full text-left p-2.5 rounded-xl transition-colors flex items-center gap-3 cursor-pointer'
-                        + (active ? ' bg-green-50/70' : ' hover:bg-gray-50') + '">'
+                        + (active ? ' bg-green-500/10/70' : ' hover:bg-white/5') + '">'
                         + '<span class="relative shrink-0">'
-                        + '<span class="w-11 h-11 rounded-full bg-gray-100 text-gray-500 font-bold flex items-center justify-center uppercase">'
+                        + '<span class="w-11 h-11 rounded-full bg-white/10 text-gray-500 font-bold flex items-center justify-center uppercase">'
                         + esc(String(d.uniID || '?').charAt(0)) + '</span>'
                         + onlineDot + '</span>'
                         + '<span class="flex-1 min-w-0">'
                         + '<span class="flex items-baseline gap-2">'
-                        + '<span class="font-semibold text-[15px] text-gray-900 truncate">' + esc(shortId(d.uniID)) + '</span>'
+                        + '<span class="font-semibold text-[15px] text-gray-100 truncate">' + esc(shortId(d.uniID)) + '</span>'
                         + '<span class="ml-auto text-xs text-gray-400 shrink-0">' + esc(fmtTime(d.last_at)) + '</span>'
                         + '</span>'
                         + '<span class="flex items-center gap-2 mt-0.5">' + sub + closedBadge + badge + '</span>'
@@ -269,11 +270,11 @@ $(function () {
             const body = (msg.type === 'image' && msg.file)
                 ? '<a href="' + photoUrl(msg.file) + '" target="_blank" rel="noopener">'
                     + '<img loading="lazy" src="' + photoUrl(msg.file) + '" alt="фото" class="rounded-xl max-w-[220px] max-h-[220px] object-cover"></a>'
-                : '<p class="' + (isUser ? 'text-gray-800' : 'text-white') + ' text-sm leading-relaxed break-words">' + esc(msg.message) + '</p>';
+                : '<p class="' + (isUser ? 'text-gray-100' : 'text-white') + ' text-sm leading-relaxed break-words">' + esc(msg.message) + '</p>';
             const sub = isUser ? 'text-gray-400' : 'text-green-100';
             const who = isUser ? 'Пользователь' : 'Вы';
             const ava = '<img src="' + esc(isUser ? av.user : av.admin) + '" alt="" class="w-8 h-8 rounded-full object-cover shrink-0">';
-            const bubble = '<div class="p-3 rounded-xl ' + (isUser ? 'rounded-bl bg-white border border-gray-200 shadow-sm' : 'rounded-br bg-green-600 shadow-sm') + ' max-w-[75%]">'
+            const bubble = '<div class="p-3 rounded-xl ' + (isUser ? 'rounded-bl bg-white/10 border border-white/10 shadow-sm' : 'rounded-br bg-green-600 shadow-sm') + ' max-w-[75%]">'
                 + '<div class="text-[11px] font-semibold mb-1 ' + sub + '">' + who + ' · ' + esc(fmtTime(msg.created_at)) + '</div>'
                 + body + '</div>';
             return isUser
@@ -327,12 +328,12 @@ $(function () {
                 $(root).find('[data-admin-profile-status]')
                     .text(active ? 'Подписка активна' : 'Нет подписки')
                     .attr('class', 'inline-block text-[11px] font-semibold rounded-full px-2.5 py-1 '
-                        + (active ? 'text-green-700 bg-green-100' : 'text-gray-500 bg-gray-100'));
+                        + (active ? 'text-green-400 bg-green-500/10' : 'text-gray-500 bg-white/10'));
                 function card(label, value) {
                     const v = String(value ?? '') || '—';
-                    return '<div class="bg-gray-50 rounded-xl px-3 py-2.5 min-w-0">'
+                    return '<div class="bg-white/5 rounded-xl px-3 py-2.5 min-w-0">'
                         + '<div class="text-[11px] text-gray-400 mb-0.5">' + label + '</div>'
-                        + '<div class="font-semibold text-gray-800 truncate" title="' + esc(v) + '">' + esc(v) + '</div></div>';
+                        + '<div class="font-semibold text-gray-100 truncate" title="' + esc(v) + '">' + esc(v) + '</div></div>';
                 }
                 const isLink = /^https?:\/\//i.test(u.subscription || '');
                 $body.html((isLink
@@ -347,12 +348,157 @@ $(function () {
                     + card('Пригласил', u.refer)
                     + card('Его код', u.myrefer)
                     + card('ID', u.uniID)
-                    + '</div>');
+                    + '</div>'
+                    + '<div data-dos-box class="mt-3"><div class="text-xs text-gray-500">Досье и чеки…</div></div>');
+                loadDossier(root, uniID);
             })
             .fail(function () {
                 $body.html('<div class="text-sm text-red-500">Ошибка загрузки</div>');
             });
     }
+
+    // Полное досье + история чеков (лениво, только при открытом профиле)
+    function loadDossier(root, uniID) {
+        const $box = $(root).find('[data-dos-box]');
+        if (!$box.length) return;
+        $.getJSON('/api/admin/client?uniID=' + encodeURIComponent(uniID))
+            .done(function (d) {
+                if (!d || d.status !== 'ok') { $box.html('<div class="text-xs text-gray-500">Досье недоступно</div>'); return; }
+                let h = '';
+                const x = d.xray;
+                h += '<div class="grid grid-cols-3 gap-2 mb-2">'
+                    + '<div class="bg-white/5 rounded-xl px-3 py-2"><div class="text-[11px] text-gray-400">Ключ</div><div class="font-semibold text-sm ' + (x && x.found ? (x.enable ? 'text-green-400' : 'text-yellow-300') : 'text-red-400') + '">' + (x && x.found ? (x.enable ? 'есть' : 'выкл') : 'нет') + '</div></div>'
+                    + '<div class="bg-white/5 rounded-xl px-3 py-2"><div class="text-[11px] text-gray-400">Оплачено всего</div><div class="font-semibold text-sm text-gray-100">' + esc(d.paid_total) + '₽</div></div>'
+                    + '<div class="bg-white/5 rounded-xl px-3 py-2"><div class="text-[11px] text-gray-400">Сообщений</div><div class="font-semibold text-sm text-gray-100">' + esc((d.chat && d.chat.messages) ?? 0) + '</div></div>'
+                    + '</div>';
+                if (x && x.found) {
+                    h += '<div class="text-xs text-gray-400 mb-2">Трафик ↓ ' + esc(x.down_h) + ' · ↑ ' + esc(x.up_h) + (x.online ? ' · <span class="text-green-400">в сети</span>' : '') + '</div>';
+                }
+                const pays = d.payments || [];
+                h += '<div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1.5">История чеков · ' + pays.length + '</div>';
+                if (!pays.length) {
+                    h += '<div class="text-xs text-gray-500">Оплат не найдено</div>';
+                } else {
+                    h += '<div class="flex flex-col gap-1 max-h-44 overflow-y-auto">';
+                    pays.forEach(function (p) {
+                        var ok = p.status === 'succeeded';
+                        var pm = (window.payMethod ? window.payMethod(p.method_type || p.method) : { icon: null, name: p.method || '' });
+                        var dot = '<span class="shrink-0">' + (window.payStatusIcon ? window.payStatusIcon(ok) : '') + '</span>';
+                        var ic = pm.icon
+                            ? '<img src="/public/assets/images/icons/payment/' + pm.icon + '" alt="" class="w-4 h-4 object-contain shrink-0">'
+                            : '<i class="fa-solid fa-credit-card text-gray-500 text-xs w-4 text-center shrink-0"></i>';
+                        h += '<button type="button" data-receipt-open="' + esc(p.payment_id) + '" class="flex items-center gap-2 text-left px-3 py-2 rounded-xl transition-colors ' + (ok ? 'bg-green-500/[0.04] hover:bg-green-500/[0.08]' : 'bg-white/5 hover:bg-white/10') + '">'
+                            + dot + ic
+                            + '<span class="text-xs text-gray-400 truncate">' + esc(p.created_at || '') + ' · ' + esc(pm.name) + '</span>'
+                            + '<span class="ml-auto text-xs font-bold text-white whitespace-nowrap">' + esc(p.amount) + '₽</span></button>';
+                    });
+                    h += '</div>';
+                }
+                $box.html(h);
+            })
+            .fail(function () { $box.html('<div class="text-xs text-gray-500">Досье недоступно</div>'); });
+    }
+
+    // Живой чек из кассы (глобальная модалка — доступна и из ROI)
+    function openReceipt(root, paymentId) {
+        if (typeof paymentId === 'undefined') { paymentId = root; }
+        const $m = $('#gl-receipt');
+        const $b = $('#gl-receipt-body');
+        if (!$m.length || !paymentId) return;
+        // (экспорт ниже, при инициализации)
+        $b.html('<div class="text-sm text-gray-400">Загрузка…</div>');
+        $m.removeClass('hidden');
+        $.ajax({
+            url: '/api/admin/payment?id=' + encodeURIComponent(paymentId),
+            method: 'GET', dataType: 'json', timeout: 45000,
+            success: function (d) {
+                renderReceipt($b, d);
+            },
+            error: function (xhr, err) {
+                $b.html('<div class="text-sm text-red-400">Ошибка загрузки (' + esc(err || 'сеть') + '). <button type="button" class="underline" data-receipt-retry="' + esc(paymentId) + '">Повторить</button></div>');
+            }
+        });
+        function renderReceipt($b, d) {
+                if (!d || d.status !== 'ok') { $b.html('<div class="text-sm text-red-400">Чек не найден</div>'); return; }
+                function row(l, v, cls) {
+                    return '<div class="flex justify-between items-center gap-3 py-2.5 border-b border-white/[0.06] last:border-0"><span class="text-gray-500">' + l + '</span><span class="font-medium tabular-nums ' + (cls || 'text-gray-100') + ' text-right break-all">' + esc(v) + '</span></div>';
+                }
+                function cell(l, v, cls) {
+                    return '<div class="rounded-xl bg-white/5 px-3 py-2 min-w-0"><div class="text-[11px] text-gray-500 mb-0.5">' + l + '</div><div class="font-semibold text-sm ' + (cls || 'text-gray-100') + ' truncate" title="' + esc(v) + '">' + esc(v) + '</div></div>';
+                }
+                function methodCell(d) {
+                    var pm = (window.payMethod ? window.payMethod(d.method_type || d.method) : { icon: null, name: d.method || '' });
+                    var img = pm.icon
+                        ? '<img src="/public/assets/images/icons/payment/' + pm.icon + '" alt="" class="w-5 h-5 object-contain shrink-0">'
+                        : '<i class="fa-solid fa-credit-card text-gray-500 text-sm shrink-0"></i>';
+                    return '<span class="inline-flex items-center gap-2">' + img + '<span>' + esc(pm.name) + '</span></span>';
+                }
+                var paid = !!d.paid;
+                var money = function (v) { return Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽'; };
+                var moneyDash = function (v) { return (v === null || v === undefined || v === '') ? '—' : (isNaN(Number(v)) ? String(v) : money(v)); };
+                var tName = window.tariffName ? window.tariffName(d.tariff) : (d.tariff || '—');
+                var shortNo = String(d.id || '').slice(0, 8).toUpperCase();
+                var stamp = '<span class="shrink-0 self-start text-[11px] font-bold uppercase px-2.5 py-1 rounded-[2px] border ' + (paid ? 'border-green-500/50 text-green-400' : 'border-yellow-500/50 text-yellow-300') + '" style="letter-spacing:.18em">' + (paid ? 'Оплачен' : esc(d.pay_status || 'Ожидает')) + '</span>';
+                $b.html(
+                    '<div class="flex items-start justify-between gap-3 pb-3 border-b border-white/10 mb-3">'
+                    + '<div><div class="text-[11px] uppercase text-gray-500" style="letter-spacing:.2em">Квитанция · QweesVPN</div>'
+                    + (shortNo ? '<div class="font-mono text-xs text-gray-400 mt-1">№ ' + esc(shortNo) + ' · ' + esc(d.created_at || '') + '</div>' : '')
+                    + '</div>' + stamp
+                    + '</div>'
+                    + '<div class="flex items-start justify-between gap-4 mb-3">'
+                    + '<div class="min-w-0"><div class="text-3xl font-bold text-white tabular-nums tracking-tight">' + esc(money(d.amount)) + '</div>'
+                    + (d.description ? '<div class="text-[13px] text-gray-400 mt-1">' + esc(d.description) + '</div>' : '') + '</div>'
+                    + '<div class="text-right shrink-0"><div class="text-[11px] text-gray-500 mb-1">Способ</div><div class="font-semibold text-sm text-gray-100 flex items-center justify-end gap-2">' + methodCell(d) + '</div>'
+                    + '<div class="text-[11px] text-gray-500 mt-2 mb-0.5">Тариф</div><div class="font-semibold text-sm text-gray-100" title="' + esc(d.tariff || '') + '">' + esc(tName) + '</div></div>'
+                    + '</div>'
+                    + '<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">'
+                    + '<div class="border border-white/10 rounded-lg px-3.5 py-2 bg-white/[0.02]"><div class="text-[11px] uppercase text-gray-500 mb-1" style="letter-spacing:.14em">Расчёт</div>'
+                    + row('Сумма', money(d.amount), '')
+                    + row('Комиссия', (Number(d.commission) > 0 ? '−' + money(d.commission) : '—'), 'text-gray-400')
+                    + row('Возврат', (Number(d.refunded) > 0 ? '−' + money(d.refunded) : '—'), 'text-gray-400')
+                    + '<div class="flex justify-between items-center gap-3 py-2 border-t-2 border-white/15"><span class="text-sm font-semibold text-gray-200">К получению</span><span class="font-bold tabular-nums text-gray-100 text-right">' + esc(moneyDash(d.income)) + '</span></div>'
+                    + '</div>'
+                    + '<div class="border border-white/10 rounded-lg px-3.5 py-2 bg-white/[0.02]"><div class="text-[11px] uppercase text-gray-500 mb-1" style="letter-spacing:.14em">Плательщик</div>'
+                    + row('Имя', d.client_name || d.uniID || '—')
+                    + row('Email', d.client_email || '—')
+                    + row('Создан', d.created_at || '—')
+                    + row('Оплачен', d.captured_at || '—')
+                    + '</div>'
+                    + '</div>'
+                    + '<div class="flex items-center gap-2 mb-3"><span class="text-gray-500 text-[13px] shrink-0">ID</span><span class="font-mono text-xs text-gray-300 truncate flex-1">' + esc(d.id || '') + '</span><button type="button" data-copy-id="' + esc(d.id || '') + '" class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:text-gray-200 hover:bg-white/10 transition-colors">Копировать</button></div>'
+                    + '<a href="/api/admin/payment/receipt?id=' + encodeURIComponent(d.id || '') + '" target="_blank" rel="noopener" class="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white transition-colors"><i class="fa-solid fa-download text-xs"></i>Скачать квитанцию</a>'
+                    + '<div class="grid grid-cols-2 gap-2.5 mt-3">'
+                    + '<div class="border border-white/10 rounded-lg px-3 py-2.5 bg-white/[0.02]"><div class="flex items-center gap-1.5 text-[13px] text-gray-300"><span class="w-1.5 h-1.5 rounded-full bg-gray-500 shrink-0"></span>Платёж создан</div><div class="text-xs text-gray-500 tabular-nums mt-0.5">' + esc(d.created_at || '—') + '</div></div>'
+                    + (paid
+                        ? '<div class="border border-white/10 rounded-lg px-3 py-2.5 bg-white/[0.02]"><div class="flex items-center gap-1.5 text-[13px] text-gray-300"><span class="w-1.5 h-1.5 rounded-full bg-green-500/80 shrink-0"></span>Платёж оплачен</div><div class="text-xs text-gray-500 tabular-nums mt-0.5">' + esc(d.captured_at || d.created_at || '—') + '</div></div>'
+                        : '<div class="border border-dashed border-white/10 rounded-lg px-3 py-2.5"><div class="flex items-center gap-1.5 text-[13px] text-gray-500"><span class="w-1.5 h-1.5 rounded-full bg-yellow-500/70 shrink-0"></span>Ожидает оплаты</div><div class="text-xs text-gray-600 mt-0.5">—</div></div>')
+                    + '</div>'
+                );
+            }
+    }
+    window.__openReceipt = openReceipt;
+    // Закрытие глобальной модалки чека — на document (модалка вне chat-root)
+    $(document).off('click.glreceipt').on('click.glreceipt', '[data-admin-receipt-close],[data-admin-receipt-bg]', function () {
+        $('#gl-receipt').addClass('hidden');
+    });
+    $(document).off('click.glretry').on('click.glretry', '[data-receipt-retry]', function () {
+        if (typeof window.__openReceipt === 'function') window.__openReceipt($(this).attr('data-receipt-retry'));
+    });
+    $(document).off('click.glcopy').on('click.glcopy', '[data-copy-id]', function () {
+        var v = $(this).attr('data-copy-id') || '', btn = $(this);
+        function ok() { btn.text('Скопировано'); setTimeout(function () { btn.text('Копировать'); }, 1500); }
+        if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(v).then(ok, ok); }
+        else { var t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); ok(); }
+    });
+    // Поиск чека по ID платежа (шапка «Истории платежей»)
+    $(document).off('click.glfind').on('click.glfind', '[data-receipt-find]', function () {
+        var id = $.trim($('[data-receipt-search]').val() || '');
+        if (!id) { $('[data-receipt-search]').focus(); return; }
+        if (typeof window.__openReceipt === 'function') window.__openReceipt(id);
+    });
+    $(document).off('keydown.glfind').on('keydown.glfind', '[data-receipt-search]', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); $('[data-receipt-find]').trigger('click'); }
+    });
 
     function tick() {
         $('[data-admin-chat]').each(function () {
@@ -443,6 +589,15 @@ $(function () {
             }
             if ($t.closest('[data-admin-modal-close]').length || $t.closest('[data-admin-modal-bg]').length) {
                 $modal.addClass('hidden');
+                return;
+            }
+            const $rc = $t.closest('[data-receipt-open]');
+            if ($rc.length) {
+                openReceipt(root, $rc.attr('data-receipt-open'));
+                return;
+            }
+            if ($t.closest('[data-admin-receipt-close]').length || $t.closest('[data-admin-receipt-bg]').length) {
+                $('#gl-receipt').addClass('hidden');
                 return;
             }
             if ($t.closest('[data-admin-close]').length) {

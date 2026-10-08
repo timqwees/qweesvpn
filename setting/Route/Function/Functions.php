@@ -154,9 +154,6 @@ class Functions
                     'telegram' => '@qweesvpn_support'
                 ]
             ],
-            'сервера' => [
-                'Нидерланды, Амстердам' => 'nl.qweesvpn.online'
-            ],
             'студия' => 'QweesTeam Studio — Венчурное агенство'
         ];
     }

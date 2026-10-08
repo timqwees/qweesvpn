@@ -1,6 +1,12 @@
 RewriteEngine On
 RewriteBase /
 
+# Секреты и исходники — никогда наружу (иначе .env/servers.json отдадутся текстом)
+RewriteRule ^(setting|app|vendor)/ - [F,L]
+<FilesMatch "^\.env$|^composer\.(json|lock)$|\.sql$|\.log$|\.md$">
+    Require all denied
+</FilesMatch>
+
 # Если файл или директория существуют, используем их напрямую
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

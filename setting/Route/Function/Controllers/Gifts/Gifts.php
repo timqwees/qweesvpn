@@ -190,6 +190,7 @@ class Gifts implements InterfaceGifts
 
 	public function onSave()
 	{
+		\Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('gifts');
 		$url = $_POST['url'] ?? '/admin';
 		if (!\is_array($this->data)) $this->data = [];//это массив
 		$this->data['enabled'] = isset($_POST['enabled']) && $_POST['enabled'] === 'on';//галочки нет — выкл

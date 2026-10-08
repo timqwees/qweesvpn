@@ -39,35 +39,11 @@ class Xray
 
     /**
      * Настройка текущего сервера из реестра Network (Server/Network.php).
-     * Текущий сервер выбирается через Network::selectServer() перед операцией.
+     * Транспорт уехал в PanelHttp (SRP) — здесь только делегаты и домен.
      */
     private static function serverSetting(string $key): string
     {
-        return (string) (ServerNetwork::getServer()[$key] ?? '');
-    }
-
-    /** Базовый URL панели 3x-ui текущего сервера, без суффикса /panel/api. */
-    private static function panelBase(): string
-    {
-        return rtrim(self::serverSetting('XUI_URL_PANEL'), '/');
-    }
-
-    /** Имя cookie сессии после POST /login (если не используется XUI_API_TOKEN). */
-    private static function cookieName(): string
-    {
-        return self::serverSetting('XUI_LOGIN_NAME_COOKIE') ?: 'x-ui';
-    }
-
-    /** Логин администратора панели (POST /login без Bearer). */
-    private static function xuiLogin(): string
-    {
-        return self::serverSetting('XUI_LOGIN');
-    }
-
-    /** Пароль администратора панели. */
-    private static function xuiPassword(): string
-    {
-        return self::serverSetting('XUI_PASSWORD');
+        return PanelHttp::server($key);
     }
 
     /** VLESS сервер хост (для client_data). */
@@ -82,273 +58,42 @@ class Xray
         return (int) self::serverSetting('XUI_INBOUND_NUMBER');
     }
 
-    /** Имя файла для логирования. */
+    /** Абсолютный путь лог-файла (корень проекта — туда же смотрят читалки админки). */
     private static function logFile(): string
     {
-        return $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
+        return dirname(__DIR__, 6) . '/' . basename($_ENV['LOG_FILE_NAME'] ?? 'qwees.log');
     }
 
-    /** API Token панели (Settings → Security). Пусто — POST /login и cookie + CSRF. */
-    private static function xuiApiToken(): string
+    /** Единая точка логирования Xray: один формат, один файл. */
+    public static function log(string $message): void
     {
-        return trim(self::serverSetting('XUI_API_TOKEN'), " \t\n\r\0\x0B\"'");
+        @file_put_contents(self::logFile(), $message, FILE_APPEND);
     }
 
-    /** Одна сессия cookie (+ CSRF) на HTTP-запрос PHP; сбрасывается при смене сервера. */
-    private static ?string $threeXuiCookieCache = null;
+    // ==================== МОНИТОРИНГ (дашборд) ====================
+    // Тонкие публичные обёртки над PanelHttp — по apixray.md.
+    // Сервер уже должен быть выбран через ServerNetwork::selectServer($code).
 
-    private static ?string $threeXuiCsrfCache = null;
-
-    private static string $threeXuiCacheServer = '';
-
-    /** Базовые SSL/UA опции (int 0/1 — совместимость с curl_setopt_array в PHP 8+). */
-    private static function curlSslUserAgentOpts(): array
+    /** Снапшот железа: cpu/mem/swap/disk/netIO/xray/tcp. GET /panel/api/server/status. */
+    public static function panelServerStatus(): array|false
     {
-        return [
-            CURLOPT_SSL_VERIFYPEER => 0,
-            CURLOPT_SSL_VERIFYHOST => 0,
-            CURLOPT_USERAGENT => 'Mozilla/5.0 (compatible; ' . Functions::site()['ООО'] . '/1.0)',
-        ];
+        $res = PanelHttp::threeXuiHttp('GET', '/panel/api/server/status');
+        if (!\is_array($res) || ($res['success'] ?? false) !== true || !\is_array($res['obj'] ?? null)) return false;
+        return $res['obj'];
     }
 
     /**
-     * @param array<int, mixed> $opts
-     * @return array<int, mixed>
+     * Параллельный пакет GET-запросов к панели (curl_multi) — дашборд одним заходом.
+     * @param string[] $paths пути от корня панели, напр. ['/panel/api/server/status']
+     * @return array<string,array|false> [path => декодированный JSON или false]
      */
-    private static function curlOptsMerge(array $opts): array
+    public static function panelBatch(array $paths): array
     {
-        // array_merge reindexes numeric keys (CURLOPT_* are ints) → invalid keys for curl_setopt_array (PHP 8+).
-        return array_replace(self::curlSslUserAgentOpts(), $opts);
+        return PanelHttp::panelBatch($paths);
     }
 
-    /** Авторизация 3x-ui по паролю (если нет Bearer-токена). */
-    private static function threeXuiLoginCookie(): ?string
-    {
-        $maxRetries = 3;
-        $code = 0;
-        $cookie = '';
-        $cookieName = self::cookieName();
-        $cookiePattern = '/Set-Cookie:\s*(3?' . $cookieName . '=[^;]+)/i';
 
-        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            $loginBody = [
-                'username' => self::xuiLogin(),
-                'password' => self::xuiPassword(),
-            ];
-            $otp = trim((string) ($_ENV['XUI_TWO_FACTOR_CODE'] ?? ''), " \t\n\r\0\x0B\"'");
-            if ($otp !== '') {
-                $loginBody['twoFactorCode'] = $otp;
-            }
-
-            $ch = curl_init(self::panelBase() . '/login');
-            curl_setopt_array($ch, self::curlOptsMerge([
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($loginBody, JSON_UNESCAPED_UNICODE),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HEADER => true,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Accept: application/json'],
-                CURLOPT_TIMEOUT => 45,
-                CURLOPT_CONNECTTIMEOUT => 20,
-            ]));
-            $response = curl_exec($ch);
-            $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-
-            if ($code === 200 && is_string($response) && preg_match($cookiePattern, $response, $m)) {
-                $headerEnd = strpos($response, "\r\n\r\n");
-                $bodyOff = $headerEnd !== false ? $headerEnd + 4 : false;
-                if ($bodyOff === false) {
-                    $headerEnd = strpos($response, "\n\n");
-                    $bodyOff = $headerEnd !== false ? $headerEnd + 2 : false;
-                }
-                if ($bodyOff !== false && $bodyOff < strlen($response)) {
-                    $loginJson = json_decode(substr($response, $bodyOff), true);
-                    if (is_array($loginJson) && array_key_exists('success', $loginJson) && $loginJson['success'] !== true) {
-                        file_put_contents(
-                            self::logFile(),
-                            \sprintf(
-                                "[%s] [ПОДПИСКА -> СЕРВЕР] Login отклонён панелью: %s\n",
-                                date('Y-m-d H:i:s'),
-                                json_encode($loginJson, JSON_UNESCAPED_UNICODE)
-                            ),
-                            FILE_APPEND
-                        );
-                        if ($attempt < $maxRetries) {
-                            usleep(500000 * $attempt);
-                        }
-                        continue;
-                    }
-                }
-                $cookie = $m[1];
-                break;
-            }
-
-            file_put_contents(
-                self::logFile(),
-                \sprintf(
-                    "[%s] [ПОДПИСКА -> СЕРВЕР] Login attempt %d/%d failed: HTTP %d, cURL: %s\n",
-                    date('Y-m-d H:i:s'),
-                    $attempt,
-                    $maxRetries,
-                    $code,
-                    $curlError
-                ),
-                FILE_APPEND
-            );
-            if ($attempt < $maxRetries) {
-                usleep(500000 * $attempt);
-            }
-        }
-
-        return $cookie !== '' ? $cookie : null;
-    }
-
-    /** GET /csrf-token — для cookie-сессии на POST нужен заголовок X-CSRF-Token (см. API Docs). */
-    private static function threeXuiFetchCsrfToken(string $cookieHeaderValue): ?string
-    {
-        foreach (['/csrf-token', '/panel/api/csrf-token'] as $path) {
-            $ch = curl_init(self::panelBase() . $path);
-            curl_setopt_array($ch, self::curlOptsMerge([
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HTTPHEADER => ['Accept: application/json', 'Cookie: ' . $cookieHeaderValue],
-                CURLOPT_TIMEOUT => 20,
-                CURLOPT_CONNECTTIMEOUT => 10,
-            ]));
-            $response = curl_exec($ch);
-            if (!is_string($response) || $response === '') {
-                continue;
-            }
-            $decoded = json_decode($response, true);
-            if (is_array($decoded) && ($decoded['success'] ?? false) === true && isset($decoded['obj'])) {
-                $t = $decoded['obj'];
-                if (is_string($t) && $t !== '') {
-                    return $t;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @return array{0: string, 1: ?string}|false [Cookie: value, csrf или null]
-     */
-    private static function threeXuiCookieAuthSession(): array|false
-    {
-        // Кэш действителен только для того сервера, на котором получен
-        if (self::$threeXuiCacheServer === self::vlessHost() && self::$threeXuiCookieCache !== null) {
-            return [self::$threeXuiCookieCache, self::$threeXuiCsrfCache];
-        }
-        $cookie = self::threeXuiLoginCookie();
-        if ($cookie === null) {
-            return false;
-        }
-        self::$threeXuiCacheServer = self::vlessHost();
-        self::$threeXuiCookieCache = $cookie;
-        self::$threeXuiCsrfCache = self::threeXuiFetchCsrfToken($cookie);
-        if (self::$threeXuiCsrfCache === null) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] CSRF токен не получен; POST может быть отклонён панелью\n", date('Y-m-d H:i:s')),
-                FILE_APPEND
-            );
-        }
-
-        return [self::$threeXuiCookieCache, self::$threeXuiCsrfCache];
-    }
-
-    /**
-     * HTTP к 3x-ui: path от корня сайта, например /panel/api/inbounds/list.
-     *
-     * @return array<string,mixed>|false Декодированный JSON; при ошибке сети/ответа — false
-     */
-    private static function threeXuiHttp(string $method, string $path, ?array $jsonBody = null): array|false
-    {
-        $url = self::panelBase() . $path;
-        $token = self::xuiApiToken();
-        $headers = ['Accept: application/json'];
-        if ($token !== '') {
-            $headers[] = 'Authorization: Bearer ' . $token;
-        } else {
-            $sess = self::threeXuiCookieAuthSession();
-            if ($sess === false) {
-                return false;
-            }
-            [$cookieVal, $csrf] = $sess;
-            $headers[] = 'Cookie: ' . $cookieVal;
-            $methodU = strtoupper($method);
-            if (
-                $csrf !== null && $csrf !== ''
-                && in_array($methodU, ['POST', 'PUT', 'PATCH', 'DELETE'], true)
-            ) {
-                $headers[] = 'X-CSRF-Token: ' . $csrf;
-            }
-        }
-        if ($jsonBody !== null) {
-            $headers[] = 'Content-Type: application/json';
-        }
-
-        $ch = curl_init($url);
-        $opts = self::curlOptsMerge([
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_TIMEOUT => 60,
-            CURLOPT_CONNECTTIMEOUT => 15,
-        ]);
-        if (strtoupper($method) === 'POST') {
-            $opts[CURLOPT_POST] = true;
-            if ($jsonBody !== null) {
-                $opts[CURLOPT_POSTFIELDS] = json_encode($jsonBody, JSON_UNESCAPED_UNICODE);
-            }
-        } elseif (strtoupper($method) !== 'GET') {
-            $opts[CURLOPT_CUSTOMREQUEST] = strtoupper($method);
-            if ($jsonBody !== null) {
-                $opts[CURLOPT_POSTFIELDS] = json_encode($jsonBody, JSON_UNESCAPED_UNICODE);
-            }
-        }
-        curl_setopt_array($ch, $opts);
-        $response = curl_exec($ch);
-        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlErr = curl_error($ch);
-
-        if ($response === false || $curlErr !== '') {
-            file_put_contents(
-                self::logFile(),
-                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] HTTP %s %s failed: %s\n", date('Y-m-d H:i:s'), $method, $path, $curlErr),
-                FILE_APPEND
-            );
-            return false;
-        }
-        $decoded = json_decode((string) $response, true);
-        if (!\is_array($decoded)) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Invalid JSON from %s HTTP %d\n", date('Y-m-d H:i:s'), $path, $httpCode),
-                FILE_APPEND
-            );
-            return false;
-        }
-
-        if ($httpCode >= 400) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf(
-                    "[%s] [ПОДПИСКА -> СЕРВЕР] %s %s HTTP %d body: %s\n",
-                    date('Y-m-d H:i:s'),
-                    $method,
-                    $path,
-                    $httpCode,
-                    substr((string) $response, 0, 500)
-                ),
-                FILE_APPEND
-            );
-        }
-
-        return $decoded;
-    }
-
-    /** В ответе API streamSettings иногда строка JSON. */
-    private static function streamSettingsArray(array $inbound): array
+    /** В ответе API streamSettings иногда строка JSON. */    private static function streamSettingsArray(array $inbound): array
     {
         $ss = $inbound['streamSettings'] ?? null;
         if (is_string($ss)) {
@@ -389,23 +134,15 @@ class Xray
         // Выбираем сервер клиента (субдомен его подписки, без подписки — дефолтный)
         ServerNetwork::selectServer($uniID);
 
-        $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
+        $data = PanelHttp::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj']) || !\is_array($data['obj'])) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Список inbounds недоступен\n", date('Y-m-d H:i:s')),
-                FILE_APPEND
-            );
+            self::log(\sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Список inbounds недоступен\n", date('Y-m-d H:i:s')));
             return false;
         }
 
         $inboundIdx = self::inboundNumber();
         if (empty($data['obj'][$inboundIdx])) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет inbound с индексом %d\n", date('Y-m-d H:i:s'), $inboundIdx),
-                FILE_APPEND
-            );
+            self::log(\sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет inbound с индексом %d\n", date('Y-m-d H:i:s'), $inboundIdx));
             return false;
         }
 
@@ -482,9 +219,14 @@ class Xray
             // email = getFirstName() — отображаемое имя в панели (может быть не уникальным!)
             // subId = uniID        — уникальный ключ для поиска/продления/удаления
             $clientId = $needsUuid ? self::generateUuidV4() : $uniID;
+            $clientEmail = (string) $user->getEmail();
+            if ($clientEmail === '') {//3.9.0 строго требует email — без него панель отвергнет
+                self::log(\sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет email для %s, выдача невозможна\n", date('Y-m-d H:i:s'), $uniID));
+                return false;
+            }
             $client = [
                 'id' => $clientId,
-                'email' => $user->getЕmail(), // отображаемое почты в панели
+                'email' => $clientEmail, // отображаемая почта в панели
                 'expiryTime' => $expiry,
                 'subId' => $uniID,               // уникальный ключ — всегда uniID
                 'enable' => true,
@@ -498,18 +240,14 @@ class Xray
             $payload = ['client' => $client, 'inboundIds' => [(int) $inbound['id']]];
         }
 
-        $updateUser = self::threeXuiHttp('POST', $path, $payload);
+        $updateUser = PanelHttp::threeXuiHttp('POST', $path, $payload);
         if ($updateUser === false || ($updateUser['success'] ?? false) !== true) {
-            file_put_contents(
-                self::logFile(),
-                \sprintf(
-                    "[%s] [ПОДПИСКА -> СЕРВЕР] Ошибка API (%s): %s\n",
-                    date('Y-m-d H:i:s'),
-                    $path,
-                    json_encode($updateUser, JSON_UNESCAPED_UNICODE)
-                ),
-                FILE_APPEND
-            );
+            self::log(\sprintf(
+                "[%s] [ПОДПИСКА -> СЕРВЕР] Ошибка API (%s): %s\n",
+                date('Y-m-d H:i:s'),
+                $path,
+                json_encode($updateUser, JSON_UNESCAPED_UNICODE)
+            ));
             return false;
         }
 
@@ -583,7 +321,7 @@ class Xray
     private function xuiUpdate3xUi(string $uniID, int $bonusDays): array
     {
         ServerNetwork::selectServer($uniID); // сервер клиента по его подписке
-        $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
+        $data = PanelHttp::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj'])) {
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
@@ -642,21 +380,17 @@ class Xray
         // 3.1.0: POST /panel/api/clients/update/:email — тело полный объект (replace, не patch)
         $path = '/panel/api/clients/update/' . rawurlencode($currentEmail);
         $payload = array_merge($clientRow, ['enable' => true]);
-        $updateUser = self::threeXuiHttp('POST', $path, $payload);
+        $updateUser = PanelHttp::threeXuiHttp('POST', $path, $payload);
         if ($updateUser !== false && ($updateUser['success'] ?? false) === true) {
             self::syncUserExpiryByUniID($uniID, $newExpiry);
             return ['status' => 'ok', 'message' => 'Бонусные дни добавлены'];
         }
-        file_put_contents(
-            self::logFile(),
-            \sprintf(
-                "[%s] [ПОДПИСКА -> СЕРВЕР] Update failed (%s): %s\n",
-                date('Y-m-d H:i:s'),
-                $path,
-                json_encode($updateUser, JSON_UNESCAPED_UNICODE)
-            ),
-            FILE_APPEND
-        );
+        self::log(\sprintf(
+            "[%s] [ПОДПИСКА -> СЕРВЕР] Update failed (%s): %s\n",
+            date('Y-m-d H:i:s'),
+            $path,
+            json_encode($updateUser, JSON_UNESCAPED_UNICODE)
+        ));
         return ['status' => 'error', 'message' => 'Не удалось обновить клиента в панели 3x-ui'];
     }
 
@@ -688,11 +422,12 @@ class Xray
      *
      * @return array{status: string, message: string}
      */
-    public static function deleteClientFromPanel(string $uniID): array
+    public static function deleteClientFromPanel(string $uniID, ?string $serverCode = null): array
     {
-        ServerNetwork::selectServer($uniID); // сервер клиента по его подписке
+        if ($serverCode !== null) ServerNetwork::selectServer(null, $serverCode);//явный сервер (чистка призраков)
+        else ServerNetwork::selectServer($uniID); // сервер клиента по его подписке
 
-        $data = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
+        $data = PanelHttp::threeXuiHttp('GET', '/panel/api/inbounds/list');
         if ($data === false || empty($data['success']) || empty($data['obj'])) {
             return ['status' => 'error', 'message' => 'Не удалось получить inbounds'];
         }
@@ -730,11 +465,11 @@ class Xray
 
         // 3.1.0: POST /panel/api/clients/del/:email (убран inboundId из пути)
         $delPath = '/panel/api/clients/del/' . rawurlencode($deleteEmail);
-        $delResult = self::threeXuiHttp('POST', $delPath, null);
+        $delResult = PanelHttp::threeXuiHttp('POST', $delPath, null);
 
         if ($delResult !== false && ($delResult['success'] ?? false) === true) {
             // Верификация: клиент действительно удалён из inbound
-            $verify = self::threeXuiHttp('GET', '/panel/api/inbounds/list');
+            $verify = PanelHttp::threeXuiHttp('GET', '/panel/api/inbounds/list');
             if ($verify !== false && !empty($verify['success']) && !empty($verify['obj'][$inboundIdx])) {
                 $vIn = $verify['obj'][$inboundIdx];
                 $rawSettings = $vIn['settings'] ?? '{}';
@@ -786,28 +521,17 @@ class Xray
         $client = new GetUser();
         $uniID = $uniID === null ? $client->getUniID() : $uniID;
 
-        file_put_contents(
-            self::logFile(),
-            \sprintf(
-                "[%s] [ПОДПИСКА -> УДАЛЕНИЕ] Начало удаления ключа для пользователя uniID: %s\n",
-                date('Y-m-d H:i:s'),
-                $uniID
-            ),
-            FILE_APPEND
-        );
+        self::log(\sprintf(
+            "[%s] [ПОДПИСКА -> УДАЛЕНИЕ] Начало удаления ключа для пользователя uniID: %s\n",
+            date('Y-m-d H:i:s'),
+            $uniID
+        ));
 
         if (empty($uniID)) {
             return ['status' => 'error', 'message' => 'Пользователь не найден'];
         }
 
         $result = $this->deleteKey3xUi((string) $uniID);
-
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-        if (str_contains($uri, 'subscription/delete')) {
-            header('Content-Type: application/json; charset=UTF-8');
-            echo json_encode($result, JSON_UNESCAPED_UNICODE);
-            exit;
-        }
 
         return $result;
     }

@@ -209,6 +209,7 @@ class Refer implements InterfaceRefer
      */
     public function onSave(): void
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('refer');
         $url = (string) ($_POST['url'] ?? '/admin');
         ReferConfig::save([
             'enabled' => ($_POST['enabled'] ?? '') === 'on',

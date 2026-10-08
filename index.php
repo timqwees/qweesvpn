@@ -49,8 +49,20 @@ if (file_exists(__DIR__ . "/.env")) {
 use App\Models\Network\Network;
 use App\Config\Database;
 
-// Инициализируем подключение к БД и структуру таблиц перед запуском роутинга
-Database::getConnection();
-Network::onTableAllExists();
+// Базовые заголовки безопасности (дешёвая защита от типовых атак)
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+
+// БД подключается лениво при первом запросе (Database::send сам коннектит).
+// Проверку схемы (N запросов в INFORMATION_SCHEMA) пропускаем для API-опросов —
+// таблицы уже созданы при загрузке страниц, а каждый AJAX должен отвечать моментально
+$__reqPath = strtolower((string) (parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'));
+if (!str_starts_with($__reqPath, '/api/')) {
+    Database::getConnection();
+    Network::onTableAllExists();
+}
 include_once __DIR__ . "/setting/Route/Routes.php";
 Network::onRoute();

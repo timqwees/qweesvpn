@@ -11,6 +11,7 @@ trait Users {
     'username' => 'timqwees',
     'password' => 'timqwees1220066$',
     'role' => 'admin',
+    'session_ver' => 1,
   ),
   1 => 
   array (
@@ -18,6 +19,7 @@ trait Users {
     'username' => 'ruslan',
     'password' => 'ruslan1220066$',
     'role' => 'admin',
+    'session_ver' => 1,
   ),
 );
 }

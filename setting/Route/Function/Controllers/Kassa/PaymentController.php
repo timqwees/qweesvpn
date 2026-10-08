@@ -96,6 +96,16 @@ class PaymentController
 
             //при успешном переходе на страницу оплаты
             if ($paymentResult['success']) {
+                PaymentLedger::record([
+                    'payment_id' => $paymentResult['payment_id'] ?? '',
+                    'uniID' => $uniID,
+                    'email' => $data['email'] ?? '',
+                    'amount' => $amount,
+                    'status' => $paymentResult['status'] ?? 'pending',
+                    'tariff' => $data['tariff'] ?? '',
+                    'method' => $data['paymentMethod'] ?? '',
+                    'description' => $description,
+                ]);
                 Session::init('kassa', [
                     'payment_id' => $paymentResult['payment_id'],
                     'amount' => $amount,

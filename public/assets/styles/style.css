@@ -1126,3 +1126,14 @@ html {
     filter: brightness(1);
   }
 }*/
+/* Тёмные нативные контролы и гашение автозаполнения браузера */
+:root { color-scheme: dark; }
+option { background-color: #16181d; color: #e5e7eb; }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+select:-webkit-autofill {
+    -webkit-text-fill-color: #f3f4f6;
+    -webkit-box-shadow: 0 0 0 100px #1e2128 inset;
+    transition: background-color 9999s ease-in-out 0s;
+}

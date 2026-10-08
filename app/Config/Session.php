@@ -52,7 +52,7 @@ class Session
     private static $data = null;
     private static $adminData = null;
     private static $lifetime = 604800; // 7 дней
-    private static $adminLifetime = 86400; // 1 день
+    private static $adminLifetime = 604800; // 7 дней
 
     /**
      * Универсальный метод для управления cookie-сессией.

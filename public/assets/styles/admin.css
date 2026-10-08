@@ -3,19 +3,27 @@
        display: none;
    }
 
-   .menu .arrow {
-       rotate: -90deg;
-       width: 0;
-       height: 0;
-       border-left: 4px solid transparent;
-       border-right: 4px solid transparent;
-       border-top: 4px solid #6b7280;
-       transition: transform 0.15s ease;
-   }
+    .menu details>summary .fa-angle-right {
+        display: inline-block;
+        transition: transform 0.15s ease;
+        font-size: 11px;
+    }
 
-   .menu details[open]>summary .arrow {
-       transform: rotate(90deg);
-   }
+    .menu details[open]>summary .fa-angle-right {
+        transform: rotate(90deg);
+    }
+
+    .menu details>summary .f-open {
+        display: none;
+    }
+
+    .menu details[open]>summary .f-open {
+        display: inline-block;
+    }
+
+    .menu details[open]>summary .f-closed {
+        display: none;
+    }
 
    .menu :where(li ul) {
        white-space: nowrap;
@@ -24,13 +32,33 @@
        position: relative;
    }
 
-   .menu :where(li ul)::before {
-       background-color: #000000;
-       opacity: .2;
-       width: 1px;
-       content: "";
-       inset-inline-start: 0;
-       position: absolute;
-       top: .75rem;
-       bottom: .75rem;
-   }
+    .menu :where(li ul)::before {
+        background-color: #000000;
+        opacity: .2;
+        width: 1px;
+        content: "";
+        inset-inline-start: 0;
+        position: absolute;
+        top: .75rem;
+        bottom: .75rem;
+    }
+
+    /* Тёмные нативные контролы: календарь, спиннеры, скроллбары, option-списки */
+    :root {
+        color-scheme: dark;
+    }
+
+    option {
+        background-color: #16181d;
+        color: #e5e7eb;
+    }
+
+    /* Автозаполнение браузера (белый/жёлтый фон) — гасим тёмным */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    select:-webkit-autofill {
+        -webkit-text-fill-color: #f3f4f6;
+        -webkit-box-shadow: 0 0 0 100px #1e2128 inset;
+        transition: background-color 9999s ease-in-out 0s;
+    }

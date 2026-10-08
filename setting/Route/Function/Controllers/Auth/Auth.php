@@ -7,6 +7,7 @@ namespace Setting\Route\Function\Controllers\Auth;
 use App\Config\Database;
 use App\Config\Session;
 use App\Controllers\MailController;
+use App\Models\Network\Message;
 use App\Models\Network\Network;
 use App\Models\User\User;
 use Setting\Route\Function\Controllers\Refer\Refer;
@@ -18,6 +19,9 @@ class Auth extends Network
 
     /** Ключи пользовательской сессии (админскую не трогаем). */
     private const USER_KEYS = ['user', 'kassa', 'pending_refer_code', 'notification'];
+
+    /** Почтовый код живёт 15 минут. */
+    private const MAIL_CODE_TTL = 900;
 
     public static function auth(): void
     {
@@ -48,16 +52,19 @@ class Auth extends Network
         }
 
         $email = isset($_POST['email']) && !empty($_POST['email']) ? strval(trim($_POST['email'])) : '';
+        if (!\App\Config\Throttle::hit('mail:' . \App\Config\Throttle::ip(), 8, 900)) {
+            echo json_encode(['success' => false, 'error' => 'Слишком много запросов кода. Подождите 15 минут.']);
+            return;
+        }
         $code = mt_rand(1000, 9999);
 
-        // Записываем в лог для отладки
+        // Записываем в лог для отладки (сам код маскируем — одноразовый секрет)
         $logFile = $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
         file_put_contents(
             $logFile,
             \sprintf(
-                "[%s] [АВТОРИЗАЦИЯ - КОД] Попытка отправки кода %s на %s\n",
+                "[%s] [АВТОРИЗАЦИЯ - КОД] Код отправлен **** на %s\n",
                 date('Y-m-d H:i:s'),
-                $code,
                 $email
             ),
             FILE_APPEND
@@ -66,6 +73,7 @@ class Auth extends Network
         $result = (new MailController())->onMail($email, 'Код верификации', "Ваш код верификации: $code");
 
         if ($result) {
+            Session::init('mail_code', ['email' => $email, 'code' => (string) $code, 'at' => time()]);
             echo json_encode(['success' => true, 'code' => $code]);
         } else {
             // Получаем ошибки из Message
@@ -97,6 +105,33 @@ class Auth extends Network
         }
     }
 
+    // ======= ОБЩЕЕ (логин и регистрация) =============
+
+    /**
+     * Проверка почтового кода (иначе POST в обход формы пустит без почты).
+     * Совпал — гасим (повторно не принять) и возвращаем true.
+     */
+    private static function verifyMailCode(string $email, string $code): bool
+    {
+        $saved = Session::init('mail_code');
+        if (!\is_array($saved)) return false;
+        $ok = ($saved['email'] ?? '') === $email
+            && $email !== ''
+            && (string) ($saved['code'] ?? '') !== ''
+            && hash_equals((string) ($saved['code'] ?? ''), $code)
+            && (time() - (int) ($saved['at'] ?? 0)) <= self::MAIL_CODE_TTL;
+        if ($ok) Session::init('mail_code', null);
+        return $ok;
+    }
+
+    /** Единая установка пользовательской сессии (админку не трогаем). */
+    private static function establishUserSession(string $uniID): void
+    {
+        Session::init(self::USER_KEYS, null);//чистим только пользовательское (админку не трогаем)
+        Session::init('user', ['uniID' => $uniID]);// user => ['uniID' => ....]
+        Session::init('lang', 'ru');
+    }
+
     // ======= LOGIN =============
 
     /**
@@ -110,11 +145,24 @@ class Auth extends Network
             echo json_encode(false);
 
         $email = isset($_POST['email']) ? (string) trim($_POST['email']) : '';
+        if (!\App\Config\Throttle::hit('login:' . \App\Config\Throttle::ip(), 10, 900)) {
+            Message::set('error', 'Слишком много попыток входа. Подождите 15 минут.');
+            self::onRedirect('/auth/login');
+            return;
+        }
+        if (!self::verifyMailCode($email, (string) ($_POST['verefy'] ?? ''))) {
+            Message::set('error', 'Неверный или просроченный код. Запросите код ещё раз.');
+            self::onRedirect('/auth/login');
+            return;
+        }
         try {
             $user = Database::send('SELECT uniID FROM qwees_users WHERE email = ?', [$email]);
-            Session::init(self::USER_KEYS, null);//чистим только пользовательское (админку не трогаем)
-            Session::init('user', $user[0]);// user => ['uniID' => ....]
-            Session::init('lang', 'ru');
+            if (empty($user)) {
+                Message::set('error', 'Пользователь с таким email не найден. Зарегистрируйтесь.');
+                self::onRedirect('/auth/login');
+                return;
+            }
+            self::establishUserSession((string) $user[0]['uniID']);
             self::onRedirect('/');
         } catch (\Exception $e) {
             return;
@@ -218,15 +266,25 @@ class Auth extends Network
             'email' => trim($_POST['email'] ?? '')
         ];
 
+        if (!\App\Config\Throttle::hit('login:' . \App\Config\Throttle::ip(), 10, 900)) {
+            Message::set('error', 'Слишком много попыток. Подождите 15 минут.');
+            self::onRedirect('/auth/regist');
+            return;
+        }
+        if (!self::verifyMailCode($userData['email'], (string) ($_POST['verefy'] ?? ''))) {
+            Message::set('error', 'Неверный или просроченный код. Запросите код ещё раз.');
+            self::onRedirect('/auth/regist');
+            return;
+        }
+
         $result = (array) self::registerUser($userData);
 
         if ($result['success']) {
-            Session::init(self::USER_KEYS, null);//очищяем пользовательское для обходов и иньекций (админку не трогаем)
-            Session::init('user', ['uniID' => strval($result['uniID'])]);
-            Session::init('lang', 'ru');
+            self::establishUserSession(strval($result['uniID']));//сразу авторизован, повторный вход не нужен
             self::onRedirect($_ENV['REDIRECT_SIGN_USER']);
         } else {
-            self::onRedirect($_ENV['REDIRECT_REG_UNSIGN_USER']);
+            Message::set('error', (string) ($result['message'] ?? 'Не удалось зарегистрироваться'));
+            self::onRedirect('/auth/regist');
         }
     }
 

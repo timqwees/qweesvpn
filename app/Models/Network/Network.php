@@ -85,6 +85,10 @@ class Network extends Session
      */
     public static function onTableAllExists()
     {
+        // Проверка раз в сутки: таблицы на рантайме не меняются (новые создают ensure* в коде)
+        $flag = rtrim((string) sys_get_temp_dir(), '/\\') . '/qwees_schema_ok';
+        $today = date('Y-m-d');
+        if (is_file($flag) && @file_get_contents($flag) === $today) return;
         $schemaFile = Database::$schema_name;
         if (!file_exists($schemaFile)) {
             Message::set('error', "Файл схемы не найден: $schemaFile");
@@ -126,6 +130,7 @@ class Network extends Session
                 }
             }
         }
+        @file_put_contents(rtrim((string) sys_get_temp_dir(), '/\\') . '/qwees_schema_ok', date('Y-m-d'));
     }
 
     /**
@@ -332,7 +337,7 @@ class Network extends Session
     public static function onRoute()
     {
         self::onAutoloadRegister();
-        Database::getConnection();
+        // Без eager-коннекта: Database::send() подключится лениво при первом запросе
         // Определяем HTTP-метод
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         if ($method === 'POST' && empty($_POST)) {

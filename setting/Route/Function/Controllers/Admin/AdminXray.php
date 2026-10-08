@@ -128,6 +128,7 @@ class AdminXray
      */
     public static function onAdminAddClientDays()
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('give');
         $url = $_POST['url'] ?? '/admin';
 
         // Новая форма (Панель создания пользователя): email, first_name, subscription, duration_days
@@ -224,6 +225,7 @@ class AdminXray
      */
     public static function onAdminAddClientHours()
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('give');
         $url = $_POST['url'] ?? '/admin';
 
         // Новая форма (Панель создания пользователя): email, first_name, subscription, duration_days
@@ -320,6 +322,7 @@ class AdminXray
      */
     public static function onAdminAddClientMinutes()
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('give');
         $url = $_POST['url'] ?? '/admin';
 
         // Новая форма (Панель создания пользователя): email, first_name, subscription, duration_days
@@ -424,6 +427,7 @@ class AdminXray
      */
     public static function onAdminReduceClient()
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('reduce');
         $url = $_POST['url'] ?: '/admin';
 
         if (empty($_POST['uniID'])) {
@@ -452,6 +456,7 @@ class AdminXray
      */
     public function getAdminUser(string $uniID)
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('give');
         $users = Database::send(
             'SELECT u.*, s.status as status, s.subscription, s.amount, s.count_days, s.count_devices, s.expiry 
              FROM qwees_users u 
@@ -469,6 +474,7 @@ class AdminXray
 
     public function onAdminCleanLogs()
     {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('logs');
         $logFile = $_ENV['LOG_FILE_NAME'] ?? 'qwees.log';
         if (file_exists($logFile))
             file_put_contents($logFile, '');

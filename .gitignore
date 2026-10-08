@@ -1,0 +1,16 @@
+qwees.log
+vendor/
+*_cache.json
+payments_index.json
+chats.json
+presence.json
+migration.json
+*.bak
+.env
+.DS_Store
+Thumbs.db
+*.orig
+*.rej
+*.tmp
+.idea/
+.vscode/

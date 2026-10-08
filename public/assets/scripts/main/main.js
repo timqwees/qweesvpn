@@ -54,6 +54,37 @@ $(function () {
   // ─────────────────────────────────────────────
   // 2. SECTION TOGGLE
   // ─────────────────────────────────────────────
+  // История оплат в профиле: id+дата+сумма из JSON-индекса,
+  // полная квитанция — живым запросом в кассу (ссылка, без нагрузки на сайт).
+  function escHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function loadPayHistory() {
+    const $box = $('[data-pay-history]');
+    if (!$box.length || $box.data('loaded')) return;
+    $box.data('loaded', true);
+    $.getJSON('/api/payments/mine')
+      .done(function (d) {
+        if (!d || d.status !== 'ok') { $box.html('<span class="text-sm text-red-400">' + escHtml($box.data('error')) + '</span>'); return; }
+        const items = d.items || [];
+        if (!items.length) { $box.html('<span class="text-sm text-gray-500">' + escHtml($box.data('empty')) + '</span>'); return; }
+        $box.html(items.map(function (p) {
+          const amt = Number(p.amount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+          return '<div class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.07] transition-colors">'
+            + '<span class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0"><i class="fa-solid fa-receipt text-green-400 text-sm"></i></span>'
+            + '<span class="flex-1 min-w-0"><span class="block font-semibold text-[white] tabular-nums">' + escHtml(amt) + '</span>'
+            + '<span class="block text-xs text-gray-500 tabular-nums">' + escHtml(p.date || '') + '</span></span>'
+            + '<a href="/api/payment/receipt?id=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener" class="shrink-0 text-xs font-medium px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 transition-colors">' + escHtml($box.data('receipt')) + ' <i class="fa-solid fa-arrow-up-right-from-bracket text-[10px]"></i></a>'
+            + '</div>';
+        }).join(''));
+      })
+      .fail(function () {
+        $box.data('loaded', false);
+        $box.html('<span class="text-sm text-red-400">' + escHtml($box.data('error')) + '</span>');
+      });
+  }
   const $root = $('#layout-root');
 
   if ($root.length && document.getElementById('layout-desktop') && document.getElementById('layout-mobile')) {
@@ -130,6 +161,7 @@ $(function () {
         setTimeout(function () { $section.css('opacity', 1); }, 10);
 
         busy = false;
+        loadPayHistory();
       };
 
       if ($current.length) {
@@ -182,6 +214,7 @@ $(function () {
         opacity: 1,
         transition: 'opacity 0.3s ease'
       });
+      loadPayHistory();
     }
 
     // Initial state: hide everything that already has .hidden

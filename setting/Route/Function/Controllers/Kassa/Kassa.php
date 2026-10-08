@@ -118,6 +118,13 @@ class Kassa
         try {
             $this->client = new Client();
             $this->client->setAuth($shopId, $secretKey);
+            // Жёсткий предел ожидания кассы: было 80с/30с по умолчанию SDK —
+            // зависшая касса вешала /pay/status и квитанции. 12с/6с достаточно живьём.
+            $api = $this->client->getApiClient();
+            if ($api instanceof \YooKassa\Client\CurlClient) {
+                $api->setTimeout(12);
+                $api->setConnectionTimeout(6);
+            }
         } catch (\Exception $e) {
             throw new \Exception('Failed to initialize YooKassa client: ' . $e->getMessage());
         }
@@ -323,6 +330,9 @@ class Kassa
                         $result['subscription_end_date'] = (int) $existingUser['expiry'];
                         $result['vpn_data'] = ['subscription_url' => self::subscriptionUrl($uniID)];
 
+                        // Указатель чека в JSON-индекс (идемпотентно; повторный опрос не дублирует)
+                        PaymentIndex::add($uniID, (string) $payment->getId(), date('Y-m-d H:i:s'), (float) ($payment->getAmount()?->getValue() ?? 0));
+
                         return $result;
                     }
 
@@ -340,7 +350,7 @@ class Kassa
                         }
 
                         // Все записи по покупке — одним коммитом
-                        Database::transaction(function () use ($uniID, $config, $expiryMs, $payment) {
+                        Database::transaction(function () use ($uniID, $config, $expiryMs, $payment, $tariff, $metadata) {
                             self::saveSubscriptionToDatabase(
                                 $uniID,
                                 'on',//status
@@ -350,6 +360,19 @@ class Kassa
                                 $config['devices'],//count diveces
                                 $expiryMs//expiry (мс)
                             );
+                            // Чек в леджер тем же коммитом (email добираем из юзера)
+                            $uemail = Database::send('SELECT email FROM qwees_users WHERE uniID = ? LIMIT 1', [$uniID]);
+                            PaymentLedger::record([
+                                'payment_id' => (string) $payment->getId(),
+                                'uniID' => $uniID,
+                                'email' => (string) (($uemail[0]['email'] ?? '') ?: ''),
+                                'amount' => (float) ($payment->getAmount()?->getValue() ?? 0),
+                                'currency' => (string) ($payment->getAmount()?->getCurrency() ?? 'RUB'),
+                                'status' => (string) $payment->getStatus(),
+                                'tariff' => (string) ($tariff ?? ''),
+                                'method' => (string) ($metadata['payment_method'] ?? ''),
+                                'description' => (string) ($payment->getDescription() ?? ''),
+                            ]);
                             // Реферальная скидка: тратим одно использование из N
                             (new ReferRepository())->useDiscountByUniID($uniID);
                             // Реферер забирает % днями с этой покупки
@@ -362,6 +385,9 @@ class Kassa
                         $result['subscription_devices'] = $config['devices'];
                         $result['subscription_end_date'] = $expiryMs;
                         $result['vpn_data'] = $vpnResult['client_data'];
+
+                        // Указатель чека в JSON-индекс (идемпотентно; повторный опрос не дублирует)
+                        PaymentIndex::add($uniID, (string) $payment->getId(), date('Y-m-d H:i:s'), (float) ($payment->getAmount()?->getValue() ?? 0));
 
                         if ($carryDays > 0) {
                             file_put_contents(

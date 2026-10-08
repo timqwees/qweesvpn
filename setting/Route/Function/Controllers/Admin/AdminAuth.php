@@ -42,6 +42,7 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Admin;
 
 use Setting\Route\Function\Controllers\Admin\Users\Users;
+use Setting\Route\Function\Controllers\Admin\Group\Groups;
 use App\Models\Network\Network;
 use App\Config\Session;
 
@@ -57,6 +58,32 @@ class AdminAuth
             Network::onRedirect('/admin/login');
             exit();
         }
+        // Пользователь существует и версия сессии актуальна (иначе — уволен/сброшен)
+        $id = (int) ($adminSession['auth'][1] ?? 0);
+        $ver = (int) ($adminSession['auth'][2] ?? 1);
+        foreach (self::$ADMIN_USERS as $a) {
+            if ((int) ($a['id'] ?? 0) === $id && (int) ($a['session_ver'] ?? 1) === $ver) return;
+        }
+        Network::onRedirect('/admin/login');
+        exit();
+    }
+
+    /** Авторизация + право на раздел (иначе назад в админку). Имя берём из трейта Users — без цикла наследования. */
+    public static function requirePermission(string $perm): void
+    {
+        self::auth();
+        $id = (int) (Session::init('admin')['auth'][1] ?? 0);
+        $username = 'unknown';
+        foreach (self::$ADMIN_USERS as $a) {
+            if ((int) ($a['id'] ?? 0) === $id) {
+                $username = (string) ($a['username'] ?? 'unknown');
+                break;
+            }
+        }
+        if (!(new Groups())->isPermission($username, $perm)) {
+            Network::onRedirect('/admin');
+            exit();
+        }
     }
 
     public static function onLogin(): void
@@ -65,20 +92,30 @@ class AdminAuth
             $username = $_POST['username'] ?? '';
             $password = $_POST['password'] ?? '';
 
+            if (!\App\Config\Throttle::hit('admin_login:' . \App\Config\Throttle::ip(), 5, 900)) {
+                Network::onRedirect('/admin/login?error=Слишком много попыток. Подождите 15 минут.');
+                return;
+            }
             foreach (self::$ADMIN_USERS as $admin) {
                 if ($admin['username'] === $username && $admin['password'] === $password) {
                     $adminSession = Session::init('admin');
                     if (!\is_array($adminSession)) {
                         $adminSession = [];
                     }
-                    $adminSession['auth'] = [true, $admin['id']];
+                    $adminSession['auth'] = [true, $admin['id'], (int) ($admin['session_ver'] ?? 1)];
                     Session::init('admin', $adminSession);
-                    (new Admin())->LoggerCRM("вошёл в панель");
+                    \App\Config\Throttle::reset('admin_login:' . \App\Config\Throttle::ip());
+                    (new Admin())->LoggerCRM("вошёл в панель", "ВХОД");
                     Network::onRedirect('/admin');
                     return;
                 }
             }
 
+            @file_put_contents(
+                dirname(__DIR__, 5) . '/' . basename($_ENV['LOG_FILE_NAME'] ?? 'qwees.log'),
+                \sprintf("[%s] [ВХОД] Неудачный вход в админку: %s с %s\n", date('Y-m-d H:i:s'), $username, \App\Config\Throttle::ip()),
+                FILE_APPEND
+            );
             Network::onRedirect('/admin/login?error=Неверные учетные данные');
         } else {
             Network::onRedirect('/admin/login');
@@ -87,7 +124,7 @@ class AdminAuth
 
     public static function onLogout(): void
     {
-        (new Admin())->LoggerCRM("вышел из панели");
+        (new Admin())->LoggerCRM("вышел из панели", "ВХОД");
         Session::init('admin', null);
         Network::onRedirect('/admin/login');
         exit();
