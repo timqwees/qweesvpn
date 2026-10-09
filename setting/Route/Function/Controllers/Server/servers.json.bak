@@ -1,0 +1,14 @@
+{
+    "gb": {
+        "country": "London",
+        "flag": "london.svg",
+        "XUI_API_TOKEN": "hz4QtjFxLdfuqatWop7yFFiKOpasegmlsV43Bw5KuoiuKA39",
+        "XUI_LOGIN": "timqwees",
+        "XUI_PASSWORD": "timqwees2018$",
+        "XUI_LOGIN_NAME_COOKIE": "x-ui",
+        "XUI_URL_PANEL": "https://gb.qweesvpn.online:12200/qwees_administrator",
+        "XUI_URL_SUBSCRIPTION": "https://gb.qweesvpn.online:1005/qweesteam_subscription/",
+        "XUI_INBOUND_NUMBER": 0,
+        "VLESS_SERVER": "gb.qweesvpn.online"
+    }
+}
