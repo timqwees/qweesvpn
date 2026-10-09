@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Kassa;
 
 use YooKassa\Client;
-use YooKassa\Model\Payment\PaymentInterface;
 use YooKassa\Request\Payments\CreatePaymentRequest;
 use YooKassa\Model\Receipt\Receipt;
 use YooKassa\Model\Receipt\ReceiptItem;
@@ -75,6 +74,8 @@ class Kassa
                 FILE_APPEND
             );
         }
+        \Setting\Route\Function\Controllers\Client\Src\Client::forget($uniID);//мемо сбросано — дальше свежее
+        ServerNetwork::forgetSub($uniID);//мемо подписки тоже
 
         return $result !== false;
     }
@@ -104,6 +105,172 @@ class Kassa
         $currentExpiry = (int) ($subData[0]['expiry'] ?? 0);
         $nowMs = new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() * 1000;
         return max($nowMs, $currentExpiry) + $days * 86400000;
+    }
+
+    /**
+     * Выдача клиента с фолбэком по панелям: свой сервер первым, затем остальные
+     * из реестра. Смена локации видна пользователю, но рабочий VPN лучше pending.
+     * С одним сервером в реестре — обычная повторная попытка. Возвращает
+     * ['vpn' => array|false, 'code' => ?string] (код панели-победителя).
+     */
+    private static function addClientFailover(string $uniID, int $days, int $devices): array
+    {
+        ServerNetwork::selectServer($uniID);
+        $first = ServerNetwork::getServerCode();
+        $ordered = array_values(array_unique(array_merge([$first], ServerNetwork::getServerCodes())));
+        $last = false;
+        foreach ($ordered as $code) {
+            ServerNetwork::pinServer($code);
+            try {
+                $r = (new Xray())->addClient($days, $uniID, $devices);
+            } catch (\Throwable $e) {
+                $r = false;
+                file_put_contents(
+                    $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                    \sprintf(
+                        "[%s] [ПОДПИСКА - ФОЛБЭК] %s: панель %s бросила исключение: %s\n",
+                        date('Y-m-d H:i:s'),
+                        $uniID,
+                        $code,
+                        mb_substr($e->getMessage(), 0, 160)
+                    ),
+                    FILE_APPEND
+                );
+            } finally {
+                ServerNetwork::unpinServer();
+            }
+            if (\is_array($r) && ($r['success'] ?? false)) {
+                if ($code !== $first) {
+                    file_put_contents(
+                        $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                        \sprintf(
+                            "[%s] [ПОДПИСКА - ФОЛБЭК] %s: свой сервер %s мёртв, выдано на %s (локация сменилась)\n",
+                            date('Y-m-d H:i:s'),
+                            $uniID,
+                            $first,
+                            $code
+                        ),
+                        FILE_APPEND
+                    );
+                }
+                return ['vpn' => $r, 'code' => $code];
+            }
+            $last = $r;
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                \sprintf(
+                    "[%s] [ПОДПИСКА - ФОЛБЭК] %s: панель %s недоступна, пробуем дальше\n",
+                    date('Y-m-d H:i:s'),
+                    $uniID,
+                    $code
+                ),
+                FILE_APPEND
+            );
+        }
+        return ['vpn' => \is_array($last) ? $last : ['success' => false], 'code' => null];
+    }
+
+    /** URL подписки на ЯВНО указанном сервере (запись после фолбэка). */
+    private static function subscriptionUrlOn(string $uniID, string $code): string
+    {
+        $srv = ServerNetwork::selectServer($uniID, $code);
+        return rtrim((string) ($srv['XUI_URL_SUBSCRIPTION'] ?? ''), '/') . '/' . $uniID;
+    }
+
+    /**
+     * Добивка pending_vpn: перевыпуск ключей с фолбэком (ленивый воркер).
+     * Дёшево: один SELECT; панели трогаем только если есть зависшие.
+     * Идемпотентно: успех переводит в on (+ чек в индекс и леджер), неуспех оставляет.
+     */
+    public static function retryPendingForUser(string $uniID, int $limit = 3): array
+    {
+        $uniID = trim($uniID);
+        if ($uniID === '') return ['retried' => 0, 'issued' => 0];
+        try {
+            $rows = Database::send(
+                "SELECT uniID, subscription, amount, count_days, count_devices FROM qwees_subscriptions WHERE uniID = ? AND status = 'pending_vpn' LIMIT " . max(1, min(10, $limit)),
+                [$uniID]
+            );
+        } catch (\Throwable) {
+            return ['retried' => 0, 'issued' => 0];
+        }
+        if (!\is_array($rows) || $rows === []) return ['retried' => 0, 'issued' => 0];
+        return self::retryPendingRows($rows);
+    }
+
+    /** Добивка всех зависших (крон админки). */
+    public static function retryPendingAll(int $limit = 20): array
+    {
+        try {
+            $rows = Database::send(
+                "SELECT uniID, subscription, amount, count_days, count_devices FROM qwees_subscriptions WHERE status = 'pending_vpn' ORDER BY updated_at ASC LIMIT " . max(1, min(100, $limit))
+            );
+        } catch (\Throwable) {
+            return ['retried' => 0, 'issued' => 0];
+        }
+        if (!\is_array($rows) || $rows === []) return ['retried' => 0, 'issued' => 0];
+        return self::retryPendingRows($rows);
+    }
+
+    private static function retryPendingRows(array $rows): array
+    {
+        $retried = 0;
+        $issued = 0;
+        foreach ($rows as $row) {
+            if (!\is_array($row)) continue;
+            $uniID = (string) ($row['uniID'] ?? '');
+            if ($uniID === '') continue;
+            $paymentId = '';
+            if (preg_match('/^pending_payment_(.+)$/', (string) ($row['subscription'] ?? ''), $m)) $paymentId = $m[1];
+            $days = max(1, (int) ($row['count_days'] ?? 30));
+            $devices = max(1, (int) ($row['count_devices'] ?? 1));
+            $amount = (float) ($row['amount'] ?? 0);
+            $retried++;
+            $issue = self::addClientFailover($uniID, $days, $devices);
+            $vpnResult = $issue['vpn'];
+            if (!\is_array($vpnResult) || !($vpnResult['success'] ?? false)) continue;
+            $winCode = (string) ($issue['code'] ?? '');
+            $expiryMs = (int) ($vpnResult['client_data']['expiryTime'] ?? 0);
+            if ($expiryMs <= 0) $expiryMs = self::computeExpiryMs($uniID, $days);
+            $subUrl = $winCode !== '' ? self::subscriptionUrlOn($uniID, $winCode) : self::subscriptionUrl($uniID);
+            try {
+                Database::transaction(function () use ($uniID, $subUrl, $amount, $days, $devices, $expiryMs, $paymentId) {
+                    self::saveSubscriptionToDatabase($uniID, 'on', $subUrl, $amount, $days, $devices, $expiryMs);
+                    if ($paymentId !== '') {
+                        $uemail = Database::send('SELECT email FROM qwees_users WHERE uniID = ? LIMIT 1', [$uniID]);
+                        PaymentLedger::record([
+                            'payment_id' => $paymentId,
+                            'uniID' => $uniID,
+                            'email' => (string) (($uemail[0]['email'] ?? '') ?: ''),
+                            'amount' => $amount,
+                            'currency' => 'RUB',
+                            'status' => 'succeeded',
+                            'tariff' => '',
+                            'method' => '',
+                            'description' => 'Добивка pending_vpn',
+                        ]);
+                        PaymentIndex::add($uniID, $paymentId, date('Y-m-d H:i:s'), $amount);
+                    }
+                    (new ReferRepository())->useDiscountByUniID($uniID);
+                    (new Refer())->rewardReferrerFromPurchase($uniID, $days);
+                    return true;
+                });
+                $issued++;
+                file_put_contents(
+                    $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+                    \sprintf(
+                        "[%s] [ПОДПИСКА - ДОБИВКА] %s: pending_vpn закрыт, ключ выдан (%s)\n",
+                        date('Y-m-d H:i:s'),
+                        $uniID,
+                        $winCode !== '' ? $winCode : '?'
+                    ),
+                    FILE_APPEND
+                );
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+        return ['retried' => $retried, 'issued' => $issued];
     }
 
     public function __construct()
@@ -201,7 +368,6 @@ class Kassa
                 'payment_url' => $payment->getConfirmation()?->getConfirmationUrl(),
                 'payment_id' => $payment->getId(),
                 'payment_method_id' => $payment->getPaymentMethod()?->getId(),
-                // 'qr_code' => $this->extractQrCode($payment),
                 'payment_method' => $paymentMethod,
                 'status' => $payment->getStatus()
             ];
@@ -213,7 +379,6 @@ class Kassa
                 'payment_url' => null,
                 'payment_id' => null,
                 'payment_method_id' => null,
-                // 'qr_code' => null,
                 'payment_method' => $paymentMethod
             ];
         }
@@ -240,33 +405,8 @@ class Kassa
      */
     public function startPaymentStatus(string $paymentId): array
     {
-        // $startTime = microtime(true);
-
-        // // Логируем начало проверки статуса
-        // file_put_contents(
-        //     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-        //     \sprintf(
-        //         "[%s] [DEBUG] Начало проверки статуса платежа: %s\n",
-        //         date('Y-m-d H:i:s'),
-        //         $paymentId
-        //     ),
-        //     FILE_APPEND
-        // );
-
         try {
-            // $apiStart = microtime(true);
             $payment = $this->client->getPaymentInfo($paymentId);
-            // $apiTime = round(microtime(true) - $apiStart, 3);
-
-            // file_put_contents(
-            //     $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-            //     \sprintf(
-            //         "[%s] [DEBUG] API YooKassa ответ: %s сек\n",
-            //         date('Y-m-d H:i:s'),
-            //         $apiTime
-            //     ),
-            //     FILE_APPEND
-            // );
 
             $result = [
                 'success' => true,
@@ -337,10 +477,8 @@ class Kassa
                     }
 
                     // Создаем VPN подписку (плюс перенос остатка trial/bonus, если был)
-                    // $vpnStart = microtime(true);
                     $xray = new Xray();
                     $vpnResult = $xray->addClient((int) $config['days'] + $carryDays, $uniID, $config['devices']);
-                    // $vpnTime = round(microtime(true) - $vpnStart, 3);
 
                     if ($vpnResult && $vpnResult['success']) {
                         // Источник истины — expiryTime (мс), который панель установила клиенту
@@ -403,7 +541,6 @@ class Kassa
                         }
 
                         // Логирование с временем
-                        // $totalTime = round(microtime(true) - $startTime, 3);
                         file_put_contents(
                             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                             \sprintf(
@@ -434,13 +571,11 @@ class Kassa
                             FILE_APPEND
                         );
 
-                        // Ждем 5 секунд и пробуем еще раз
+                        // Ждем 5 секунд и пробуем еще раз — с фолбэком по панелям
                         sleep(5);
 
-                        // $vpnRetryStart = microtime(true);
-                        $xray = new Xray();
-                        $vpnResult = $xray->addClient((int) $config['days'] + $carryDays, $uniID, $config['devices']);
-                        // $vpnRetryTime = round(microtime(true) - $vpnRetryStart, 3);
+                        $issue = self::addClientFailover($uniID, (int) $config['days'] + $carryDays, (int) $config['devices']);
+                        $vpnResult = $issue['vpn'];
 
                         if ($vpnResult && $vpnResult['success']) {
                             // Вторая попытка успешна! Источник истины — expiryTime (мс) из панели
@@ -449,16 +584,20 @@ class Kassa
                                 $expiryMs = self::computeExpiryMs($uniID, $config['days']);
                             }
 
+                            // URL — строго с панели-победителя (после фолбэка сервер мог смениться)
+                            $winCode = (string) ($issue['code'] ?? '');
+                            $subUrl = $winCode !== '' ? self::subscriptionUrlOn($uniID, $winCode) : self::subscriptionUrl($uniID);
+
                             // Все записи по покупке — одним коммитом
-                            Database::transaction(function () use ($uniID, $config, $expiryMs, $payment) {
+                            Database::transaction(function () use ($uniID, $config, $expiryMs, $payment, $subUrl) {
                                 self::saveSubscriptionToDatabase(
                                     $uniID,
-                                    'on',
-                                    self::subscriptionUrl($uniID),
-                                    $payment->getAmount()?->getValue(),
-                                    $config['days'],
-                                    $config['devices'],
-                                    $expiryMs
+                                    'on',//status
+                                    $subUrl,//subscription
+                                    $payment->getAmount()?->getValue(),//amount
+                                    $config['days'],//days
+                                    $config['devices'],//count diveces
+                                    $expiryMs//expiry (мс)
                                 );
                                 // Реферальная скидка: тратим одно использование из N
                                 (new ReferRepository())->useDiscountByUniID($uniID);
@@ -473,16 +612,12 @@ class Kassa
                             $result['subscription_end_date'] = $expiryMs;
                             $result['vpn_data'] = $vpnResult['client_data'];
 
-                            // $totalTime = round(microtime(true) - $startTime, 3);
                             file_put_contents(
                                 $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
                                 \sprintf(
                                     "[%s] [ПОДПИСКА - УСПЕШНАЯ ПОПЫТКА ВЫДАЧИ] %s: VPN создан со 2-й попытки!\n",
                                     date('Y-m-d H:i:s'),
                                     $uniID,
-                                    // $vpnTime,
-                                    // $vpnRetryTime,
-                                    // $totalTime
                                 ),
                                 FILE_APPEND
                             );
@@ -609,21 +744,6 @@ class Kassa
     }
 
     /**
-     * Извлекает QR-код из платежа (для СБП)
-     */
-    private function extractQrCode(PaymentInterface $payment): ?string
-    {
-        $paymentMethod = $payment->getPaymentMethod();
-
-        if ($paymentMethod && $paymentMethod->getType() === 'sbp') {
-            // Для СБП QR-код может быть в ответе платежа
-            return $payment->getConfirmation()?->getConfirmationUrl() ?? null;
-        }
-
-        return null;
-    }
-
-    /**
      * Сохраняет метод оплаты для автоплатежей
      */
     public function savePaymentMethod(string $uniID, string $paymentMethodId): bool
@@ -660,52 +780,4 @@ class Kassa
         }
     }
 
-    /**
-     * Создает автоплатеж
-     */
-    public function createAutoPayment(
-        string $paymentMethodId,
-        float $amount,
-        string $description = 'Автоплатеж QweesVPN'
-    ): array {
-        try {
-            // Создание запроса на автоплатеж
-            $paymentRequest = new CreatePaymentRequest();
-            $amountValue = ['value' => $amount, 'currency' => 'RUB'];
-            $paymentRequest->setAmount($amountValue);
-            $paymentRequest->setDescription($description);
-            $paymentRequest->setCapture(true);
-            $paymentRequest->setPaymentMethodId($paymentMethodId);
-
-            // Создание чека
-            $receipt = $this->createReceipt($amount, $description, null, null);
-            $paymentRequest->setReceipt($receipt);
-
-            // Создание платежа
-            $payment = $this->client->createPayment($paymentRequest);
-
-            return [
-                'success' => true,
-                'payment_id' => $payment->getId(),
-                'status' => $payment->getStatus(),
-                'paid' => $payment->getPaid()
-            ];
-
-        } catch (\Exception $e) {
-            file_put_contents(
-                $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                \sprintf(
-                    "[%s] [ОПЛАТА - ОШИБКА] createAutoPayment: %s\n",
-                    date('Y-m-d H:i:s'),
-                    $e->getMessage()
-                ),
-                FILE_APPEND
-            );
-
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
-    }
 }

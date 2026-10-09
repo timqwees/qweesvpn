@@ -5,6 +5,9 @@ $site = Functions::site();
 $currentLanguage = Language::getCurrent();
 $translations = Language::getTranslations($currentLanguage);
 $t = fn(string $key): string => $translations[$key] ?? $key;
+// Flash забираем ДО любого вывода: иначе чистящая cookie не уйдёт
+// (заголовки уже отправлены) и уведомление будет всплывать вечно.
+$notify = \App\Models\Network\Message::getAll();
 ?>
 <!DOCTYPE html>
 <html lang="<?= $currentLanguage ?>">
@@ -114,7 +117,6 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
         </div>
 
-        <?php $notify = \App\Models\Network\Message::getAll(); ?>
         <?php if (!empty($notify['message'])): ?>
             <script>
                 window.addEventListener('DOMContentLoaded', function () {

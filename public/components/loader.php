@@ -56,6 +56,17 @@
 <script defer>
     window.addEventListener('load', () => {
         const loader = document.getElementById('loader');
+        const finish = () => {
+            if (!loader || loader.dataset.done) return;
+            loader.dataset.done = '1';
+            loader.style.display = 'none';
+            // Сигнал остальному UI (reveal-анимации и т.п.): сплэш закрыт
+            window.dispatchEvent(new Event('qwees:loader-done'));
+        };
+        // Страховка: гасим в любом случае через 6с (CDN gsap мог не загрузиться)
+        setTimeout(finish, 6000);
+        if (!loader) { finish(); return; }
+        if (!window.gsap) { finish(); return; }
         const bar = document.getElementById('loader-bar');
         const counter = document.getElementById('loader-counter');
         const name = document.getElementById('loader-name');
@@ -80,7 +91,7 @@
                         duration: 0.9,
                         ease: 'power4.inOut',
                         onComplete: () => {
-                            loader.style.display = 'none';
+                            finish();
                         }
                     });
                 }, 300);

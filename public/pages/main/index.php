@@ -2,6 +2,7 @@
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\{Auth\Auth, Client\GetUser, Language\Language, OS\OS, Vpn\VpnStatus, Profile\Profile, System\SystemInfo, Refer\Refer, Refer\Config\ReferConfig};
 use Setting\Route\Function\Controllers\Server\Network as ServerNetwork;
+use Setting\Route\Function\Controllers\Kassa\PaymentIndex;
 use Setting\Route\Function\Controllers\Gifts\Gifts;
 use Setting\Route\Function\Functions;
 
@@ -12,6 +13,12 @@ if (!$user->onCheckSubscription() && (parse_url($_SERVER['REQUEST_URI'], PHP_URL
     Network::onRedirect('/');
 if ($user->onPaymantStatus())//если в сесии есть payment_id, то оплата не проверена
     Network::onRedirect('/pay/status');//перенаправляем на страницу проверки
+// Ленивая добивка зависших выдач: один дешёвый SELECT, панели трогаем только если есть pending_vpn
+try {
+    $pendingFixed = \Setting\Route\Function\Controllers\Kassa\Kassa::retryPendingForUser($user->getUniID(), 2);
+    if (($pendingFixed['issued'] ?? 0) > 0) $user = new GetUser();//данные обновились — перечитываем
+} catch (\Throwable) {
+}
 //===================================================================================
 $site = Functions::site();//после всех провроек получем уже данные сервиса
 $gifts = new Gifts();//пробные
@@ -26,7 +33,6 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
 // Получаем реальные данные через новые классы
 $vpnStatusObj = new VpnStatus();
-$profileObj = new Profile();
 $usageStats = $vpnStatusObj->getUsageStats();
 
 // Список приглашённых по реферальной ссылке (для секции referal)
@@ -56,6 +62,32 @@ $isActiveSub = $vpnStatus === 'active';
 $pingMs = $isActiveSub ? $vpnStatusObj->getPingMs() : null;
 $pingStatus = $isActiveSub ? $vpnStatusObj->getPingStatus() : 'inactive';
 
+// Кольцо подписки: остаток от ВЫДАННОГО периода (выдано 90 → кольцо = остаток от 90).
+$daysLeftNum = max(0, (int) floor(((int) $user->getExpiry() / 1000 - time()) / 86400));
+$periodDays = max(0, (int) $user->getCountDays());
+$devicesNum = (int) $vpnStatusObj->getCountDevices();
+$devicesLabel = $devicesNum > 0 ? (string) $devicesNum : '∞';
+$ringBase = $periodDays > 0 ? $periodDays : 30;
+$ringPct = $isActiveSub ? max(4, min(100, (int) round($daysLeftNum / $ringBase * 100))) : 0;
+$ringOff = $isActiveSub ? '' : ' bank-ring--off';
+// Прогресс периода: дата окончания + доля прошедшего (для полосы под кольцом)
+$expiryTs = (int) ($user->getExpiry() / 1000);
+$expiryDate = $expiryTs > 0 ? date('d.m.Y', $expiryTs) : '—';
+$elapsedDays = max(0, $periodDays - $daysLeftNum);
+$elapsedPct = $periodDays > 0 ? min(100, (int) round($elapsedDays / $periodDays * 100)) : 0;
+// Маскированный ID счёта в духе банковской карты: •••• 1234
+$maskedUni = '•••• ' . substr((string) $user->getUniID(), -4);
+// Последняя оплата для подвала обзора (быстрый файловый индекс, без БД)
+$lastPay = PaymentIndex::forUser($user->getUniID(), 1)[0] ?? null;
+$lastPayLabel = null;
+$lastPayShort = null;
+if (\is_array($lastPay)) {
+    $amt = rtrim(rtrim(number_format((float) ($lastPay['amount'] ?? 0), 2, '.', ' '), '0'), '.');
+    $ts = strtotime((string) ($lastPay['date'] ?? ''));
+    $lastPayLabel = $amt . ' ₽ · ' . ($ts > 0 ? date('d.m.Y', $ts) : (string) ($lastPay['date'] ?? ''));
+    $lastPayShort = $amt . ' ₽' . ($ts > 0 ? ' · ' . date('d.m', $ts) : '');
+}
+
 $formattedVpnStatus = [
     'status_text' => $t($vpnStatus === 'active' ? 'active' : 'inactive'),
     'status_class' => $vpnStatus === 'active' ? 'text-green-400' : 'text-red-400',
@@ -65,12 +97,6 @@ $formattedVpnStatus = [
     'protocol' => $vpnStatusObj->getProtocol(),
     'ip_address' => $isActiveSub ? $vpnStatusObj->getIpAddress() : '—',
     'location' => $isActiveSub ? $vpnStatusObj->getLocation() : '—',
-    'background_world' => $vpnStatus === 'active' ? 'world_green.svg' : 'world_red.svg',
-    'monoblock_image' => [
-        'layout_bg' => $vpnStatus === 'active' ? 'layout_bg_green.png' : 'layout_bg_red.png',
-        'layout_spin' => $vpnStatus === 'active' ? 'layout_spin_green.png' : 'layout_spin_red.png',
-        'layout_center' => 'layout_center.png'
-    ],
 ];
 
 // Без активной подписки не показываем реальные параметры узла (пинг/IP/хост из .env)
@@ -97,11 +123,12 @@ $formattedUserProfile = [
 ];
 
 $systemInfoObj = new SystemInfo();
+$dbStatus = $systemInfoObj->getDbStatus();//один запрос вместо трёх
 $formattedSystemInfo = [
     'version' => $systemInfoObj->getVersion(),
-    'db_status' => $systemInfoObj->getDbStatus(),
-    'db_status_text' => $t($systemInfoObj->getDbStatus() === 'connected' ? 'yes' : 'no'),
-    'db_status_class' => $systemInfoObj->getDbStatus() === 'connected' ? 'text-green-400' : 'text-red-400'
+    'db_status' => $dbStatus,
+    'db_status_text' => $t($dbStatus === 'connected' ? 'yes' : 'no'),
+    'db_status_class' => $dbStatus === 'connected' ? 'text-green-400' : 'text-red-400'
 ];
 
 $activeSection = $_GET['section'] ?? 'main';
@@ -128,8 +155,6 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
     <!-- ========================================== -->
     <!-- Preload critical resources -->
     <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" as="style"
-        crossorigin="anonymous">
     <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
 
     <!-- Critical CSS with onload optimization -->
@@ -271,7 +296,11 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         data-section="main">
 
                         <!-- оглавление DESCKTOP -->
-                        <h1 class="text-3xl font-bold">
+                        <div class="flex items-center gap-3 mb-2" data-reveal>
+                            <span class="text-sm font-bold tracking-[.3em] text-white">Qwees<span class="text-green-400">VPN</span></span>
+                            <span class="h-px flex-1 bg-gradient-to-r from-white/15 to-transparent"></span>
+                        </div>
+                        <h1 class="bank-h1 text-3xl font-bold">
                             <?php foreach (mb_str_split($t('main')) as $letter): ?>
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
@@ -280,75 +309,96 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <div class="flex items-start justify-center gap-6 w-full">
                             <!-- BLOCK-1 => DISPLAY STATUS -->
                             <div
-                                class="glow-card relative min-h-[600px] flex flex-1 flex-col items-center justify-center rounded-2xl overflow-hidden">
-                                <!-- backgound -->
-                                <img
-                                    src="/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>"
-                                    alt="background" class="absolute w-full h-full opacity-20">
-
-                                <!-- Monoblock decorative elements -->
-                                <div class="relative flex justify-center items-center flex-col w-1/3">
-                                  <!-- bg -->
-                                    <img
-                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
-                                        alt="monoblock_bg" title="monoblock_bg"
-                                        class="z-10 w-full absolute">
-                                  <!-- spin -->
-                                    <img
-                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
-                                        alt="monoblock_spin" title="monoblock_spin"
-                                        class="z-20 w-[70%] absolute animate-spin [animation-duration:10s]">
-                                  <!-- center -->
-                                    <img
-                                        src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
-                                        alt="monoblock_center" title="monoblock_center"
-                                        class="z-30 w-[35%] absolute">
+                                data-reveal class="glow-card bank-glass relative min-h-[600px] flex flex-1 flex-col rounded-2xl overflow-hidden p-8" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>">
+                                <!-- шапка счёта: статус + локация -->
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="bank-status <?= $vpnStatus === 'active' ? 'text-green-300 border-green-400/25 bg-green-400/10' : 'text-gray-400' ?>">
+                                        <span class="w-2 h-2 rounded-full <?= $vpnStatus === 'active' ? 'bg-green-400' : 'bg-gray-500' ?>"></span>
+                                        <?= $vpnStatusObj->getStatusText() ?>
+                                    </span>
+                                    <span class="text-right shrink-0">
+                                        <span class="block text-sm text-gray-400" data-server><?= $formattedVpnStatus['location'] ?></span>
+                                        <span class="block font-mono text-[11px] text-gray-600 mt-0.5"><?= htmlspecialchars($maskedUni) ?></span>
+                                    </span>
                                 </div>
 
-                                <p
-                                    class="text-[white] status-glow absolute text-xl font-medium bottom-10 px-6 py-3 rounded-full bg-white/[0.05] backdrop-blur-md ring-1 ring-white/[0.1]">
-                                    <?= $t('status') ?>:
-                                    <span
-                                        class="<?= $formattedVpnStatus['status_class'] ?>"><?= $vpnStatusObj->getStatusText() ?></span>
-                                </p>
+                                <!-- сервер сменился: напомнить обновить подписку в приложении -->
+                                <div data-subwatch hidden class="mt-5 flex items-center gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-3">
+                                    <i class="fa-solid fa-arrows-rotate text-yellow-300 text-sm shrink-0"></i>
+                                    <div class="flex-1 text-[13px] text-gray-200">Сервер обновлён — обновите подписку в приложении</div>
+                                    <button type="button" data-subwatch-copy class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors">Копировать</button>
+                                    <button type="button" data-subwatch-ok class="shrink-0 text-xs px-2.5 py-1.5 text-gray-400 hover:text-gray-200 transition-colors">OK</button>
+                                </div>
+
+                                <!-- кольцо подписки -->
+                                <div class="mt-10 flex items-center gap-8">
+                                    <div class="relative shrink-0" style="width:190px;height:190px">
+                                        <div class="absolute inset-0 rounded-full bg-green-500/15 blur-2xl"></div>
+                                        <div class="bank-ticks absolute inset-0 rounded-full"></div>
+                                        <div class="bank-ring<?= $ringOff ?> absolute inset-0 rounded-full" style="--pt:<?= $ringPct ?>"></div>
+                                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                            <div class="bank-num text-5xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
+                                            <div class="bank-label mt-1"><?= $t('days_short') ?> из <?= $periodDays ?></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="py-3 border-b border-white/[0.07]">
+                                            <div class="bank-label mb-0.5"><?= rtrim($t('duration_colon'), ':') ?></div>
+                                            <div class="text-xl font-semibold text-white tabular-nums"><?= $periodDays ?> <span class="text-sm font-normal text-gray-400"><?= $t('days_short') ?></span></div>
+                                        </div>
+                                        <div class="py-3">
+                                            <div class="bank-label mb-0.5"><?= rtrim($t('devices_colon'), ':') ?></div>
+                                            <div class="text-xl font-semibold text-white tabular-nums"><?= $devicesLabel ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-6">
+                                    <div class="flex items-center justify-between text-xs mb-1.5">
+                                        <span class="text-gray-400"><?= rtrim($t('valid_until'), ':') ?> <?= $expiryDate ?></span>
+                                        <span class="text-gray-300 tabular-nums" data-timeleft>—</span>
+                                    </div>
+                                    <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                        <div class="h-full rounded-full <?= $isActiveSub ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gray-600' ?>" style="width:<?= $elapsedPct ?>%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- параметры плиткой -->
+                                <div class="grid grid-cols-3 gap-3 mt-8">
+                                    <div class="bank-tile px-4 py-3">
+                                        <div class="bank-label mb-1"><?= $t('ping') ?>, мс</div>
+                                        <div class="text-lg font-semibold text-white tabular-nums flex items-center gap-2">
+                                            <i class="fas <?= $formattedVpnStatus['ping_icon'] ?> <?= $formattedVpnStatus['ping_class'] ?> text-sm"></i>
+                                            <span class="<?= $formattedVpnStatus['ping_class'] ?>" data-ping><?= $formattedVpnStatus['ping_label'] ?></span>
+                                        </div>
+                                    </div>
+                                    <div class="bank-tile px-4 py-3">
+                                        <div class="bank-label mb-1"><?= $t('protocol') ?></div>
+                                        <div class="text-lg font-semibold text-white" data-protocol><?= $formattedVpnStatus['protocol'] ?></div>
+                                    </div>
+                                    <div class="bank-tile px-4 py-3 min-w-0">
+                                        <div class="bank-label mb-1"><?= $t('ip_address') ?></div>
+                                        <div class="text-base font-semibold text-white tabular-nums truncate" data-ip><?= $formattedVpnStatus['ip_address'] ?></div>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1"></div>
+                                <div class="mt-8 pt-4 border-t border-white/[0.07] flex items-center justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="bank-label mb-0.5">Последняя оплата</div>
+                                        <div class="text-sm font-semibold text-gray-200 tabular-nums truncate"><?= $lastPayLabel !== null ? htmlspecialchars($lastPayLabel) : $t('pay_empty') ?></div>
+                                    </div>
+                                    <button type="button" data-toggle-section="profile" class="shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg border border-white/15 text-gray-300 hover:bg-white/5 transition-colors">Все чеки →</button>
+                                </div>
                             </div>
 
                             <!-- BLOCK-2 => INFORMATION PANELS -->
-                            <div class="glow-card flex-1 h-full max-w-[350px] p-6 rounded-2xl">
+                            <div data-reveal data-reveal-delay="100" class="glow-card flex-1 h-full max-w-[350px] p-6 rounded-2xl">
                                 <ul class="flex flex-col gap-4 w-full text-xl">
                                     <!-- content 1 -->
                                     <li
-                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        class="gradient-border flex p-3 justify-between items-center w-full">
                                         <div class="text-gray-300 text-sm flex items-center gap-2">
-                                            <?= $t('ping') ?>:
-                                            <div class="relative group">
-                                                <i class="fas fa-question-circle text-gray-400 text-xs cursor-help"></i>
-                                                <div
-                                                    class="absolute left-0 top-full mt-1 w-64 p-3 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 text-xs text-gray-300 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                                    <div class="font-semibold text-white mb-1"><?= $t('ping_status') ?></div>
-                                                    <div class="space-y-1">
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-                                                            <span><?= $t('ping_excellent') ?></span>
-                                                        </div>
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                                            <span><?= $t('ping_good') ?></span>
-                                                        </div>
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="w-2 h-2 bg-gray-400 rounded-full"></span>
-                                                            <span><?= $t('ping_slow') ?></span>
-                                                        </div>
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="w-2 h-2 bg-red-400 rounded-full"></span>
-                                                            <span><?= $t('no_connection') ?></span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="mt-2 pt-2 border-t border-gray-700/50 text-gray-400">
-                                                        <?= $t('ping_hint') ?>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <?= $t('ping') ?>, мс
                                         </div>
                                         <div class="text-[white] flex items-center gap-2">
                                             <i
@@ -359,28 +409,28 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     </li>
                                     <!-- content 2 -->
                                     <li
-                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        class="gradient-border flex p-3 justify-between items-center w-full">
                                         <span class="text-gray-300 text-sm"><?= $t('protocol') ?>:</span>
                                         <span class="text-[white] text-base font-light"
                                             data-protocol><?= $formattedVpnStatus['protocol'] ?></span>
                                     </li>
                                     <!-- content 3 -->
                                     <li
-                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        class="gradient-border flex p-3 justify-between items-center w-full">
                                         <span class="text-gray-300 text-sm"><?= $t('ip_address') ?>:</span>
                                         <span class="text-[white] text-base font-light"
                                             data-ip><?= $formattedVpnStatus['ip_address'] ?></span>
                                     </li>
                                     <!-- content 4 -->
                                     <li
-                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        class="gradient-border flex p-3 justify-between items-center w-full">
                                         <span class="text-gray-300 text-sm"><?= $t('server') ?>:</span>
                                         <span class="text-emerald-300 text-sm font-light"
                                             data-server><?= $formattedVpnStatus['location'] ?></span>
                                     </li>
                                     <!-- content 5 -->
                                     <li
-                                        class="gradient-border flex p-3 justify-between items-center w-full rounded-xl hover:bg-white/[0.06] transition-all duration-300">
+                                        class="gradient-border flex p-3 justify-between items-center w-full">
                                         <span class="text-gray-300 text-sm"><?= $t('remaining') ?>:</span>
                                         <span class="text-emerald-300 text-sm font-light" data-server
                                             data-timeleft></span>
@@ -390,49 +440,39 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <!-- Action Buttons -->
                                 <ul class="flex flex-col gap-3 mt-6">
                                     <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                        <a href="/install" class="btn_install_tour">
+                                        <a href="/install" class="btn_install_tour block w-full">
                                             <li
-                                                class="neon-btn elite-btn group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
-                                                <?php if ((new OS())->getOS()['os'] === 'Windows' || (new OS())->getOS()['os'] === 'macOS' || (new OS())->getOS()['os'] === 'Linux'): ?>
+                                                class="bank-btn-primary bank-btn-split group relative w-full">
+                                                <?php $osName = (new OS())->getOS()['os']; ?>
+                                                <?php if ($osName === 'Windows' || $osName === 'macOS' || $osName === 'Linux'): ?>
                                                     <img decoding="async" loading="lazy"
                                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_desktop.svg"
                                                         alt=""
-                                                        class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                                        class="h-6 opacity-70">
                                                 <?php else: ?>
                                                     <img decoding="async"
                                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                                         alt="" loading="lazy"
-                                                        class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                                        class="h-6 opacity-70">
                                                 <?php endif; ?>
-                                                <div class="flex flex-col items-center justify-start">
-                                                    <span
-                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide"><?= $t('install_btn') ?>
-                                                        <span class="text-emerald-300">VPN</span>
-                                                    </span>
-                                                </div>
+                                                <span class="text-sm font-semibold text-center flex-1"><?= $t('install_btn') ?> VPN</span>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
-                                                    alt="" loading="lazy"
-                                                    class="h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                                    alt="" class="h-5 opacity-60">
                                             </li>
                                         </a>
                                     <?php else: ?>
                                         <a href="/pay" class="block w-full">
                                             <li
-                                                class="elite-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
+                                                class="bank-btn-primary bank-btn-split group relative w-full">
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
                                                     alt="buy" loading="lazy"
-                                                    class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
-                                                <div class="flex flex-col items-center justify-start">
-                                                    <span
-                                                        class="text-sm font-medium text-[white] text-center flex gap-2 tracking-wide"><?= $t('buy') ?>
-                                                        <span class="text-emerald-300"><?= $t('subscription') ?></span></span>
-                                                </div>
+                                                    class="h-6 opacity-70">
+                                                <span class="text-sm font-semibold text-center flex-1"><?= $t('buy') ?> <?= $t('subscription') ?></span>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
-                                                    alt="" loading="lazy"
-                                                    class="h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                                    alt="" class="h-5 opacity-60">
                                             </li>
                                         </a>
                                     <?php endif; ?>
@@ -442,18 +482,15 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     
                                     <li class="w-full"> 
                                       <form action="/api/gifts/give" method="post">
-                                        <button type="submit" class="block w-full free-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
+                                        <button type="submit" class="bank-btn-light bank-btn-split w-full">
                                                 <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/free.svg"
                                                   alt="buy" loading="lazy" decoding="async"
-                                                  class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                                  class="h-6 opacity-70">
                                                     
-                                                <div class="flex flex-col items-center justify-start">
-                                                    <span class="text-black"><?= $t('trial') ?></span>
-                                                </div>
-                                                
-                                                <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
+                                                <span class="flex-1 text-center"><?= $t('trial') ?></span>
+                                                <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
                                                   alt="" loading="lazy" decoding="async"
-                                                  class="invert h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                                  class="h-5 opacity-60">
                                         </button>
                                        </form>
                                     </li>
@@ -478,7 +515,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <!-- Header Card -->
                         <div class="flex flex-col gap-6">
                             <div class="flex items-center justify-between">
-                                <h1 class="text-3xl font-bold">
+                                <h1 class="bank-h1 text-3xl font-bold">
                                     <?php foreach (mb_str_split($t('profile')) as $letter): ?>
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
@@ -493,7 +530,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                             </div>
 
                             <!-- Profile Hero Card -->
-                            <div class="glow-card relative flex items-center gap-6 p-6 rounded-2xl">
+                            <div data-reveal class="glow-card bank-glass relative flex items-center gap-6 p-6 rounded-2xl">
                                 <div class="relative">
                                     <img decoding="async" loading="lazy"
                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/1.png"
@@ -507,13 +544,14 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <?= htmlspecialchars($formattedUserProfile['full_name']) ?>
                                     </h2>
                                     <p class="text-sm text-gray-400"><?= $formattedUserProfile['status_text'] ?></p>
+                                    <p class="text-xs text-gray-500"><?= htmlspecialchars($user->getEmail()) ?></p>
                                 </div>
                             </div>
 
                             <!-- Stats Grid -->
-                            <div class="grid grid-cols-4 gap-4">
+                            <div data-reveal data-reveal-delay="70" class="grid grid-cols-4 gap-4">
                                 <div
-                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl hover:bg-white/[0.06] transition-colors">
+                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-green-400">
                                         <i class="fa fa-wifi text-lg"></i>
                                         <span class="text-sm font-medium">VPN</span>
@@ -522,7 +560,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         class="text-[white] text-lg font-semibold"><?= $formattedUserProfile['subscription_status'] ?></span>
                                 </div>
                                 <div
-                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl hover:bg-white/[0.06] transition-colors">
+                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-blue-400">
                                         <i class="fa fa-language text-lg"></i>
                                         <span class="text-sm font-medium"><?= $t('language') ?></span>
@@ -531,7 +569,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         class="text-[white] text-lg font-semibold"><?= $formattedUserProfile['language'] ?></span>
                                 </div>
                                 <div
-                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl hover:bg-white/[0.06] transition-colors">
+                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-purple-400">
                                         <i class="fa fa-server text-lg"></i>
                                         <span class="text-sm font-medium"><?= $t('remaining') ?></span>
@@ -539,7 +577,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <span class="text-[white] text-lg font-semibold" data-timeleft></span>
                                 </div>
                                 <div
-                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl hover:bg-white/[0.06] transition-colors">
+                                    class="glow-card flex flex-col gap-3 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-yellow-400">
                                         <i class="fa fa-palette text-lg"></i>
                                         <span class="text-sm font-medium"><?= $t('theme') ?></span>
@@ -553,7 +591,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
                         <!-- VPN Key Section -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                            <div class="flex flex-col gap-4">
+                            <div data-reveal data-reveal-delay="140" class="flex flex-col gap-4">
                                 <h3 class="text-xl font-semibold text-gray-300 mt-4"><?= $t('subscription_data') ?></h3>
                                 <div class="glow-card relative z-20 flex items-center gap-4 p-5 rounded-xl">
                                     <div class="flex-1 flex flex-col gap-2">
@@ -585,7 +623,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
                         <!-- Server Select (radio scroll list) -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                            <div class="flex flex-col gap-4 mt-4">
+                            <div data-reveal data-reveal-delay="210" class="flex flex-col gap-4 mt-4">
                                 <h3 class="text-xl font-semibold text-gray-300"><?= $t('server_select') ?></h3>
                                 <div class="glow-card p-3 rounded-xl">
                                     <div class="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
@@ -611,7 +649,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <?php endif; ?>
 
                         <!-- Payment History (id+дата+сумма из JSON, квитанция живьём из кассы) -->
-                        <div class="flex flex-col gap-4 mt-6">
+                        <div data-reveal data-reveal-delay="280" class="flex flex-col gap-4 mt-6">
                             <h3 class="text-xl font-semibold text-gray-300"><?= $t('pay_history') ?></h3>
                             <div class="glow-card p-4 rounded-xl">
                                 <div data-pay-history
@@ -627,12 +665,12 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <!-- Company Links & Logout -->
                         <div class="flex flex-col gap-4 mt-6">
                             <h3 class="text-xl font-semibold text-gray-300"><?= $t('company') ?></h3>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div data-reveal data-reveal-delay="350" class="grid grid-cols-2 gap-4">
                                 <a href="/about"
                                     class="glow-card flex items-center gap-4 p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center ring-1 ring-amber-400/30">
-                                        <i class="fa-solid fa-building text-amber-400 text-xl"></i>
+                                        class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ring-1 ring-white/10">
+                                        <i class="fa-solid fa-building text-gray-300 text-xl"></i>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-[white] font-medium"><?= $t('about_title') ?></span>
@@ -642,8 +680,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <a href="/requisites"
                                     class="glow-card flex items-center gap-4 p-4 rounded-xl hover:bg-white/[0.06] transition-colors group">
                                     <div
-                                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center ring-1 ring-cyan-400/30">
-                                        <i class="fa-solid fa-file-invoice text-cyan-400 text-xl"></i>
+                                        class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center ring-1 ring-white/10">
+                                        <i class="fa-solid fa-file-invoice text-gray-300 text-xl"></i>
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-[white] font-medium"><?= $t('requisites') ?></span>
@@ -1018,36 +1056,60 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
             <!-- ################# CONTENT MOBILE ####################-->
             <div class="js-sections w-full text-white overflow-clip outer_mobile">
 
-                <div class="absolute inset-0 z-0 bg-gradient-to-br from-green-900/35 via-transparent to-emerald-900/48">
-                </div>
                 <!-- SECTION = MAIN -->
                 <template data-section="main">
                 <section
                     class="setka overflow-hidden relative flex flex-col justify-between py-[95px] box-border w-full min-h-[100dvh] p-10"
                     data-section="main">
 
-                    <!-- backgound -->
-                    <img
-                        src="<?= $site['baseUrl'] ?>/public/assets/images/background/<?= htmlspecialchars($formattedVpnStatus['background_world']) ?>" alt="background"
-                        class="absolute h-full opacity-20 -left-[3rem] right-0 top-0 bottom-0 mx-auto scale-[2.5] z-0">
-
-                    <!-- Monoblock decorative elements -->
-                    <div class="flex justify-center items-center flex-col max-h-[300px] max-w-[200px] m-auto">
-                      <!-- bg -->
-                        <img
-                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_bg']) ?>"
-                            alt="monoblock_bg" title="monoblock_bg"
-                            class="z-10 w-[70%] absolute">
-                      <!-- spin -->
-                        <img
-                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_spin']) ?>"
-                            alt="monoblock_spin" title="monoblock_spin"
-                            class="z-20 w-[50%] absolute animate-spin [animation-duration:10s]">
-                      <!-- center -->
-                        <img
-                            src="/public/assets/images/icons/services/monoblock/<?= htmlspecialchars($formattedVpnStatus['monoblock_image']['layout_center']) ?>"
-                            alt="monoblock_center" title="monoblock_center"
-                            class="z-30 w-[22%] absolute">
+                    <!-- overview -->
+                    <div data-reveal class="z-10 w-full bank-tile bank-glass p-5" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="bank-status <?= $vpnStatus === 'active' ? 'text-green-300 border-green-400/25 bg-green-400/10' : 'text-gray-400' ?>">
+                                <span class="w-2 h-2 rounded-full <?= $vpnStatus === 'active' ? 'bg-green-400' : 'bg-gray-500' ?>"></span>
+                                <?= htmlspecialchars($formattedVpnStatus['status_text']) ?>
+                            </span>
+                            <span class="text-right shrink-0">
+                                <span class="block text-xs text-gray-400 truncate" data-server><?= htmlspecialchars($formattedVpnStatus['location']) ?></span>
+                                <span class="block font-mono text-[10px] text-gray-600 mt-0.5"><?= htmlspecialchars($maskedUni) ?></span>
+                            </span>
+                        </div>
+                        <!-- сервер сменился: напомнить обновить подписку в приложении -->
+                        <div data-subwatch hidden class="mt-4 flex items-center gap-2.5 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-3.5 py-2.5">
+                            <i class="fa-solid fa-arrows-rotate text-yellow-300 text-xs shrink-0"></i>
+                            <div class="flex-1 text-xs text-gray-200">Сервер обновлён — скопируйте ключ заново в профиле</div>
+                            <button type="button" data-subwatch-ok class="shrink-0 text-xs text-gray-300 underline">OK</button>
+                        </div>
+                        <div class="mt-5 flex items-center gap-5">
+                            <div class="relative shrink-0" style="width:128px;height:128px">
+                                <div class="absolute inset-0 rounded-full bg-green-500/15 blur-2xl"></div>
+                                <div class="bank-ticks absolute inset-0 rounded-full"></div>
+                                <div class="bank-ring<?= $ringOff ?> absolute inset-0 rounded-full" style="--pt:<?= $ringPct ?>"></div>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                    <div class="bank-num text-4xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
+                                    <div class="bank-label mt-0.5" style="font-size:.65rem"><?= $t('days_short') ?> из <?= $periodDays ?></div>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="py-2 border-b border-white/[0.07]">
+                                    <div class="bank-label mb-0.5"><?= rtrim($t('duration_colon'), ':') ?></div>
+                                    <div class="text-lg font-semibold text-white tabular-nums"><?= $periodDays ?> <span class="text-xs font-normal text-gray-400"><?= $t('days_short') ?></span></div>
+                                </div>
+                                <div class="py-2">
+                                    <div class="bank-label mb-0.5"><?= rtrim($t('devices_colon'), ':') ?></div>
+                                    <div class="text-lg font-semibold text-white tabular-nums"><?= $devicesLabel ?></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center justify-between text-xs mb-1.5">
+                                <span class="text-gray-400"><?= rtrim($t('valid_until'), ':') ?> <?= $expiryDate ?></span>
+                                <span class="text-gray-300 tabular-nums" data-timeleft>—</span>
+                            </div>
+                            <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                                <div class="h-full rounded-full <?= $isActiveSub ? 'bg-gradient-to-r from-green-500 to-emerald-400' : 'bg-gray-600' ?>" style="width:<?= $elapsedPct ?>%"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- information -->
@@ -1094,18 +1156,15 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                             
                               <li class="w-full"> 
                                 <form action="/api/gifts/give" method="post">
-                                  <button type="submit" class="block w-full free-btn glow-card group relative w-full flex justify-between items-center p-4 rounded-xl cursor-pointer">
+                                  <button type="submit" class="bank-btn-light bank-btn-split w-full">
                                           <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/free.svg"
                                             alt="buy" loading="lazy" decoding="async"
-                                            class="h-6 opacity-70 group-hover:opacity-100 transition-opacity">
+                                            class="h-6 opacity-70">
                                               
-                                          <div class="flex flex-col items-center justify-start">
-                                              <span class="text-black"><?= $t('trial') ?></span>
-                                          </div>
-                                          
-                                          <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
+                                          <span class="flex-1 text-center"><?= $t('trial') ?></span>
+                                          <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
                                             alt="" loading="lazy" decoding="async"
-                                            class="invert h-6 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                                            class="h-5 opacity-60">
                                   </button>
                                  </form>
                               </li>
@@ -1113,71 +1172,47 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                             <?php endif; ?>
                             
                             <!-- block 2 -->
-                            <li class="glow-card_mobile relative w-full p-[15px] bg-[rgb(255,255,255,0.1)] rounded-xl">
+                            <li data-reveal data-reveal-delay="100" class="relative w-full">
                                 <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                    <a href="/install" class="btn_install_tour z-10 flex justify-between items-center">
+                                    <a href="/install" class="btn_install_tour bank-btn-primary bank-btn-split">
                                         <img data-theme-invert decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                             alt="" loading="lazy"
-                                            class="rounded-md h-6 opacity-70 group-hover:opacity-100 transition-opacity">
-                                        <div class="flex flex-col items-center justify-start text-lg text-white">
-                                            <span class="z-10 uppercase text-center flex gap-2"><?= $t('install_btn') ?> <span
-                                                    class="word_hidden">vpn</span>
-                                            </span>
-                                        </div>
+                                            class="rounded-md h-6 opacity-70">
+                                        <span class="uppercase text-center flex-1 whitespace-nowrap"><?= $t('install_btn') ?> VPN</span>
                                         <img decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
-                                            alt="" loading="lazy" decoding="async" class="h-6 invert">
+                                            alt="" class="h-5 opacity-60">
                                     </a>
                                 <?php else: ?>
-                                    <a href="/pay" class="z-10 flex justify-between items-center">
+                                    <a href="/pay" class="bank-btn-primary bank-btn-split">
                                         <img decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
-                                            alt="" class="h-6">
-                                        <div class="flex flex-col items-center justify-start text-lg text-white">
-                                            <!-- no -->
-                                            <span class="z-10 text-center flex gap-2"><?= $t('buy') ?> <span
-                                                    class="word_hidden"><?= $t('subscription') ?></span>
-                                            </span>
-                                            <!-- yes -->
-                                        </div>
+                                            alt="" class="h-6 opacity-70 invert">
+                                        <span class="text-center flex-1 whitespace-nowrap"><?= $t('buy') ?> <?= $t('subscription') ?></span>
                                         <img decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
-                                            alt="" loading="lozy" decoding="async" class="h-6 invert">
+                                            alt="" class="h-5 opacity-60">
                                     </a>
                                 <?php endif; ?>
                             </li>
                             
-                            <!-- block 3 -->
-                            <li class="relative w-full flex justify-between gap-2 py-3 rounded-xl text-sm">
-                                <!-- 1 -->
-                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/timeleft.svg"
-                                        alt="timeleft" loading="lazy" class="h-6 shrink-0">
-                                    <span class="text-white text-sm font-light text-center break-words whitespace-normal leading-tight max-w-full [overflow-wrap:anywhere]" data-server
-                                        data-timeleft></span>
+                            <!-- block 3: только то, чего нет в overview -->
+                            <li data-reveal data-reveal-delay="170" class="bank-tile relative w-full flex justify-between gap-2 p-3 text-sm">
+                                <!-- 1: оплата -->
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
+                                    <span class="text-[11px] text-gray-500">Оплата</span>
+                                    <span class="text-sm font-semibold text-gray-100 tabular-nums truncate max-w-full"><?= $lastPayShort !== null ? htmlspecialchars($lastPayShort) : '—' ?></span>
                                 </div>
-                                <!-- 2 -->
-                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
-                                    <p class="text-white text-lg leading-tight"><?= $t('main') ?></p>
-                                    <p class="text-[#93A7C8] break-words whitespace-normal max-w-full text-center [overflow-wrap:unset]">
-                                        <?= htmlspecialchars($formattedVpnStatus['ip_address'] ?: '—') ?>
-                                    </p>
+                                <!-- 2: пинг -->
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
+                                    <span class="text-[11px] text-gray-500"><?= $t('ping') ?>, мс</span>
+                                    <span class="text-sm font-semibold tabular-nums <?= $formattedVpnStatus['ping_class'] ?>"><?= htmlspecialchars($formattedVpnStatus['ping_label']) ?></span>
                                 </div>
-                                <!-- 3 -->
-                                <div class="flex flex-1 min-w-0 flex-col items-center justify-between gap-2 text-center">
-                                    <div class="flex gap-2 items-center justify-center h-8">
-                                        <span
-                                            class="<?= htmlspecialchars($formattedVpnStatus['ping_class']) ?> bg-current h-2 w-2 rounded-full aspect-square"></span>
-                                        <span
-                                            class="<?= htmlspecialchars($formattedVpnStatus['ping_class']) ?> bg-current h-2 w-2 rounded-full aspect-square"></span>
-                                        <span
-                                            class="<?= htmlspecialchars($formattedVpnStatus['ping_class']) ?> bg-current h-2 w-2 rounded-full aspect-square"></span>
-                                    </div>
-                                    <p class="text-[#93A7C8] font-bold break-words whitespace-normal max-w-full text-center [overflow-wrap:anywhere]">
-                                        <?= htmlspecialchars($formattedVpnStatus['ping_label']) ?>
-                                    </p>
+                                <!-- 3: IP -->
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
+                                    <span class="text-[11px] text-gray-500">IP</span>
+                                    <span class="text-[13px] font-semibold text-gray-100 tabular-nums truncate max-w-full"><?= htmlspecialchars($formattedVpnStatus['ip_address']) ?></span>
                                 </div>
                             </li>
                         </ul>
@@ -1192,7 +1227,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                     data-section="profile">
                     <div class="px-6 pt-[5.5rem]">
                         <div class="flex items-center justify-between mb-4">
-                            <h1 class="text-2xl font-bold">
+                            <h1 class="bank-h1 text-2xl font-bold">
                                 <?php foreach (mb_str_split($t('profile')) as $letter): ?>
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
@@ -1206,7 +1241,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         </div>
 
                         <div class="flex flex-col gap-4">
-                            <div class="glow-card_mobile relative flex items-center gap-4 p-5 rounded-2xl">
+                            <div data-reveal class="glow-card_mobile bank-glass relative flex items-center gap-4 p-5 rounded-2xl">
                                 <div class="relative">
                                     <img decoding="async" loading="lazy"
                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/avatar/1.png"
@@ -1222,10 +1257,11 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <p class="text-sm text-gray-400" data-profile-status>
                                         <?= $formattedUserProfile['status_text'] ?>
                                     </p>
+                                    <p class="text-xs text-gray-500 truncate"><?= htmlspecialchars($user->getEmail()) ?></p>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
+                            <div data-reveal data-reveal-delay="70" class="grid grid-cols-2 gap-3">
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-green-400">
                                         <i class="fa fa-wifi"></i>
@@ -1262,7 +1298,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
                         <!-- data -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                            <div class="mt-4 flex flex-col gap-4 mb-4">
+                            <div data-reveal data-reveal-delay="140" class="mt-4 flex flex-col gap-4 mb-4">
                                 <h4 class="text-white text-xl font-semibold"><?= $t('data') ?></h4>
                                 <ul class="flex flex-col gap-2.5">
                                     <li class="glow-card_mobile flex p-4 justify-between items-center rounded-xl">
@@ -1299,7 +1335,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
                         <!-- Server Select (radio scroll list) -->
                         <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                            <div class="mt-4 flex flex-col gap-3 mb-2">
+                            <div data-reveal data-reveal-delay="210" class="mt-4 flex flex-col gap-3 mb-2">
                                 <h4 class="text-white text-xl font-semibold"><?= $t('server_select') ?></h4>
                                 <div class="glow-card_mobile p-3 rounded-xl">
                                     <div class="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
@@ -1325,7 +1361,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <?php endif; ?>
 
                         <!-- Payment History (id+дата+сумма из JSON, квитанция живьём из кассы) -->
-                        <div class="flex flex-col gap-4 mt-6">
+                        <div data-reveal data-reveal-delay="280" class="flex flex-col gap-4 mt-6">
                             <h3 class="text-xl font-semibold text-gray-300"><?= $t('pay_history') ?></h3>
                             <div class="glow-card p-4 rounded-xl">
                                 <div data-pay-history
@@ -1339,22 +1375,22 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         </div>
 
                         <!-- Company Links & Logout -->
-                        <div class="mt-6 flex flex-col gap-4">
+                        <div data-reveal data-reveal-delay="350" class="mt-6 flex flex-col gap-4">
                             <h4 class="text-white text-xl font-semibold"><?= $t('company') ?></h4>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div data-reveal data-reveal-delay="420" class="grid grid-cols-2 gap-3">
                                 <a href="/about"
                                     class="glow-card_mobile flex flex-col items-center justify-center gap-2 p-4 rounded-xl">
                                     <div
-                                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center">
-                                        <i class="fa-solid fa-building text-amber-400 text-lg"></i>
+                                        class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ring-1 ring-white/10">
+                                        <i class="fa-solid fa-building text-gray-300 text-lg"></i>
                                     </div>
                                     <span class="text-white text-sm font-medium"><?= $t('about_title') ?></span>
                                 </a>
                                 <a href="/requisites"
                                     class="glow-card_mobile flex flex-col items-center justify-center gap-2 p-4 rounded-xl">
                                     <div
-                                        class="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center">
-                                        <i class="fa-solid fa-file-invoice text-cyan-400 text-lg"></i>
+                                        class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center ring-1 ring-white/10">
+                                        <i class="fa-solid fa-file-invoice text-gray-300 text-lg"></i>
                                     </div>
                                     <span class="text-white text-sm font-medium"><?= $t('requisites') ?></span>
                                 </a>
@@ -1477,7 +1513,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
 
-                        <div class="grid grid-cols-2 gap-3">
+                        <div data-reveal class="grid grid-cols-2 gap-3">
                             <div
                                 class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.08] hover:bg-white/[0.06] transition-colors">
                                 <div class="flex items-center gap-2 text-emerald-400">

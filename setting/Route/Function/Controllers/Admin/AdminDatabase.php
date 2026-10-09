@@ -341,22 +341,6 @@ class AdminDatabase
     }
 
     /**
-     * Таблицы со счётчиками одним запросом (вместо N COUNT в цикле сайдбара).
-     * @return array<int,array{name:string,count:int}>
-     */
-    public static function getTablesWithCounts(): array
-    {
-        $tables = array_values(array_filter(self::getTables(), fn($t) => \is_string($t) && preg_match('/^[a-zA-Z0-9_]+$/', $t)));
-        if ($tables === []) return [];
-        $sel = implode(', ', array_map(fn($t) => "(SELECT COUNT(*) FROM `$t`) AS `$t`", $tables));
-        $row = Database::send("SELECT $sel");
-        $row = (\is_array($row) && !empty($row)) ? $row[0] : [];
-        $out = [];
-        foreach ($tables as $t) $out[] = ['name' => $t, 'count' => (int) ($row[$t] ?? 0)];
-        return $out;
-    }
-
-    /**
      * Фильтрация данных по колонке
      * @param string $table название таблицы
      * @param string $column название колонки

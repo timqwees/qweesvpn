@@ -1,10 +1,5 @@
 /* Font Urbanist */
 @font-face {
-    font-family: 'qwees-urbanist-bold';
-    src: url('/public/assets/fonts/Urbanist/Urbanist-Bold.ttf') format('truetype');
-}
-
-@font-face {
     font-family: 'qwees-urbanist-medium';
     src: url('/public/assets/fonts/Urbanist/Urbanist-Medium.ttf') format('truetype');
 }
@@ -14,17 +9,7 @@
     src: url('/public/assets/fonts/Urbanist/Urbanist-Regular.ttf') format('truetype');
 }
 
-@font-face {
-    font-family: 'qwees-urbanist-semibold';
-    src: url('/public/assets/fonts/Urbanist/Urbanist-SemiBold.ttf') format('truetype');
-}
-
 /* Font Poppins */
-@font-face {
-    font-family: 'qwees-poppins-bold';
-    src: url('/public/assets/fonts/Poppins/Poppins-Bold.ttf') format('truetype');
-}
-
 @font-face {
     font-family: 'qwees-poppins-medium';
     src: url('/public/assets/fonts/Poppins/Poppins-Medium.ttf') format('truetype');
@@ -181,29 +166,6 @@ html {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 1px -1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* word_hidden */
-.word_hidden {
-    display: block;
-}
-
-@media (max-width: 374px) {
-    .word_hidden {
-        display: none;
-    }
-}
-
-/* border_light - тонкие линии */
-.border_light_t:after {
-    content: '';
-    position: absolute;
-    width: 80%;
-    height: 0.5px;
-    background: linear-gradient(to left, transparent, white, transparent);
-    top: 0;
-    left: 10%;
-    z-index: 1;
-}
-
 .border_light_b:after {
     content: '';
     position: absolute;
@@ -222,17 +184,6 @@ html {
     height: 80%;
     background: linear-gradient(to bottom, transparent, white, transparent);
     right: 0;
-    top: 10%;
-    z-index: 1;
-}
-
-.border_light_l:before {
-    content: '';
-    position: absolute;
-    width: 0.5px;
-    height: 80%;
-    background: linear-gradient(to bottom, transparent, white, transparent);
-    left: 0;
     top: 10%;
     z-index: 1;
 }
@@ -560,19 +511,11 @@ html {
 }
 
 /* Light theme border decorations */
-.light .border_light_t:after {
-    background: linear-gradient(to left, transparent, #d1d5db, transparent);
-}
-
 .light .border_light_b:after {
     background: linear-gradient(to left, transparent, #d1d5db, transparent);
 }
 
 .light .border_light_r:before {
-    background: linear-gradient(to bottom, transparent, #d1d5db, transparent);
-}
-
-.light .border_light_l:before {
     background: linear-gradient(to bottom, transparent, #d1d5db, transparent);
 }
 
@@ -875,20 +818,7 @@ html {
     transform: translateY(-1px);
 }
 
-/* Status indicator glow - elegant pulse */
-.status-glow {
-    position: relative;
-}
 
-.status-glow::after {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(20, 83, 45, 0.2));
-    opacity: 0.4;
-    z-index: -1;
-}
 
 
 /* Animated gradient border */
@@ -911,21 +841,6 @@ html {
 }
 
 
-/* tsParticles container */
-#tsparticles {
-    position: relative;
-}
-
-#tsparticles canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100% !important;
-    height: 100% !important;
-    z-index: 1;
-    pointer-events: auto;
-}
-
 /* Enhanced grid pattern - minimal */
 .setka {
     background-image:
@@ -935,88 +850,6 @@ html {
         linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
     background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
-}
-
-/* Neon button effect - elegant green */
-.neon-btn {
-    position: relative;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(20, 83, 45, 0.12) 50%, rgba(34, 197, 94, 0.15) 100%);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-.neon-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
-    transition: left 0.6s ease;
-}
-
-.neon-btn:hover::before {
-    left: 100%;
-}
-
-.neon-btn:hover {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.22) 0%, rgba(20, 83, 45, 0.18) 50%, rgba(34, 197, 94, 0.22) 100%);
-    box-shadow:
-        0 0 20px rgba(34, 197, 94, 0.2),
-        0 0 40px rgba(20, 83, 45, 0.12),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    border-color: rgba(34, 197, 94, 0.5);
-    transform: translateY(-1px);
-}
-
-/* Elegant elite button */
-.elite-btn {
-    position: relative;
-    background: linear-gradient(145deg, rgba(28, 32, 30, 0.9) 0%, rgba(20, 24, 22, 0.95) 100%);
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    transition: all 0.4s ease;
-    overflow: hidden;
-}
-
-.elite-btn::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(20, 83, 45, 0.3), rgba(34, 197, 94, 0.35));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0.4;
-}
-
-.elite-btn:hover {
-    background: linear-gradient(145deg, rgba(32, 40, 35, 0.9) 0%, rgba(24, 32, 28, 0.95) 100%);
-    box-shadow:
-        0 6px 24px rgba(34, 197, 94, 0.15),
-        0 0 12px rgba(20, 83, 45, 0.1);
-    transform: translateY(-1px);
-}
-
-/* Бесплатная подписка*/
-.free-btn {
-    position: relative;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    transition: all 0.4s ease;
-    overflow: hidden;
-}
-
-.free-btn:hover {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.95) 100%);
-    box-shadow:
-        0 6px 24px rgba(255, 255, 255, 0.15),
-        0 0 12px rgba(255, 255, 255, 0.1);
-    transform: translateY(-1px);
 }
 
 /* effect text - AI loading animation */
@@ -1136,4 +969,222 @@ select:-webkit-autofill {
     -webkit-text-fill-color: #f3f4f6;
     -webkit-box-shadow: 0 0 0 100px #1e2128 inset;
     transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ============================================================
+   BANK CALM — спокойный банковский слой кабинета.
+   Плоские поверхности вместо неона: убраны backdrop-blur на
+   карточках, mask-градиенты, бесконечные анимации и тяжёлые тени.
+   Классы и data-атрибуты не меняются — JS работает как раньше.
+   Результат: спокойный вид + меньше работы GPU на каждом кадре.
+   ============================================================ */
+.glow-card,
+.glow-card_mobile {
+    background: #12161b;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    transition: border-color 0.2s ease;
+}
+.glow-card::before,
+.glow-card_mobile::before {
+    display: none;
+}
+.glow-card:hover,
+.glow-card_mobile:hover {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.13);
+}
+/* строки-списки: плоский разделитель вместо градиентной рамки */
+.gradient-border {
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.gradient-border::before {
+    display: none;
+}
+li.gradient-border:last-child {
+    border-bottom: 0;
+}
+/* каркас: возвращён фирменный фон и рамка общего блока (outer/card) */
+/* гасим бесконечные анимации заголовков и пульсации */
+.loader-letter {
+    animation: none;
+}
+/* ---- банковские кнопки и плитка ---- */
+.bank-btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 0.9rem;
+    background: #4ade80;
+    color: #052012;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px rgba(74, 222, 128, 0.16);
+    transition: background 0.2s ease;
+}
+.bank-btn-primary:hover {
+    background: #63e693;
+}
+.bank-btn-ghost {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: transparent;
+    color: #e5e7eb;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.bank-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+/* светлая кнопка: белый фон, чёрный текст (пробная подписка) */
+.bank-btn-light {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border-radius: 0.9rem;
+    background: #f4f4f5;
+    color: #111111;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background 0.2s ease;
+}
+.bank-btn-light:hover {
+    background: #ffffff;
+}
+.bank-tile {
+    background: #12161b;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 1rem;
+}
+.bank-label {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+.bank-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+/* лёгкое стекло для hero-поверхностей: только главный обзор и шапка
+   профиля, без анимаций — блюр статичен и почти ничего не стоит */
+.bank-glass {
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+/* кольцо подписки: conic-маска, заливка — одноразовая CSS-анимация
+   без JS (1.6с при появлении, дальше статика, GPU не грузит) */
+@property --p {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+.bank-ring {
+    --p: var(--pt, 100);
+    background: conic-gradient(from -90deg, #4ade80 0%, #10b981 calc(var(--p) * 1%), rgba(255, 255, 255, 0.08) 0);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 13px), #000 calc(100% - 12px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 13px), #000 calc(100% - 12px));
+    animation: bank-ring-fill 1.6s cubic-bezier(0.22, 0.8, 0.3, 1) both,
+        bank-ring-glow 1.6s ease-out both;
+    filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.25));
+}
+@keyframes bank-ring-fill {
+    from {
+        --p: 0;
+    }
+}
+/* свет спидометра: вспыхивает ярко пока крутится, гаснет к остановке */
+@keyframes bank-ring-glow {
+    0% {
+        filter: drop-shadow(0 0 2px rgba(74, 222, 128, 0.1));
+    }
+    35% {
+        filter: drop-shadow(0 0 24px rgba(74, 222, 128, 0.8));
+    }
+    100% {
+        filter: drop-shadow(0 0 10px rgba(74, 222, 128, 0.25));
+    }
+}
+.bank-ring--off {
+    background: rgba(255, 255, 255, 0.08);
+    animation: none;
+    filter: none;
+}
+/* faint tick-scale outside the ring — premium gauge feel, static */
+.bank-ticks {
+    background: repeating-conic-gradient(rgba(255, 255, 255, 0.13) 0deg 0.6deg, transparent 0.6deg 30deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 24px), #000 calc(100% - 23px), #000 calc(100% - 15px), transparent calc(100% - 14px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 24px), #000 calc(100% - 23px), #000 calc(100% - 15px), transparent calc(100% - 14px));
+}
+/* metallic number: white melting into soft green */
+.bank-num {
+    background: linear-gradient(180deg, #ffffff 55%, #a7f3c9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+/* заголовки разделов: видимый металлический градиент вместо плоского белого */
+.bank-h1 {
+    background: linear-gradient(180deg, #ffffff 40%, #8fe3ae 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: 0.04em;
+}
+.bank-h1 .loader-letter {
+    color: transparent;
+}
+/* кнопка-распорка: иконка слева, текст по центру, стрелка справа (как было) */
+.bank-btn-split {
+    justify-content: space-between;
+}
+/* reveal on scroll: блоки мягко всплывают при появлении в кадре.
+   Один IntersectionObserver (main.js), transform+opacity — дёшево.
+   data-reveal-delay="120" — каскадная задержка в мс. */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 0.8, 0.3, 1);
+    will-change: opacity, transform;
+}
+[data-reveal].revealed {
+    opacity: 1;
+    transform: none;
+    will-change: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+/* баннер смены сервера: hidden-атрибут всегда побеждает flex-классы */
+[data-subwatch][hidden] {
+    display: none !important;
 }

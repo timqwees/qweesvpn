@@ -502,6 +502,7 @@ class Xray
 
         if (($result['status'] ?? '') === 'ok') {
             Database::send('DELETE FROM qwees_subscriptions WHERE uniID = ?', [strval($uniID)]);
+            \Setting\Route\Function\Controllers\Client\Src\Client::forget(strval($uniID));//мемо сброшено
             return ['status' => 'ok', 'message' => 'Подписка успешно удалёна'];
         }
 

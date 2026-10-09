@@ -7,12 +7,23 @@ namespace Setting\Route\Function\Controllers\Client\Src;
 use App\Config\Database;
 class Client
 {
+    /** Мемо на запрос: один и тот же JOIN не гоняем по 5 раз. Сброс — forget() в точках записи. */
+    private static array $memo = [];
+
+    public static function forget(?string $uniID = null): void
+    {
+        if ($uniID === null) self::$memo = [];
+        else unset(self::$memo[$uniID]);
+    }
+
     public static function get($uniID = null): array
     {
         if (!isset($uniID) || $uniID === null) {
             $sessionUser = \App\Config\Session::init('user');
             $uniID = is_array($sessionUser) ? ($sessionUser['uniID'] ?? '') : '';
         }
+        $uniID = (string) $uniID;
+        if (isset(self::$memo[$uniID])) return self::$memo[$uniID];
 
         // LEFT JOIN с подписками - сохраняем тот же API.
         // Строка одна: с максимальным expiry (наследие дублей в старых БД без UNIQUE).
@@ -31,7 +42,7 @@ class Client
 
         $data = $user[0];
 
-        return [
+        $out = [
             'id' => intval($data['id']),
             'first_name' => strval($data['first_name'] ?? ''),
             'last_name' => strval($data['last_name'] ?? ''),
@@ -51,5 +62,7 @@ class Client
             'count_devices' => intval($data['count_devices'] ?? 0),  // из qwees_subscriptions
             'expiry' => intval($data['expiry'] ?? 0)// из qwees_subscriptions с проверкой истечения (мс)
         ];
+        self::$memo[$uniID] = $out;
+        return $out;
     }
 }

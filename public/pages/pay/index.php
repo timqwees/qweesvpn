@@ -80,9 +80,9 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
     <title><?= $t('pay_title') ?></title>
 
     <!-- Preload critical resources -->
-    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style" defer>
-    <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml" defer>
-    <link rel="preload" href="/public/assets/images/icons/services/buy/crown.svg" as="image" defer>
+    <link rel="preload" href="/public/assets/styles/style.css<?= '?v=' . $site['versionApp'] ?>" as="style">
+    <link rel="preload" href="/public/assets/images/icons/logo/qweesvpn.svg" as="image" type="image/svg+xml">
+    <link rel="preload" href="/public/assets/images/icons/services/buy/crown.svg" as="image">
 
     <!-- Critical CSS with onload optimization -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" as="style"
@@ -2043,9 +2043,16 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 // Выбор периода — запоминаем целевую секцию в [data-main]
                 $('[data-select-section]').on('click', function () {
-                    var sectionId = $(this).attr('data-select-section');
+                    var sectionId = $(this).attr('data-toggle-section');
                     var $layout = $(this).closest('[data-pay-layout]');
                     $layout.find('[data-main]').attr('data-toggle-section', sectionId);
+                    // Период сам по себе не тариф: preselect первый тариф секции,
+                    // иначе на оплату уйдёт голый '1month' и сервер выдаст дефолт.
+                    var $sec = $layout.find('[data-section="' + sectionId + '"]');
+                    if ($sec.length && !$sec.find('input[name="subscription"]:checked').length) {
+                        var $first = $sec.find('input[name="subscription"]').first();
+                        if ($first.length) $first.prop('checked', true).trigger('change');
+                    }
                 });
 
                 // При выборе тарифа — сразу запоминаем и обновляем finish
@@ -2105,6 +2112,12 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                     var selectedTariff = $layout.find('input[name="subscription"]:checked').val() ||
                         lastSelected[layoutKey];
+                    // Голый период ('1month') — не тариф: подменяем запомненным, иначе дефолт.
+                    if (selectedTariff && !TARIFF_DATA[selectedTariff]) {
+                        selectedTariff = (lastSelected[layoutKey] && TARIFF_DATA[lastSelected[layoutKey]])
+                            ? lastSelected[layoutKey]
+                            : null;
+                    }
                     var paymentName = layoutKey === 'desktop' ? 'payment-desktop' : 'payment-mobile';
                     var selectedPayment = $layout.find('input[name="' + paymentName + '"]:checked').val();
 
@@ -2156,9 +2169,6 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                 });
             });
 
-            function closeQrModal() {
-                $('#qr-modal').remove();
-            }
         </script>
         <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
         <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>

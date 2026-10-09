@@ -20,7 +20,11 @@ $paymentStatus = [
 
 if ($paymentId) {//true - this is object
     $paymentStatus = (new Kassa())->startPaymentStatus($paymentId);//DB SEND + KEY VPN
-    Session::init('kassa', null);
+    // Сессию чистим только на терминальном статусе: pending/succeeded-неоплачен
+    // остаются — перезагрузка страницы добьёт проверку и выдачу, клиент не в тупике.
+    $terminal = ($paymentStatus['paid'] ?? false)
+        || \in_array($paymentStatus['status'] ?? '', ['canceled'], true);
+    if ($terminal) Session::init('kassa', null);
 
     if ($paymentStatus['subscription_issued'] ?? false) {
         $subscriptionInfo = [
@@ -137,7 +141,7 @@ if ($paymentId) {//true - this is object
                         <div class="flex justify-between mb-2">
                             <span class="text-white/70"><?= $t('payment_id') ?></span>
                             <span
-                                id="payment-id text-end"><?php echo htmlspecialchars($paymentId ?? 'TEST_PAYMENT'); ?></span>
+                                id="payment-id" class="text-end"><?php echo htmlspecialchars($paymentId ?? 'TEST_PAYMENT'); ?></span>
                         </div>
                         <div class="flex justify-between mb-2">
                             <span class="text-white/70"><?= $t('status_colon') ?></span>

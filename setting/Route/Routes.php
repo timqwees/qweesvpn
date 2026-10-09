@@ -247,6 +247,23 @@ Routes::post('/api/admin/relocation', function () {
             // fallback: form-encoded JSON строкой
             $servers = json_decode((string) ($_POST['servers'] ?? ''), true);
         }
+        if (\is_array($servers)) {
+            // Нельзя молча выкинуть сервер с живыми клиентами (иначе сироты с мёртвым URL).
+            $gone = array_values(array_diff(array_keys($srv::servers()), array_keys($servers)));
+            $busy = [];
+            foreach ($gone as $code) {
+                try {
+                    $n = (int) $rel::serverClients($code);
+                } catch (\Throwable) {
+                    $n = 0;
+                }
+                if ($n > 0) $busy[] = $code . ' (' . $n . ')';
+            }
+            if ($busy !== []) {
+                echo json_encode(['status' => 'error', 'message' => 'На серверах есть клиенты: ' . implode(', ', $busy) . '. Сначала перенесите их (migrate_from).'], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+        }
         echo json_encode(\is_array($servers) ? $srv::saveServersJson($servers) : ['status' => 'error', 'message' => 'Нет данных'], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -353,6 +370,18 @@ Routes::get('/api/admin/payment/receipt', function () {
     exit;
 });
 //=============================================//ADMIN CLEANUP (очистка неактивных)
+Routes::post('/api/admin/retry-pending', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    try {
+        $out = \Setting\Route\Function\Controllers\Kassa\Kassa::retryPendingAll(20);
+        $out['status'] = 'ok';
+    } catch (\Throwable $e) {
+        $out = ['status' => 'error', 'message' => mb_substr($e->getMessage(), 0, 200)];
+    }
+    echo json_encode($out, JSON_UNESCAPED_UNICODE);
+    exit;
+});
 Routes::post('/api/admin/cleanup', function () {
     AdminAuth::requirePermission('monitoring');
     header('Content-Type: application/json; charset=UTF-8');

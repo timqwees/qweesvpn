@@ -98,11 +98,6 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
         return (string) ($this->client['subscription'] ?? '');
     }
 
-    public function getSub()/*aliases*/
-    {
-        return $this->getSubscription();
-    }
-
     public function getAmount(): int
     {
         return (int) ($this->client['amount'] ?? 0);
@@ -116,11 +111,6 @@ class GetUser extends \Setting\Route\Function\Controllers\Client\Src\Client
     public function getMyRefer(): string
     {
         return (string) ($this->client['myrefer'] ?? '');
-    }
-
-    public function getReferLink(): string
-    {
-        return (string) ($this->client['refer_link'] ?? '');
     }
 
     public function getCountDays(): int

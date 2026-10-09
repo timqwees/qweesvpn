@@ -614,7 +614,6 @@ $t = fn(string $key): string => $translations[$key] ?? $key;
 
         </main>
         <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/main/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
-        <script src="<?= $site['baseUrl'] ?>/public/assets/scripts/theme/main.js<?= '?v=' . $site['versionApp'] ?>" defer></script>
     </div>
 </body>
 

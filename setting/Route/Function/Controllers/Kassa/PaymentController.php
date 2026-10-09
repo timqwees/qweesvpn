@@ -15,7 +15,6 @@ class PaymentController
     public static function createPayment()
     {
         header('Content-Type: application/json');
-        // $startTime = microtime(true);
 
         try {
             $input = file_get_contents('php://input');
@@ -74,7 +73,6 @@ class PaymentController
             }
 
             // запрос на создание оплаты
-            // $apiStart = microtime(true);
             $paymentResult = $kassa->createPayment(
                 amount: (float) $amount,
                 description: $description,
@@ -92,7 +90,6 @@ class PaymentController
                 ]
             );
 
-            // $apiTime = round(microtime(true) - $apiStart, 3);
 
             //при успешном переходе на страницу оплаты
             if ($paymentResult['success']) {
@@ -118,13 +115,11 @@ class PaymentController
                     $kassa->savePaymentMethod($uniID, $paymentResult['payment_method_id']);
                 }
 
-                // $totalTime = round(microtime(true) - $startTime, 3);
 
                 echo json_encode([
                     'success' => true,
                     'payment_url' => $paymentResult['payment_url'],
                     'payment_id' => $paymentResult['payment_id'],
-                    // 'qr_code' => $paymentResult['qr_code'],
                     'payment_method' => $paymentResult['payment_method']
                 ], JSON_UNESCAPED_UNICODE);
             } else {

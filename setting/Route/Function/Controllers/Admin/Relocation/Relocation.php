@@ -255,11 +255,13 @@ class Relocation
         if (!empty($row)) $oldUrl = (string) ($row[0]['subscription'] ?? '');
         // 1. переключаем БД на новый сервер (addClient выберет панель по субдомену)
         Database::send('UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?', [$newUrl, $uniID]);
+        ServerNetwork::forgetSub($uniID);
         // 2. создаём на новой панели с тем же сроком
         $added = (new Xray())->addClient(1, $uniID, $c['devices'], '', $c['expiry']);
         if (!\is_array($added) || ($added['success'] ?? false) !== true) {
             if ($oldUrl !== null) {//откат БД — старый ключ цел, клиент ничего не заметил
                 Database::send('UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?', [$oldUrl, $uniID]);
+                ServerNetwork::forgetSub($uniID);
             }
             Xray::log(\sprintf("[%s] [ПЕРЕЕЗД] %s: не создан на %s, откат\n", date('Y-m-d H:i:s'), $uniID, $target));
             return ['status' => 'error', 'message' => 'Не создан на новом сервере'];

@@ -41,6 +41,34 @@ class Network
     /** Код текущего выбранного сервера. */
     private static string $current = self::DEFAULT_SERVER;
 
+    /** Запиненный сервер: пока взведён, selectServer() не перевыбирает (фолбэк выдачи). */
+    private static bool $pinned = false;
+
+    /** Мемо URL подписки на запрос (SELECT за render — один, а не пачка). Сброс — forgetSub(). */
+    private static array $subCache = [];
+
+    /** Сбросить мемо подписки (после любой перезаписи subscription в БД). */
+    public static function forgetSub(?string $uniID = null): void
+    {
+        if ($uniID === null) self::$subCache = [];
+        else unset(self::$subCache[$uniID]);
+    }
+
+    /** Зафиксировать сервер на время операции (только код из реестра). */
+    public static function pinServer(string $code): void
+    {
+        if (isset(self::servers()[$code])) {
+            self::$current = $code;
+            self::$pinned = true;
+        }
+    }
+
+    /** Снять фиксацию (текущий код остаётся последним удачным). */
+    public static function unpinServer(): void
+    {
+        self::$pinned = false;
+    }
+
     private static ?array $serversCache = null;
 
     /** Живой реестр: servers.json поверх дефолтов; битый файл — игнор с логом. */
@@ -101,22 +129,35 @@ class Network
      */
     public static function selectServer(?string $uniID = null, ?string $code = null): array
     {
+        // Запиненный сервер (фолбэк выдачи): не перевыбираем, работаем на нём.
+        if (self::$pinned && isset(self::servers()[self::$current])) {
+            return self::servers()[self::$current];
+        }
         if ($code !== null && isset(self::servers()[$code])) {
             self::$current = $code;
             return self::servers()[$code];
         }
 
         $uniID = $uniID ?? self::sessionUniID();
-        $sub = $uniID !== '' ? Database::send('SELECT subscription FROM qwees_subscriptions WHERE uniID = ?', [$uniID]) : [];
+        if (!isset(self::$subCache[$uniID])) {
+            self::$subCache[$uniID] = $uniID !== ''
+                ? (string) (Database::send('SELECT subscription FROM qwees_subscriptions WHERE uniID = ?', [$uniID])[0]['subscription'] ?? '')
+                : '';
+        }
+        $sub = self::$subCache[$uniID];
 
-        self::$current = self::getServerCodeFromUrl((string) ($sub[0]['subscription'] ?? '')) ?: self::DEFAULT_SERVER;
+        self::$current = self::getServerCodeFromUrl($sub) ?: self::DEFAULT_SERVER;
         return self::servers()[self::$current];
     }
 
-    /** Данные текущего сервера (после selectServer()). */
+    /** Данные текущего сервера (после selectServer()). С протухшим кодом не падаем. */
     public static function getServer(): array
     {
-        return self::servers()[self::$current];
+        $all = self::servers();
+        if (!isset($all[self::$current])) {
+            self::$current = array_key_first($all) ?: self::DEFAULT_SERVER;
+        }
+        return $all[self::$current] ?? [];
     }
 
     /** Код текущего сервера ('nl', 'fi', ...). */
@@ -204,6 +245,7 @@ class Network
             'UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
             [$newUrl, $uniID]
         );
+        self::forgetSub($uniID);
 
         // 3. создаём клиента на новой панели с тем же сроком (expiryMs сохраняет остаток дней)
         $xray = new Xray();
@@ -215,6 +257,7 @@ class Network
                 'UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
                 [$oldUrl, $uniID]
             );
+            self::forgetSub($uniID);
             return ['status' => 'error', 'message' => 'Не удалось создать клиента на новом сервере'];
         }
 

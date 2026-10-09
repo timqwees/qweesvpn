@@ -13,6 +13,15 @@ $(document).ready(function () {
   //кнопки переключения
   const button_email = $('[data-button="email"]');
 
+  // Один сабмит на форму: повторный клик «Войти» во время загрузки
+  // прилетал бы уже без кода в сессии и пугал ошибкой.
+  const $authForm = button_email.closest('form');
+  $authForm.off('submit.once').on('submit.once', function (e) {
+    if ($authForm.data('submitted')) { e.preventDefault(); return false; }
+    $authForm.data('submitted', true);
+    $('[data-button="verefy"]', $authForm).attr('disabled', 'disabled');
+  });
+
   let expectedCode = null;
   let mailSent = false;
 
@@ -129,8 +138,14 @@ $(document).ready(function () {
     }, 350);
   });
 
-  // проверка всех полей только в #part1
+  // проверка всех полей только в #part1 (дебаунс 400мс — не спамим /auth/find)
+  let findTimer = null;
   $('#part1 input').on('input', function () {
+    const $field = $(this);
+    clearTimeout(findTimer);
+    findTimer = setTimeout(function () { $field.trigger('find-check'); }, 400);
+  });
+  $('#part1 input').on('find-check', function () {
     if ($(this).val() === '') {
       message_status.removeClass('hidden');
       message_status.text(prefix_message_status + 'Заполните поле почты');

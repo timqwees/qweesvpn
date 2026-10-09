@@ -54,6 +54,91 @@ $(function () {
   // ─────────────────────────────────────────────
   // 2. SECTION TOGGLE
   // ─────────────────────────────────────────────
+  // Смена сервера (переезд/фолбэк): URL подписки изменился —
+  // показываем баннер «обновите подписку в приложении».
+  // Храним последний виденный URL в localStorage, сравниваем при каждом рендере.
+  function watchSubUrl() {
+    const host = document.querySelector('[data-sub-url]');
+    if (!host) return;
+    const cur = host.getAttribute('data-sub-url') || '';
+    if (!cur) return;
+    let saved = null;
+    try { saved = localStorage.getItem('qwees_sub_url'); } catch (e) {}
+    if (!saved) {
+      try { localStorage.setItem('qwees_sub_url', cur); } catch (e) {}
+      return;
+    }
+    if (saved === cur) return;
+    const bar = host.querySelector('[data-subwatch]');
+    if (!bar) return;
+    bar.hidden = false;
+    const remember = function () {
+      try { localStorage.setItem('qwees_sub_url', cur); } catch (e) {}
+      bar.hidden = true;
+    };
+    const copyBtn = bar.querySelector('[data-subwatch-copy]');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      const done = function () { copyBtn.textContent = 'Готово'; setTimeout(remember, 900); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cur).then(done, done);
+      else {
+        const t = document.createElement('textarea');
+        t.value = cur; document.body.appendChild(t); t.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        t.remove(); done();
+      }
+    });
+    const okBtn = bar.querySelector('[data-subwatch-ok]');
+    if (okBtn) okBtn.addEventListener('click', remember);
+  }
+  // Reveal on scroll: [data-reveal] всплывают при входе в кадр.
+  // Один observer на страницу; секции рендерятся лениво —
+  // armReveals() вызывается после каждой отрисовки секции.
+  const revealIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        en.target.classList.add('revealed');
+        revealIO.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' }) : null;
+  function armReveals() {
+    if (!revealIO) {
+      document.querySelectorAll('[data-reveal]').forEach(function (el) { el.classList.add('revealed'); });
+      return;
+    }
+    document.querySelectorAll('[data-reveal]:not(.revealed)').forEach(function (el) {
+      const dl = parseInt(el.getAttribute('data-reveal-delay') || '0', 10);
+      if (dl > 0) el.style.transitionDelay = dl + 'ms';
+      revealIO.observe(el);
+    });
+  }
+  // Reveal только после закрытия сплэша QweesTeam Studio —
+  // иначе анимация проигрывается под чёрным экраном и её не видно.
+  function loaderVisible() {
+    const loader = document.getElementById('loader');
+    if (!loader || loader.dataset.done === '1' || loader.style.display === 'none') return false;
+    return !(window.getComputedStyle && getComputedStyle(loader).display === 'none');
+  }
+  // Кольцо подписки: пока сплэш виден — стоим на нуле,
+  // после закрытия докручиваемся до значения (CSS-анимация).
+  function pauseRingsWhileLoading() {
+    if (!loaderVisible()) return false;
+    document.querySelectorAll('.bank-ring').forEach(function (el) { el.style.animationPlayState = 'paused'; });
+    return true;
+  }
+  window.addEventListener('qwees:loader-done', function ringGo() {
+    document.querySelectorAll('.bank-ring').forEach(function (el) { el.style.animationPlayState = 'running'; });
+  });
+  function armRevealsWhenReady() {
+    pauseRingsWhileLoading();
+    if (!loaderVisible()) { armReveals(); return; }
+    const onDone = function () {
+      window.removeEventListener('qwees:loader-done', onDone);
+      armReveals();
+    };
+    window.addEventListener('qwees:loader-done', onDone);
+    setTimeout(armReveals, 6000); // страховка, если событие потерялось
+  }
   // История оплат в профиле: id+дата+сумма из JSON-индекса,
   // полная квитанция — живым запросом в кассу (ссылка, без нагрузки на сайт).
   function escHtml(s) {
@@ -162,6 +247,8 @@ $(function () {
 
         busy = false;
         loadPayHistory();
+        watchSubUrl();
+        armRevealsWhenReady();
       };
 
       if ($current.length) {
@@ -215,6 +302,8 @@ $(function () {
         transition: 'opacity 0.3s ease'
       });
       loadPayHistory();
+      watchSubUrl();
+      armRevealsWhenReady();
     }
 
     // Initial state: hide everything that already has .hidden

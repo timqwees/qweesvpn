@@ -5,109 +5,18 @@ declare(strict_types=1);
 namespace Setting\Route\Function\Controllers\Profile;
 
 use App\Config\Database;
-use Setting\Route\Function\Controllers\Kassa\PriceConfig;
+
+// От класса осталась только живая статика (имя пригласившего для кабинета).
+// Инстанс-методы и конструктор с лишним запросом удалены как мёртвые.
 
 class Profile
 {
-    private $user;
-
-    public function __construct()
-    {
-        $this->user = new \Setting\Route\Function\Controllers\Client\GetUser;
-    }
-
-    /**
-     * Проверка наличия скидки
-     */
-    public function hasDiscount(): bool
-    {
-        return !empty($this->user->getRefer());
-    }
-
-    /**
-     * Получить имя пригласившего по коду реферала
-     */
-    public function getReferrerName(): string
-    {
-        return self::_referrerName($this->user->getRefer());
-    }
-
     /**
      * Статический метод для получения имени реферера
      */
     public static function getReferrerNameStatic(string $referCode): string
     {
         return self::_referrerName($referCode);
-    }
-
-    public function getPricingInfo(): array
-    {
-        return self::_pricingInfo();
-    }
-
-    public function getUserProfile(): array
-    {
-        if (empty($this->user->getUniID())) {
-            return self::getEmptyProfile();
-        }
-
-        return [
-            'personal_info' => [
-                'first_name' => $this->user->getFirstName(),
-                'last_name' => $this->user->getLastName(),
-                'email' => $this->user->getEmail(),
-                'uniID' => $this->user->getUniID(),
-                'registration_date' => ''
-            ],
-            'subscription_info' => [
-                'status' => $this->user->getStatus() === 'on' ? 'active' : 'inactive',
-                'subscription' => $this->user->getSubscription(),
-                'expiry' => $this->user->getExpiry(),
-                'count_days' => $this->user->getCountDays(),
-                'count_devices' => $this->user->getCountDevices(),
-                'amount' => $this->user->getAmount()
-            ],
-            'referal_info' => [
-                'refer_link' => $this->user->getRefer(),
-                'my_refer_link' => $this->user->getMyRefer(),
-                'my_refer_url' => !empty($this->user->getMyRefer()) ? 'https://' . $_SERVER['HTTP_HOST'] . '/reflink=' . $this->user->getMyRefer() : '',
-                'refer_count' => $this->user->getReferCount(),
-                'has_discount' => $this->user->getDiscountPercent() > 0,
-                'discount_percent' => $this->user->getDiscountPercent(),
-                'discount_uses' => $this->user->getDiscountUses(),
-                'referrer_name' => self::_referrerName($this->user->getRefer())
-            ],
-            'pricing_info' => self::_pricingInfo()
-        ];
-    }
-
-    private static function getEmptyProfile(): array
-    {
-        return [
-            'personal_info' => ['first_name' => '', 'last_name' => '', 'email' => '', 'uniID' => '', 'registration_date' => ''],
-            'subscription_info' => ['status' => 'inactive', 'subscription' => '', 'expiry' => 0, 'count_days' => 0, 'count_devices' => 0, 'amount' => 0],
-            'referal_info' => ['refer_link' => '', 'my_refer_link' => '', 'refer_count' => 0, 'has_discount' => false],
-            'pricing_info' => self::_pricingInfo()
-        ];
-    }
-
-    private static function _pricingInfo(): array
-    {
-        $prices1m = PriceConfig::getPrices()[1] ?? [];
-        $meta = PriceConfig::getTariffMeta();
-        $pricingInfo = [];
-
-        // Всё строится из единого объекта тарифов — никаких захардкоженных тарифов
-        foreach ($meta as $tariffName => $tariff) {
-            $pricingInfo[$tariffName] = [
-                'name'    => ucfirst($tariffName),
-                'price'   => $prices1m[$tariffName] ?? 0,
-                'days'    => $tariff['periods'][1]['days'] ?? 30,
-                'devices' => $tariff['devices'],
-            ];
-        }
-
-        return $pricingInfo;
     }
 
     private static function _referrerName(string $referCode): string
