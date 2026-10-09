@@ -1178,7 +1178,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <img data-theme-invert decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                             alt="" loading="lazy"
-                                            class="rounded-md h-6 opacity-70">
+                                            class="rounded-md h-6 opacity-70 invert">
                                         <span class="uppercase text-center flex-1 whitespace-nowrap"><?= $t('install_btn') ?> VPN</span>
                                         <img decoding="async" loading="lazy"
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
