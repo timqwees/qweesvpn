@@ -20,6 +20,9 @@ $paymentStatus = [
 
 if ($paymentId) {//true - this is object
     $paymentStatus = (new Kassa())->startPaymentStatus($paymentId);//DB SEND + KEY VPN
+    // При ошибке API приходит только success/error — доопределяем ключи,
+    // иначе страница сыпет Warning'ами (кнопка «назад» после сбоя кассы).
+    $paymentStatus += ['status' => 'unknown', 'paid' => false, 'success' => false, 'amount' => '0', 'currency' => 'RUB'];
     // Сессию чистим только на терминальном статусе: pending/succeeded-неоплачен
     // остаются — перезагрузка страницы добьёт проверку и выдачу, клиент не в тупике.
     $terminal = ($paymentStatus['paid'] ?? false)
@@ -79,7 +82,7 @@ if ($paymentId) {//true - this is object
         <link rel="stylesheet" href="/public/assets/styles/noscript.css<?= '?v=' . $site['versionApp'] ?>">
     </noscript>
 
-    <?php if ($paymentStatus['status'] === 'pending'): ?>
+    <?php if ($paymentStatus['status'] === 'pending' || $paymentStatus['status'] === 'unknown'): ?>
         <meta http-equiv="refresh" content="10">
     <?php endif; ?>
 </head>
@@ -220,7 +223,7 @@ if ($paymentId) {//true - this is object
 
                     <!-- action buttons -->
                     <div class="flex flex-col gap-4">
-                        <?php if ($paymentStatus['status'] === 'pending' || ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid'])): ?>
+                        <?php if ($paymentStatus['status'] === 'pending' || $paymentStatus['status'] === 'unknown' || ($paymentStatus['status'] === 'succeeded' && !$paymentStatus['paid'])): ?>
                             <button onclick="location.reload()"
                                 class="flex font-bold bg-gradient-to-r from-yellow-500/20 to-yellow-500/5 border border-yellow-500/30 justify-center items-center gap-2 px-6 py-4 rounded-full cursor-pointer hover:border-yellow-500/50 transition-colors">
                                 <i class="fa fa-refresh"></i> <?= $t('refresh_status') ?>

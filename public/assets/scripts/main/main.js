@@ -161,7 +161,7 @@ $(function () {
             + '<span class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0"><i class="fa-solid fa-receipt text-green-400 text-sm"></i></span>'
             + '<span class="flex-1 min-w-0"><span class="block font-semibold text-[white] tabular-nums">' + escHtml(amt) + '</span>'
             + '<span class="block text-xs text-gray-500 tabular-nums">' + escHtml(p.date || '') + '</span></span>'
-            + '<a href="/api/payment/receipt?id=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener" class="shrink-0 text-xs font-medium px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 transition-colors">' + escHtml($box.data('receipt')) + ' <i class="fa-solid fa-arrow-up-right-from-bracket text-[10px]"></i></a>'
+            + '<a href="/api/payment/receipt?id=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener" class="shrink-0 text-xs font-medium px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 transition-colors">' + escHtml($box.data('receipt')) + ' <i class="fa-solid fa-download text-[10px]"></i></a>'
             + '</div>';
         }).join(''));
       })
