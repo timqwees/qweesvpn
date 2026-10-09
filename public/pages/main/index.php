@@ -448,17 +448,17 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                                     <img decoding="async" loading="lazy"
                                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_desktop.svg"
                                                         alt=""
-                                                        class="h-6 opacity-70">
+                                                        class="h-6 opacity-70 invert">
                                                 <?php else: ?>
                                                     <img decoding="async"
                                                         src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/install_mobile.svg"
                                                         alt="" loading="lazy"
-                                                        class="h-6 opacity-70">
+                                                        class="h-6 opacity-70 invert">
                                                 <?php endif; ?>
                                                 <span class="text-sm font-semibold text-center flex-1"><?= $t('install_btn') ?> VPN</span>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
-                                                    alt="" class="h-5 opacity-60">
+                                                    alt="" class="h-5 opacity-60 invert">
                                             </li>
                                         </a>
                                     <?php else: ?>
@@ -468,11 +468,11 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/buy.svg"
                                                     alt="buy" loading="lazy"
-                                                    class="h-6 opacity-70">
+                                                    class="h-6 opacity-70 invert">
                                                 <span class="text-sm font-semibold text-center flex-1"><?= $t('buy') ?> <?= $t('subscription') ?></span>
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
-                                                    alt="" class="h-5 opacity-60">
+                                                    alt="" class="h-5 opacity-60 invert">
                                             </li>
                                         </a>
                                     <?php endif; ?>

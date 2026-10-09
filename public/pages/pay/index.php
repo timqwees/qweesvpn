@@ -200,7 +200,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="1month" class="sr-only peer"/>
+                                        <input type="radio" name="period" value="1month" class="sr-only peer"/>
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
@@ -224,7 +224,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="3months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="3months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
@@ -247,7 +247,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="6months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="6months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
@@ -271,7 +271,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="12months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="12months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse" data-theme-invert>
                                         </div>
@@ -295,7 +295,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 1 месяц -->
                 <section data-section="next_1"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
@@ -454,7 +454,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 6 месяцев -->
                 <section data-section="next_3"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
@@ -612,7 +612,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                 </section>
 
                 <section data-section="next_6"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
@@ -771,7 +771,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 12 месяцев -->
                 <section data-section="next_12"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
@@ -930,7 +930,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- ОПЛАТА -->
                 <section data-section="finish"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-64 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center flex-col gap-4 items-center mb-6">
                         <div class="bg_active relative flex items-center justify-center p-6 aspect-square">
@@ -1065,7 +1065,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
             <div class="sm:hidden w-full text-white" data-pay-layout="mobile">
                 <!-- main -->
                 <section data-section="main"
-                    class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -1142,7 +1142,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="1month" class="sr-only peer" />
+                                        <input type="radio" name="period" value="1month" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1166,7 +1166,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="3months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="3months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1189,7 +1189,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="6months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="6months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1213,7 +1213,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                                     </div>
                                     <!-- radio button -->
                                     <div class="flex items-center justify-center">
-                                        <input type="radio" name="subscription" value="12months" class="sr-only peer" />
+                                        <input type="radio" name="period" value="12months" class="sr-only peer" />
                                         <div
                                             class="w-6 h-6 rounded-full border-2 border-white/50 relative peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:absolute peer-checked:after:top-1/2 peer-checked:after:left-1/2 peer-checked:after:-translate-x-1/2 peer-checked:after:-translate-y-1/2 peer-checked:after:w-3.5 peer-checked:after:h-3.5 peer-checked:after:rounded-full peer-checked:after:bg-gradient-to-r peer-checked:after:from-white/50 peer-checked:after:to-white/20 peer-checked:after:animate-pulse">
                                         </div>
@@ -1233,7 +1233,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 1 месяц -->
                 <section data-section="next_1"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -1392,7 +1392,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 6 месяцев -->
                 <section data-section="next_3"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -1550,7 +1550,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
                 </section>
 
                 <section data-section="next_6"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -1709,7 +1709,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!-- на 12 месяцев -->
                 <section data-section="next_12"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -1868,7 +1868,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 <!--  ОПЛАТА -->
                 <section data-section="finish"
-                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[95px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
+                    class="hidden overflow-hidden relative flex flex-col gap-2 justify-between pt-[32px] pb-4 box-border w-full min-h-[100dvh] px-4 bg-gradient-to-t from-black via-green-950 to-black">
                     <!-- icon -->
                     <div class="mobile w-full flex justify-center items-center">
                         <div class="bg_active relative flex items-center justify-center p-3 aspect-square">
@@ -2043,7 +2043,7 @@ $ft12 = array_map(fn($price) => $price * 12, $f12);
 
                 // Выбор периода — запоминаем целевую секцию в [data-main]
                 $('[data-select-section]').on('click', function () {
-                    var sectionId = $(this).attr('data-toggle-section');
+                    var sectionId = $(this).attr('data-select-section');
                     var $layout = $(this).closest('[data-pay-layout]');
                     $layout.find('[data-main]').attr('data-toggle-section', sectionId);
                     // Период сам по себе не тариф: preselect первый тариф секции,

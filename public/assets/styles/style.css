@@ -1188,3 +1188,40 @@ li.gradient-border:last-child {
 [data-subwatch][hidden] {
     display: none !important;
 }
+/* выбранный тариф/способ оплаты: чистый CSS вместо длинных peer-checked
+   цепочек (CDN их собирает ненадёжно — выбор не подсвечивался).
+   Точка всегда в DOM и пружинит scale — появление плавное. */
+input[name="subscription"] ~ div,
+input[name="period"] ~ div,
+input[name="payment-desktop"] ~ div,
+input[name="payment-mobile"] ~ div {
+    transition: border-color 0.2s ease;
+}
+input[name="subscription"] ~ div::after,
+input[name="period"] ~ div::after,
+input[name="payment-desktop"] ~ div::after,
+input[name="payment-mobile"] ~ div::after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.875rem;
+    height: 0.875rem;
+    border-radius: 9999px;
+    background: #4ade80;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+input[name="subscription"]:checked ~ div,
+input[name="period"]:checked ~ div,
+input[name="payment-desktop"]:checked ~ div,
+input[name="payment-mobile"]:checked ~ div {
+    border-color: #4ade80;
+}
+input[name="subscription"]:checked ~ div::after,
+input[name="period"]:checked ~ div::after,
+input[name="payment-desktop"]:checked ~ div::after,
+input[name="payment-mobile"]:checked ~ div::after {
+    transform: translate(-50%, -50%) scale(1);
+}
