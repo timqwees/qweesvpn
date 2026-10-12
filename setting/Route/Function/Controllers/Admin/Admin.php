@@ -126,7 +126,7 @@ class Admin extends AdminAuth
         }
         $id = 1;
         foreach (self::$ADMIN_USERS as $admin) $id = max($id, $admin['id'] + 1);//новый id
-        self::$ADMIN_USERS[] = ['id' => $id, 'username' => $username, 'password' => $password, 'role' => $role, 'session_ver' => 1];
+        self::$ADMIN_USERS[] = ['id' => $id, 'username' => $username, 'password' => self::hashPassword($password), 'role' => $role, 'session_ver' => 1];
         $this->saveUsers();//пишем в файл трейта
         $rows = (new GetUsers())->getUsers();
         $rows[] = ['username' => $username, 'role' => $role, 'permissions' => self::rolePermissions($role)];
@@ -192,7 +192,7 @@ class Admin extends AdminAuth
         }
         if ($idx === null) return ['status' => 'error', 'message' => 'Сотрудник не найден'];
         self::$ADMIN_USERS[$idx]['username'] = $newUsername;
-        if ($password !== '') self::$ADMIN_USERS[$idx]['password'] = $password;
+        if ($password !== '') self::$ADMIN_USERS[$idx]['password'] = self::hashPassword($password);
         self::$ADMIN_USERS[$idx]['session_ver'] = (int) (self::$ADMIN_USERS[$idx]['session_ver'] ?? 1) + 1;
         $this->saveUsers();
         $rows = (new GetUsers())->getUsers();
@@ -228,10 +228,44 @@ class Admin extends AdminAuth
     {
         foreach (self::$ADMIN_USERS as $k => $admin) {
             if (!isset($admin['session_ver'])) self::$ADMIN_USERS[$k]['session_ver'] = 1;
-        }        $file = __DIR__ . '/Users/Users.php';
+        }
+        $file = __DIR__ . '/Users/Users.php';
         $export = var_export(array_values(self::$ADMIN_USERS), true);
         file_put_contents($file, "<?php declare(strict_types=1);\n\nnamespace Setting\\Route\\Function\\Controllers\\Admin\\Users;\n\ntrait Users {\n\n\tpublic static array \$ADMIN_USERS = {$export};\n}\n\n?>");
         if (function_exists('opcache_invalidate')) opcache_invalidate($file, true);//сброс кэша
+    }
+
+    /** Хеш пароля (новые и сменённые хранятся только так). */
+    public static function hashPassword(string $password): string
+    {
+        return password_hash($password, PASSWORD_DEFAULT);
+    }
+
+    /**
+     * Проверка пароля: хеш через password_verify, legacy-plaintext — строгим
+     * сравнением с флагом needRehash (первый успешный вход перехеширует).
+     * @return array{ok:bool,rehash:bool}
+     */
+    public static function verifyPassword(string $stored, string $input): array
+    {
+        if ($input === '') return ['ok' => false, 'rehash' => false];
+        $info = password_get_info($stored);
+        if (($info['algo'] ?? 0) !== 0) {
+            $ok = password_verify($input, $stored);
+            return ['ok' => $ok, 'rehash' => $ok && password_needs_rehash($stored, PASSWORD_DEFAULT)];
+        }
+        return ['ok' => hash_equals($stored, $input), 'rehash' => $input !== '' && hash_equals($stored, $input)];
+    }
+
+    /** Перехешировать пароль сотрудника в новый формат (тихая миграция при входе). */
+    public function rehashPassword(string $username, string $password): void
+    {
+        foreach (self::$ADMIN_USERS as $k => $admin) {
+            if (strtolower($admin['username'] ?? '') === strtolower($username)) {
+                self::$ADMIN_USERS[$k]['password'] = self::hashPassword($password);
+            }
+        }
+        $this->saveUsers();
     }
 
     // === лог действий рабочих ===

@@ -43,10 +43,6 @@ interface InterfaceChat
 
 	public function markRead(string $uniID): bool;
 
-	public function getUnreadCount(string $uniID): int;
-
-	public function isClosed(string $uniID): bool;
-
 	public function isOnline(string $uniID): bool;
 
 	public function sendPhoto(string $uniID, string $name): bool;

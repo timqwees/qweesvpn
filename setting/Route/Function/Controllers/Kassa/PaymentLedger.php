@@ -50,6 +50,19 @@ class PaymentLedger
         self::ensureMethodColumn();
         $id = (string) ($p['payment_id'] ?? '');
         if ($id === '') return false;
+        // Пустые method/tariff/description не затирают уже записанные (добивка идёт без них).
+        if (($p['method'] ?? '') === '' || ($p['tariff'] ?? '') === '' || ($p['description'] ?? '') === '') {
+            try {
+                $ex = Database::send('SELECT method, tariff, description FROM qwees_payments WHERE payment_id = ? LIMIT 1', [$id]);
+            } catch (\Throwable) {
+                $ex = null;
+            }
+            if (\is_array($ex) && isset($ex[0])) {
+                foreach (['method', 'tariff', 'description'] as $k) {
+                    if (($p[$k] ?? '') === '') $p[$k] = (string) ($ex[0][$k] ?? '');
+                }
+            }
+        }
         $params = [
             $id,
             (string) ($p['uniID'] ?? ''),
@@ -78,6 +91,19 @@ class PaymentLedger
             );
         }
         return $res !== false;
+    }
+
+    /** Платёж уже закрыт как успешный (защита от двойных наград при повторном опросе). */
+    public static function wasSucceeded(string $paymentId): bool
+    {
+        if ($paymentId === '') return false;
+        try {
+            self::ensureTable();
+            $r = Database::send('SELECT status FROM qwees_payments WHERE payment_id = ? LIMIT 1', [$paymentId]);
+        } catch (\Throwable) {
+            return false;
+        }
+        return (($r[0]['status'] ?? '') === 'succeeded');
     }
 
     /** История чеков пользователя, новые сверху. */

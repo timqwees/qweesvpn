@@ -148,11 +148,20 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         </div>
                         <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5 flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-percent text-blue-400"></i>
+                                <i class="fa-solid fa-wallet text-green-400"></i>
                             </div>
                             <div class="min-w-0">
-                                <div class="text-xs text-gray-500">Конверсия в подписку</div>
-                                <div class="text-2xl font-bold text-blue-400"><span data-st="convRate">…</span></div>
+                                <div class="text-xs text-gray-500">Прибыль в месяц</div>
+                                <div class="text-2xl font-bold text-green-400"><span data-st="mrr">…</span>₽</div>
+                            </div>
+                        </div>
+                        <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5 flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-user-plus text-purple-400"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-xs text-gray-500">Новых за сегодня</div>
+                                <div class="text-2xl font-bold text-purple-400"><span data-st="dailyNewUsers">…</span></div>
                             </div>
                         </div>
                     </div>
@@ -211,6 +220,11 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     <?php if ($groups->isPermission($adminUsername,'chat')): ?>
                     <button data-toggle-section="chat" class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-300 text-sm hover:border-green-400 hover:text-green-400 transition-all whitespace-nowrap">
                         <i class="fa-solid fa-comments text-gray-500"></i><span>Открыть чат</span>
+                    </button>
+                    <?php endif; ?>
+                    <?php if ($groups->isPermission($adminUsername,'logs')): ?>
+                    <button data-toggle-section="logs" class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-300 text-sm hover:border-green-400 hover:text-green-400 transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-terminal text-gray-500"></i><span>Логи</span>
                     </button>
                     <?php endif; ?>
                     <?php if ($groups->isPermission($adminUsername,'add_user')): ?>
@@ -3156,14 +3170,13 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     window.__adminStats = null;
                     window.__roi30 = null;
                     window.__roi365 = null;
-                    function fillStats(client) {
+                    function fillStats(client, financial) {
                         var money = function (v) { return Number(v || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
                         $('[data-st]').each(function () {
                             var k = $(this).attr('data-st'), v = client[k];
                             $(this).text(k === 'avgPrice' || k === 'maxPrice' ? money(v) : (v ?? '—'));
                         });
-                        var tot = Number(client.totalUsers || 0);
-                        $('[data-st="convRate"]').text(tot > 0 ? (Number(client.usersWithSubscriptions || 0) / tot * 100).toFixed(1) + '%' : '—');
+                        $('[data-st="mrr"]').text(money(financial.mrr));
                         $('[data-st]').removeClass('animate-pulse');
                         $.ajax({
                             url: '/api/admin/overview', method: 'GET', dataType: 'json', timeout: 60000,
@@ -3199,7 +3212,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         success: function (d) {
                             if (!d || d.status !== 'ok') return;
                             window.__adminStats = d;
-                            fillStats(d.client || {});
+                            fillStats(d.client || {}, d.financial || {});
                             ensureCharts();
                         }
                     });

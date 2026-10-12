@@ -3,7 +3,7 @@ use Setting\Route\Function\Functions;
 use App\Config\Session;
 $site = Functions::site();
 $adminSession = Session::init('admin');
-if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['auth'] === true) {
+if (is_array($adminSession) && !empty($adminSession['auth'][0])) {
     \App\Models\Network\Network::onRedirect('/admin');
 }
 ?>
@@ -102,7 +102,8 @@ if (is_array($adminSession) && isset($adminSession['auth']) && $adminSession['au
             let container = ((newContainer = document.createElement('div')) => (newContainer.id = 'notification-container', newContainer.className = 'fixed right-2 top-2 z-[999] flex flex-col gap-2', document.body.appendChild(newContainer), newContainer))();
             const element = container.appendChild(document.createElement('div'));
             element.className = `px-6 py-3 rounded-lg text-white z-50 transform translate-x-full transition-transform duration-300 bg-red-500`;
-            element.innerHTML = '<i class="fa-solid fa-info-circle"></i> ' + msg;
+            element.innerHTML = '<i class="fa-solid fa-info-circle"></i> ';
+            element.appendChild(document.createTextNode(String(msg ?? '')));
             setTimeout(() => element.classList.remove('translate-x-full'), 100);
             setTimeout(() => element.classList.add('translate-x-full'), 4100);
             setTimeout(() => (element.remove(), container.children.length || container.remove()), 4400);

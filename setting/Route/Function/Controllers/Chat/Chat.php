@@ -137,26 +137,6 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 		return $total;
 	}
 
-	public function getUnreadCount(string $uniID) : int
-	{
-		if ($uniID === '') return 0;//пустого не берем
-		if (!\is_array($this->data)) return 0;//это массив
-		$count = 0;
-		foreach ($this->dialog($uniID) as $value) {//пробежимся по сообщениям
-			if (($value['sender_type'] ?? '') === 'user' && empty($value['is_read'])) $count++;//юзер написал, админ еще не читал
-		}
-		return $count;
-	}
-
-	public function isClosed(string $uniID) : bool
-	{
-		if ($uniID === '') return false;//пустого не берем
-		if (!\is_array($this->data)) return false;//это массив
-		$dialog = $this->dialog($uniID);
-		if (empty($dialog)) return false;
-		return $this->isClosedDialog($dialog);
-	}
-
 	public function isOnline(string $uniID) : bool
 	{
 		if ($uniID === '') return false;//пустого не берем
@@ -357,6 +337,7 @@ class Chat implements InterfaceChat, InterfaceChatAdmin
 			$msg = $this->makeMessage($dialog, $sender, $receiver, $message, $read, $extra);
 			$msg['uniID'] = $uniID;
 			$dialog[] = $msg;//новое сообщение
+			if (\count($dialog) > 300) $dialog = \array_slice($dialog, -300);//диалог без bounds не растёт
 			$data[$uniID] = $dialog;
 		});
 	}

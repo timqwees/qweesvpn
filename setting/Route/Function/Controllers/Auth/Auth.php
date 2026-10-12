@@ -51,7 +51,7 @@ class Auth extends Network
             echo json_encode(['success' => false, 'error' => 'Слишком много запросов кода. Подождите 15 минут.']);
             return;
         }
-        $code = mt_rand(1000, 9999);
+        $code = random_int(1000, 9999);
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
             \sprintf("[%s] [АВТОРИЗАЦИЯ - КОД] Код отправлен **** на %s\n", date('Y-m-d H:i:s'), $email),
@@ -64,7 +64,8 @@ class Auth extends Network
             return;
         }
         self::rememberCode($email, (string) $code);
-        echo json_encode(['success' => true, 'code' => $code]);
+        // Код в ответ НЕ отдаём: иначе вход сводится к чтению JSON без почты.
+        echo json_encode(['success' => true]);
     }
 
     // Есть ли такой email. POST /auth/find.
@@ -158,7 +159,7 @@ class Auth extends Network
         if (!empty($exists)) {
             return ['success' => false, 'message' => 'Email уже существует'];
         }
-        $uniID = $userData['uniID'] ?? uniqid('qws');
+        $uniID = $userData['uniID'] ?? bin2hex(random_bytes(4));
         $myreferCode = $userData['myrefer'] ?? (new Refer())->generateCode();
         try {
             $saved = Database::transaction(function () use ($userData, $uniID, $myreferCode) {

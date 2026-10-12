@@ -191,6 +191,10 @@ Routes::get('/api/chat/photo', function () {
     $name = (string) ($_GET['f'] ?? '');
     $isAdmin = (bool) (Session::init('admin')['auth'][0] ?? false);
     $uniID = $isAdmin ? '' : (string) (Session::init('user')['uniID'] ?? '');
+    if (!$isAdmin && $uniID === '') {//гостям фото не отдаём
+        header(($_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1') . ' 404 Not Found');
+        exit;
+    }
     $path = (new Chat())->photoPath($name, $uniID);
     if ($path === '') {
         header(($_SERVER['SERVER_PROTOCOL'] ?? 'HTTP/1.1') . ' 404 Not Found');

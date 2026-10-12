@@ -9,7 +9,7 @@ trait Users {
   array (
     'id' => 1,
     'username' => 'timqwees',
-    'password' => 'timqwees1220066$',
+    'password' => '$2y$12$nJ6lruVydNZ5KJAQ.BK7GuthmgRklIoLW508bT8mmVt3NmrsF8Qiy',
     'role' => 'admin',
     'session_ver' => 1,
   ),

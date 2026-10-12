@@ -460,6 +460,7 @@ $(function () {
                     + '</div>'
                     + '<div class="border border-white/10 rounded-lg px-3.5 py-2 bg-white/[0.02]"><div class="text-[11px] uppercase text-gray-500 mb-1" style="letter-spacing:.14em">Плательщик</div>'
                     + row('Имя', d.client_name || d.uniID || '—')
+                    + row('ID клиента', d.uniID || '—')
                     + row('Email', d.client_email || '—')
                     + row('Создан', d.created_at || '—')
                     + row('Оплачен', d.captured_at || '—')
@@ -710,10 +711,5 @@ $(function () {
         if ($(e.target).closest('[data-toggle-section]').length) setTimeout(tick, 300);
     });
     setInterval(tick, 5000);
-    setInterval(function () {
-        $('[data-admin-chat]').each(function () {
-            if (this.dataset.selected && isVisible(this)) loadThread(this);
-        });
-    }, 3000);
 });
 </script>

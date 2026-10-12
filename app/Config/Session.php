@@ -145,6 +145,7 @@ class Session
 
     /**
      * Ленивая загрузка хранилища из cookie
+     * Подпись HMAC проверяется всегда: чужую/подправленную куку не принимаем.
      */
     private static function loadStore(bool $isAdmin): void
     {
@@ -152,29 +153,54 @@ class Session
             if (self::$adminData !== null) {
                 return;
             }
-            self::$adminData = [];
-            if (!empty($_COOKIE[self::$adminCookieName])) {
-                $tmp = json_decode($_COOKIE[self::$adminCookieName], true);
-                if (is_array($tmp)) {
-                    self::$adminData = $tmp;
-                }
-            }
+            self::$adminData = self::verified($_COOKIE[self::$adminCookieName] ?? '');
             return;
         }
         if (self::$data !== null) {
             return;
         }
-        self::$data = [];
-        if (!empty($_COOKIE[self::$cookieName])) {
-            $tmp = json_decode($_COOKIE[self::$cookieName], true);
-            if (is_array($tmp)) {
-                self::$data = $tmp;
-            }
+        self::$data = self::verified($_COOKIE[self::$cookieName] ?? '');
+    }
+
+    /** Секрет подписи (генерируется один раз в .env, недостающий — создаём). */
+    private static function secret(): string
+    {
+        $s = (string) ($_ENV['SESSION_SECRET'] ?? '');
+        if ($s !== '') return $s;
+        $root = dirname(__DIR__, 2);
+        $envFile = $root . '/.env';
+        $s = bin2hex(random_bytes(32));
+        if (is_writable($root) && (!is_file($envFile) || is_writable($envFile))) {
+            @file_put_contents($envFile, "\nSESSION_SECRET=\"$s\"\n", FILE_APPEND);
+            $_ENV['SESSION_SECRET'] = $s;
+            return $s;
         }
+        return $s;//некуда сохранить — подпись живёт до рестарта процесса
+    }
+
+    /** Проверка подписи, возврат данных или [] при любом сомнении. */
+    private static function verified($raw): array
+    {
+        if (!\is_string($raw) || $raw === '') return [];
+        $data = json_decode($raw, true);
+        if (!\is_array($data) || !isset($data['_sig']) || !\is_string($data['_sig'])) return [];
+        $sig = $data['_sig'];
+        unset($data['_sig']);
+        $expect = hash_hmac('sha256', (string) json_encode($data, JSON_UNESCAPED_UNICODE), self::secret());
+        if (!hash_equals($expect, $sig)) return [];
+        return $data;
+    }
+
+    /** Подпись полезной нагрузки. */
+    private static function sign(array $data): array
+    {
+        unset($data['_sig']);
+        $data['_sig'] = hash_hmac('sha256', (string) json_encode($data, JSON_UNESCAPED_UNICODE), self::secret());
+        return $data;
     }
 
     /**
-     * Записывает cookie
+     * Записывает cookie (с подписью HMAC + SameSite=Lax)
      * @param bool $all_remove удалить cookie
      * @param bool $isAdmin чьё хранилище пишем
      */
@@ -197,20 +223,32 @@ class Session
             return true;
         }
 
-        $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        $json = json_encode(self::sign(\is_array($payload) ? $payload : []), JSON_UNESCAPED_UNICODE);
         if ($json === false) {
             return false;
         }
 
-        @setcookie(
-            $cookie,
-            $json,
-            new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + $lifetime,
-            '/',
-            '',
-            false,
-            true
-        );
+        $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        if (\PHP_VERSION_ID >= 70300) {
+            @setcookie($cookie, $json, [
+                'expires' => new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + $lifetime,
+                'path' => '/',
+                'secure' => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ]);
+        } else {
+            @setcookie(
+                $cookie,
+                $json,
+                new DateTime('now', new DateTimeZone('Europe/Moscow'))->getTimestamp() + $lifetime,
+                '/',
+                '',
+                $secure,
+                true
+            );
+        }
 
         return true;
     }

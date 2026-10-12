@@ -147,7 +147,6 @@ class Relocation
 
     public static function preview(string $target): array
     {
-        self::ensurePermission();
         $target = strtolower(trim($target));
         $codes = ServerNetwork::getServerCodes();
         if (!\in_array($target, $codes, true)) return ['status' => 'error', 'message' => 'Нет такого сервера'];
@@ -185,6 +184,13 @@ class Relocation
     {
         $st = self::state();
         if (($st['status'] ?? 'idle') !== 'running') return ['status' => 'ok', 'state' => $st];
+        // Один тик за раз: параллельный опрос второй вкладки получает busy, а не двоит переносы.
+        $lockFp = @fopen(self::FILE . '.lock', 'c+');
+        if ($lockFp !== false && !flock($lockFp, LOCK_EX | LOCK_NB)) {
+            fclose($lockFp);
+            return ['status' => 'ok', 'state' => self::state(), 'busy' => true];
+        }
+        try {
         $target = (string) ($st['target'] ?? '');
         $cands = self::candidates();
         $pending = array_values(array_filter($cands, fn($c) => $c['server'] !== $target));
@@ -228,6 +234,12 @@ class Relocation
             $st['finished_at'] = date('Y-m-d H:i:s');
             self::saveState($st);
             (new Admin())->LoggerCRM("переезд на $target завершён: ok {$st['ok']}, ошибок " . \count($st['failed'] ?? []));
+        }
+        } finally {
+            if (isset($lockFp) && $lockFp !== false) {
+                flock($lockFp, LOCK_UN);
+                fclose($lockFp);
+            }
         }
         return ['status' => 'ok', 'state' => $st, 'rest' => $rest];
     }
@@ -343,16 +355,4 @@ class Relocation
         return ['checked' => true, 'exposed' => true, 'url' => 'setting/*.json, .env'];
     }
 
-    private static function ensurePermission(): void
-    {
-        $groups = new Groups();
-        foreach ((array) (new GetUsers())->getUsers() as $u) {
-            $name = (string) ($u['username'] ?? '');
-            if ($name === '') continue;
-            if (!$groups->isPermission($name, 'main')) continue;
-            foreach (['relocation', 'servers'] as $perm) {
-                if (!$groups->isPermission($name, $perm)) $groups->addPermission($name, $perm);
-            }
-        }
-    }
 }

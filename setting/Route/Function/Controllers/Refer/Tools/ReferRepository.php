@@ -55,7 +55,12 @@ class ReferRepository implements InterfaceReferRepository
 
     public function bindReferral(int $userId, string $code, int $referrerId): bool
     {
-        Database::send('UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ?', [$code, $referrerId, $userId]);
+        // Атомарно: побеждает первая привязка (параллельная вторая видит 0 строк и откатывается).
+        $ok = Database::send(
+            'UPDATE qwees_users SET refer = ?, refer_id = ? WHERE id = ? AND (refer IS NULL OR refer = ?)',
+            [$code, $referrerId, $userId, '']
+        );
+        if ($ok === false) return false;
         $check = $this->findUserById($userId);
         return $check !== null && ($check['refer'] ?? '') === $code && (int) ($check['refer_id'] ?? 0) === $referrerId;
     }
@@ -78,13 +83,13 @@ class ReferRepository implements InterfaceReferRepository
         if (Database::isMysql()) {
             return (bool) Database::send(
                 "INSERT INTO qwees_refer ($cols) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE takes_left = VALUES(takes_left)",
+                 ON DUPLICATE KEY UPDATE code = VALUES(code)",
                 $params
             );
         }
         return (bool) Database::send(
             "INSERT INTO qwees_refer ($cols) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(referral_uniID) DO UPDATE SET takes_left = excluded.takes_left",
+             ON CONFLICT(referral_uniID) DO UPDATE SET code = excluded.code",
             $params
         );
     }
@@ -170,22 +175,22 @@ class ReferRepository implements InterfaceReferRepository
      */
     public function useTake(string $referralUniID): int
     {
+        // Атомарный декремент: конкурент видит 0 строк и получает -1, двойной траты нет.
+        $ok = Database::send(
+            'UPDATE qwees_refer SET takes_left = takes_left - 1 WHERE referral_uniID = ? AND takes_left > 0',
+            [$referralUniID]
+        );
+        if ($ok === false) return -1;
         $row = $this->getReferralRow($referralUniID);
-        $left = (int) ($row['takes_left'] ?? 0);
-        if ($row === null || $left <= 0) {
-            return -1;
-        }
-        Database::send('UPDATE qwees_refer SET takes_left = ? WHERE referral_uniID = ?', [$left - 1, $referralUniID]);
-        return $left - 1;
+        return (int) ($row['takes_left'] ?? 0);
     }
 
     /** +1 приглашённый. Возвращает новый счётчик. */
     public function incrementReferrer(int $referrerId): int
     {
+        Database::send('UPDATE qwees_users SET refer_count = refer_count + 1 WHERE id = ?', [$referrerId]);
         $current = $this->findUserById($referrerId);
-        $count = (int) ($current['refer_count'] ?? 0) + 1;
-        Database::send('UPDATE qwees_users SET refer_count = ? WHERE id = ?', [$count, $referrerId]);
-        return $count;
+        return (int) ($current['refer_count'] ?? 0);
     }
 
     public function applyReferralDiscount(int $userId, int $percent, int $uses = 0): int
@@ -213,20 +218,19 @@ class ReferRepository implements InterfaceReferRepository
         if ($discount <= 0) {
             return ['used' => false, 'left' => 0];
         }
-        $left = (int) ($user['discount_uses'] ?? 0);
-        if ($left > 0) {
-            $left--;
-            if ($left > 0) {
-                Database::send('UPDATE qwees_users SET discount_uses = ? WHERE uniID = ?', [$left, $uniID]);
-            } else {
-                Database::send('UPDATE qwees_users SET discount_uses = 0, discount_percent = 0 WHERE uniID = ?', [$uniID]);
-            }
-            $this->log->log('СКИДКА-ИСПОЛЬЗОВАНА', ['uniID' => $uniID, 'discount' => $discount, 'left' => $left]);
-            return ['used' => true, 'left' => $left];
+        // Атомарное списание: конкурент видит 0 строк и уходит в legacy-ветку без двойной траты.
+        $spent = Database::send('UPDATE qwees_users SET discount_uses = discount_uses - 1 WHERE uniID = ? AND discount_uses > 0', [$uniID]);
+        if ($spent === false) {
+            Database::send('UPDATE qwees_users SET discount_percent = 0 WHERE uniID = ? AND discount_percent > 0', [$uniID]);
+            $this->log->log('СКИДКА-СПИСАНА', ['uniID' => $uniID, 'discount' => $discount, 'reason' => 'legacy(без счётчика)']);
+            return ['used' => true, 'left' => 0];
         }
-        Database::send('UPDATE qwees_users SET discount_percent = 0 WHERE uniID = ? AND discount_percent > 0', [$uniID]);
-        $this->log->log('СКИДКА-СПИСАНА', ['uniID' => $uniID, 'discount' => $discount, 'reason' => 'legacy(без счётчика)']);
-        return ['used' => true, 'left' => 0];
+        $left = (int) ($this->findUserByUniID($uniID)['discount_uses'] ?? 0);
+        if ($left <= 0) {
+            Database::send('UPDATE qwees_users SET discount_percent = 0 WHERE uniID = ?', [$uniID]);
+        }
+        $this->log->log('СКИДКА-ИСПОЛЬЗОВАНА', ['uniID' => $uniID, 'discount' => $discount, 'left' => $left]);
+        return ['used' => true, 'left' => max(0, $left)];
     }
 
     public function listReferrals(int $referrerId, int $limit = 50): array

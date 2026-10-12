@@ -2,6 +2,11 @@ $(document).ready(function () {
     const email = $('#email');
     const message_status = $('#message_status');
     const prefix_message_status = '[Внимание] ';
+    const button_email = $('#form_admin_add_user [type="submit"]');
+    function setBorderState($el, ok) {
+        if (ok) $el.removeClass('border-red-500').addClass('border-green-500');
+        else $el.addClass('border-red-500').removeClass('border-green-500');
+    }
 
     // проверка всех полей только в #part1
     $('#form_admin_add_user input').on('input', function () {

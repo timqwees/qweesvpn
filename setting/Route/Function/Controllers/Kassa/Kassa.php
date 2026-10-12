@@ -440,6 +440,19 @@ class Kassa
                     // Конфигурация тарифов (сроки и устройства берутся из PriceConfig)
                     $config = PriceConfig::getTariffConfig()[$tariff] ?? ['days' => 30, 'devices' => 1];
 
+                    // Повторный опрос уже закрытого платежа: леджер уже 'succeeded' —
+                    // награды и выдачу не дублируем, просто подтверждаем.
+                    $pid = (string) $payment->getId();
+                    if ($pid !== '' && PaymentLedger::wasSucceeded($pid)) {
+                        $row = Database::send('SELECT expiry FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+                        $result['subscription_issued'] = true;
+                        $result['subscription_days'] = $config['days'];
+                        $result['subscription_devices'] = $config['devices'];
+                        $result['subscription_end_date'] = (int) ($row[0]['expiry'] ?? 0);
+                        $result['vpn_data'] = ['subscription_url' => self::subscriptionUrl($uniID)];
+                        return $result;
+                    }
+
                     // Проверяем, не была ли уже выдана подписка для этого платежа
                     $existingUserData = Database::send("SELECT status, subscription, expiry FROM qwees_subscriptions WHERE uniID = ?", [$uniID]);
                     $existingUser = $existingUserData[0] ?? null;//получение данных
@@ -448,33 +461,11 @@ class Kassa
                     // Триал/бонус/pending — не «активная платная», а конвертируемые: покупку не блокируем,
                     // остаток дней переносим в выдачу (иначе сгорит в панели, где клиента ещё нет)
                     $carry = self::carryFromRow($existingUser, $nowMs);
-                    $convertible = $carry['convertible'];
                     $carryDays = $carry['days'];
 
-                    if ($existingUser && $existingUser['status'] === 'on' && (int) $existingUser['expiry'] > $nowMs && !$convertible) {
-                        // Подписка уже активна, не создаем новую
-                        file_put_contents(
-                            $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-                            \sprintf(
-                                "[%s] [ПОДПИСКА - ЗАЩИТА] %s: Подписка уже активна до %s, пропуск создания\n",
-                                date('Y-m-d H:i:s'),
-                                $uniID,
-                                date('Y-m-d H:i:s', (int) $existingUser['expiry'] / 1000)
-                            ),
-                            FILE_APPEND
-                        );
-
-                        $result['subscription_issued'] = true;
-                        $result['subscription_days'] = $config['days'];
-                        $result['subscription_devices'] = $config['devices'];
-                        $result['subscription_end_date'] = (int) $existingUser['expiry'];
-                        $result['vpn_data'] = ['subscription_url' => self::subscriptionUrl($uniID)];
-
-                        // Указатель чека в JSON-индекс (идемпотентно; повторный опрос не дублирует)
-                        PaymentIndex::add($uniID, (string) $payment->getId(), date('Y-m-d H:i:s'), (float) ($payment->getAmount()?->getValue() ?? 0));
-
-                        return $result;
-                    }
+                    // Активная платная подписка НЕ блокирует покупку: идём в обычную выдачу,
+                    // панель продлит срок от max(сейчас, текущий expiry), леджер и награды запишутся.
+                    // (carryDays=0 для неконвертируемых — остаток не дублируется.)
 
                     // Создаем VPN подписку (плюс перенос остатка trial/bonus, если был)
                     $xray = new Xray();

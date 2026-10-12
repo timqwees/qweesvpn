@@ -231,35 +231,33 @@ class Network
             return ['status' => 'ok', 'message' => 'Этот сервер уже используется'];
         }
 
-        $oldUrl = rtrim(self::servers()[$oldCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
         $newUrl = rtrim(self::servers()[$newCode]['XUI_URL_SUBSCRIPTION'], '/') . '/' . $uniID;
 
-        // 1. удаляем клиента со старой панели (запись БД пока остаётся)
-        $deleted = Xray::deleteClientFromPanel($uniID);
-        if (($deleted['status'] ?? '') === 'error') {
-            return ['status' => 'error', 'message' => 'Не удалось отвязать клиента от текущего сервера'];
+        // 1. создаём клиента на новой панели (старый ключ жив — даунтайма нет)
+        self::pinServer($newCode);
+        try {
+            $xray = new Xray();
+            $added = $xray->addClient(1, $uniID, max(1, (int) ($sub[0]['count_devices'] ?? 1)), '', $expiryMs);
+        } finally {
+            self::unpinServer();
         }
 
-        // 2. перезаписываем подписку — теперь addClient сам выберет новую панель по субдомену
+        if (!\is_array($added) || ($added['success'] ?? false) !== true) {
+            return ['status' => 'error', 'message' => 'Не удалось создать клиента на новом сервере, старый работает'];
+        }
+
+        // 2. удаляем со старой панели (в БД ещё старый URL — селект попадёт куда надо)
+        $deleted = Xray::deleteClientFromPanel($uniID);
+        if (($deleted['status'] ?? '') === 'error') {
+            return ['status' => 'error', 'message' => 'Создан на новом сервере, но старый ключ не удалён — обновите подписку и напишите в поддержку'];
+        }
+
+        // 3. перезаписываем подписку на новый субдомен
         Database::send(
             'UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
             [$newUrl, $uniID]
         );
         self::forgetSub($uniID);
-
-        // 3. создаём клиента на новой панели с тем же сроком (expiryMs сохраняет остаток дней)
-        $xray = new Xray();
-        $added = $xray->addClient(1, $uniID, max(1, (int) ($sub[0]['count_devices'] ?? 1)), '', $expiryMs);
-
-        if (!\is_array($added) || ($added['success'] ?? false) !== true) {
-            // откат подписки на старый сервер — клиента нужно перевыдать вручную
-            Database::send(
-                'UPDATE qwees_subscriptions SET subscription = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?',
-                [$oldUrl, $uniID]
-            );
-            self::forgetSub($uniID);
-            return ['status' => 'error', 'message' => 'Не удалось создать клиента на новом сервере'];
-        }
 
         file_put_contents(
             $_ENV['LOG_FILE_NAME'] ?? 'qwees.log',

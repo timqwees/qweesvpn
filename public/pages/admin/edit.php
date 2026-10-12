@@ -1,6 +1,7 @@
 <?php
 // Проверяем авторизацию администратора
 \Setting\Route\Function\Controllers\Admin\AdminAuth::auth();
+\Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('database');//чтение любых строк — только с доступом к базе
 
 use App\Models\Network\Network;
 use Setting\Route\Function\Controllers\Admin\AdminDatabase;

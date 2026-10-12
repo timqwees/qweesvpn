@@ -97,7 +97,10 @@ class AdminAuth
                 return;
             }
             foreach (self::$ADMIN_USERS as $admin) {
-                if ($admin['username'] === $username && $admin['password'] === $password) {
+                if (($admin['username'] ?? '') !== $username) continue;
+                $check = \Setting\Route\Function\Controllers\Admin\Admin::verifyPassword((string) ($admin['password'] ?? ''), $password);
+                if ($check['ok']) {
+                    if ($check['rehash']) (new \Setting\Route\Function\Controllers\Admin\Admin())->rehashPassword($username, $password);//тихая миграция с plaintext
                     $adminSession = Session::init('admin');
                     if (!\is_array($adminSession)) {
                         $adminSession = [];

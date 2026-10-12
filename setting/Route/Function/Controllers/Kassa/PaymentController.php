@@ -9,6 +9,17 @@ use Setting\Route\Function\Functions;
 
 class PaymentController
 {
+    /** Возврат на наш сайт после кассы: хост из белого списка + всегда https. */
+    private static function safeReturnUrl(): string
+    {
+        $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        $parts = explode(':', $host, 2);
+        $name = $parts[0];
+        $port = isset($parts[1]) && $parts[1] !== '' ? ':' . preg_replace('/\D/', '', $parts[1]) : '';
+        $ok = \in_array($name, ['qweesvpn.online', 'www.qweesvpn.online', 'localhost', '127.0.0.1'], true);
+        return 'https://' . ($ok ? $name . $port : 'qweesvpn.online') . '/pay/status';
+    }
+
     /**
      * Подготовка данных для запроса на создание платежа
      */
@@ -80,7 +91,8 @@ class PaymentController
                 customerPhone: $data['phone'] ?? null,
                 saveCard: $data['saveCard'] ?? false,
                 paymentMethod: $yookassaPaymentMethod,
-                returnUrl: 'http://' . $_SERVER['HTTP_HOST'] . '/pay/status',
+                // returnUrl — только наш хост и только https (без Host-инъекций и даунгрейда)
+                returnUrl: self::safeReturnUrl(),
                 metadata: [ //заполнение методанных
 		                'first_name' => $user->getFirstname(),
 		                'last_name' => $user->getLastname(),

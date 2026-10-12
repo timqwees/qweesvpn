@@ -197,7 +197,11 @@ class AdminDatabase
     public static function getData(string $table, int $limit = 50, string $orderBy = 'id', string $orderDir = 'ASC'): array
     {
         //SELECT * FROM users ORDER BY name DESC LIMIT 10 (именно name в сторону понижения ток 10 записей)
-        $result = Database::send("SELECT * FROM $table ORDER BY $orderBy $orderDir LIMIT $limit");
+        $t = self::ident($table);
+        $o = self::ident($orderBy);
+        if ($t === '' || $o === '') return [];
+        $limit = max(1, min(200, $limit));
+        $result = Database::send("SELECT * FROM $t ORDER BY $o " . self::orderDir($orderDir) . " LIMIT $limit");
         return is_array($result) ? $result : [];
     }
 
@@ -209,7 +213,9 @@ class AdminDatabase
      */
     public static function getRow(string $table, $id): ?array
     {
-        $result = Database::send("SELECT * FROM $table WHERE id = ? LIMIT 1", [$id]);
+        $t = self::ident($table);
+        if ($t === '') return null;
+        $result = Database::send("SELECT * FROM $t WHERE id = ? LIMIT 1", [$id]);
         return (is_array($result) && !empty($result)) ? $result[0] : null;
     }
 
@@ -294,6 +300,18 @@ class AdminDatabase
         return is_array($result) ? $result : [];
     }
 
+    /** Имя таблицы/колонки в SQL — только [A-Za-z0-9_], иначе пусто (защита от инъекций). */
+    private static function ident(string $name): string
+    {
+        return preg_match('/^[A-Za-z0-9_]+$/', $name) ? "`$name`" : '';
+    }
+
+    /** Направление сортировки — только ASC/DESC. */
+    private static function orderDir(string $dir): string
+    {
+        return strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC';
+    }
+
     /**
      * Подсчитать количество строк в таблице (записей)
      * @param string $table название таблицы
@@ -301,7 +319,9 @@ class AdminDatabase
      */
     public static function getCount(string $table): int
     {
-        $result = Database::send("SELECT COUNT(*) as count FROM $table");
+        $t = self::ident($table);
+        if ($t === '') return 0;
+        $result = Database::send("SELECT COUNT(*) as count FROM $t");
         return (is_array($result) && !empty($result)) ? (int) ($result[0]['count'] ?? 0) : 0;
     }
 
@@ -355,15 +375,19 @@ class AdminDatabase
         if (!in_array($condition, $allowedConditions))
             $condition = '=';
         /**нету условий среди них по умолчанию будем искать сходство*/
+        $t = self::ident($table);
+        $c = self::ident($column);
+        if ($t === '' || $c === '') return [];
+        $limit = max(1, min(200, $limit));
 
         // Для != с пустой строкой используем специальную логику
         if ($condition === '!=' && $value === '') {
-            $result = Database::send("SELECT * FROM $table WHERE $column != '' AND $column IS NOT NULL LIMIT $limit");
+            $result = Database::send("SELECT * FROM $t WHERE $c != '' AND $c IS NOT NULL LIMIT $limit");
             return is_array($result) ? $result : [];
         }
 
         //SELECT * FROM users WHERE name == 'hello' LIMIT 10
-        $result = Database::send("SELECT * FROM $table WHERE $column $condition ? LIMIT $limit", [$value]);
+        $result = Database::send("SELECT * FROM $t WHERE $c $condition ? LIMIT $limit", [$value]);
         return is_array($result) ? $result : [];
     }
 
@@ -381,11 +405,16 @@ class AdminDatabase
             return self::getData($table, $limit);
         }
 
+        $t = self::ident($table);
+        if ($t === '') return [];
+
         $conditions = []; //тут будут сами LIKE запросы, которые вставятся >> WHERE LOWER(col) LIKE '%' . strtolower($query) . '%'
         $params = []; //тут будут параметры которые, которые вставятся в sql запросы ?
 
         foreach ($columns as $col) {
-            $conditions[] = "LOWER($col) LIKE ?"; //будем искать с маленькой буквы все найденные LIKE значения
+            $c = self::ident((string) $col);
+            if ($c === '') continue;
+            $conditions[] = "LOWER($c) LIKE ?"; //будем искать с маленькой буквы все найденные LIKE значения
             $params[] = '%' . strtolower($query) . '%'; //будем искать слово где бы оно не стояло  ..%(...)%..
             /** Мол напоминание себе:
              * %..% -  ищем в любом месте хоть до слова есть имволы или после
@@ -396,7 +425,7 @@ class AdminDatabase
              */
         }
 
-        $result = Database::send("SELECT * FROM $table WHERE " . implode(' OR ', $conditions) . " LIMIT $limit", $params);
+        $result = Database::send("SELECT * FROM $t WHERE " . implode(' OR ', $conditions) . " LIMIT $limit", $params);
         return is_array($result) ? $result : [];
     }
 
@@ -679,12 +708,31 @@ class AdminDatabase
      */
     public static function aggregate(string $table, string $func, string $column = '*', string $where = ''): mixed
     {
-        $sql = "SELECT {$func}({$column}) as result FROM {$table}";
+        $t = self::ident($table);
+        $f = strtoupper($func);
+        if ($t === '' || !\in_array($f, ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'], true)) return 0;
+        $c = $column === '*' ? '*' : self::ident($column);
+        if ($c === '') return 0;
+        // $where — только из кода, не из запроса (сырьё сюда не передаём)
+        $sql = "SELECT {$f}({$c}) as result FROM {$t}";
         if ($where) {
             $sql .= " WHERE {$where}";
         }
         $result = Database::send($sql);
         return $result[0]['result'] ?? 0;
+    }
+
+    public static function aggregateToday(string $table, ?string $where = ''): int
+    {
+        $t = self::ident($table);
+        if ($t === '') return 0;
+        $today = date('Y-m-d');
+        $sql = "SELECT COUNT(*) AS result FROM {$t} WHERE DATE(created_at) = '" . $today . "'";
+        if ($where) {
+            $sql .= " AND " . $where;
+        }
+        $result = Database::send($sql);
+        return (int) ($result[0]['result'] ?? 0);
     }
 
     /**
@@ -750,7 +798,9 @@ class AdminDatabase
         $bannedSubscriptions = (int) ($row['banned'] ?? 0);
         $usersWithSubscriptions = (int) ($row['users'] ?? 0);
 
-        $usersWithoutSubscriptions = max(0, $totalUsers - $usersWithSubscriptions);
+         $usersWithoutSubscriptions = max(0, $totalUsers - $usersWithSubscriptions);
+
+         $newToday = (int) self::aggregateToday('qwees_users');
 
         // Статистика цен — из конфигурации PriceConfig (единый объект тарифов)
         $allPrices = [];
@@ -770,6 +820,7 @@ class AdminDatabase
             'bannedSubscriptions' => $bannedSubscriptions,
             'usersWithSubscriptions' => $usersWithSubscriptions,
             'usersWithoutSubscriptions' => $usersWithoutSubscriptions,
+            'dailyNewUsers' => $newToday,
             'avgPrice' => $avgPrice,
             'maxPrice' => $maxPrice,
             // Для обратной совместимости
@@ -800,6 +851,16 @@ class AdminDatabase
         $totalRevenue = (float) ($rev['total'] ?? 0);
         $subsCount = (int) ($rev['cnt'] ?? 0);
 
+        // MRR (прибыль в месяц) — из кассы за 30 дней
+        $mrr = 0.0;
+        try {
+            $roi30 = \Setting\Route\Function\Controllers\Admin\Finance\Finance::report(30);
+            if (($roi30['status'] ?? '') === 'ok') {
+                $mrr = (float) ($roi30['mrr'] ?? 0);
+            }
+        } catch (\Throwable) {
+        }
+
         // Прибыль по месяцам для графика
         $monthlyRevenueChart = self::getMonthlyRevenueChart();
 
@@ -817,6 +878,7 @@ class AdminDatabase
             'weeklyRevenue' => $weeklyRevenue,
             'dailyRevenue' => $dailyRevenue,
             'totalRevenue' => $totalRevenue,
+            'mrr' => $mrr,
             'avgCheck' => $avgCheck,
             'monthlyRevenueChart' => $monthlyRevenueChart,
             'monthlyUsersChart' => $monthlyUsersChart,

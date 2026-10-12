@@ -114,6 +114,8 @@ class Finance
             'status' => 'ok', 'days' => $days, 'source' => $source,
             'range' => (string) ($rev['range'] ?? ''),
             'cached' => (bool) ($rev['cached'] ?? false),
+            'partial' => (bool) ($rev['partial'] ?? false),
+            'truncated' => (bool) ($rev['truncated'] ?? false),
             'gross' => (float) ($rev['gross'] ?? 0),
             'refunds' => (float) ($rev['refunds'] ?? 0),
             'refunds_count' => (int) ($rev['refunds_count'] ?? 0),

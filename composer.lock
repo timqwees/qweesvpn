@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "44db1c6e2c0c587e62c0e64091022b6e",
+    "content-hash": "021e984b95baa65d235f41a086ed4bcb",
     "packages": [
         {
             "name": "graham-campbell/result-type",
@@ -587,12 +587,12 @@
             "version": "v5.7.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/vlucas/phpdotenv.git",
+                "url": "https://github.com/phpdotenv/phpdotenv.git",
                 "reference": "301c07936b16d88628b126b01d082ba153cf4c40"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vlucas/phpdotenv/zipball/301c07936b16d88628b126b01d082ba153cf4c40",
+                "url": "https://api.github.com/repos/phpdotenv/phpdotenv/zipball/301c07936b16d88628b126b01d082ba153cf4c40",
                 "reference": "301c07936b16d88628b126b01d082ba153cf4c40",
                 "shasum": ""
             },
@@ -668,16 +668,16 @@
         },
         {
             "name": "yoomoney/yookassa-sdk-php",
-            "version": "3.15.1",
+            "version": "3.16.0",
             "source": {
                 "type": "git",
                 "url": "https://git.yoomoney.ru/scm/sdk/yookassa-sdk-php.git",
-                "reference": "70069f008a90b4ae6c5a8a9ff767c202b5855884"
+                "reference": "1b0823a1e119186de5c497963d4cd99e20e5c499"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://git.yoomoney.ru/rest/api/latest/projects/SDK/repos/yookassa-sdk-php/archive?at=refs%2Ftags%2F3.15.1&format=zip",
-                "reference": "70069f008a90b4ae6c5a8a9ff767c202b5855884"
+                "url": "https://git.yoomoney.ru/rest/api/latest/projects/SDK/repos/yookassa-sdk-php/archive?at=refs%2Ftags%2F3.16.0&format=zip",
+                "reference": "1b0823a1e119186de5c497963d4cd99e20e5c499"
             },
             "require": {
                 "ext-curl": "*",
@@ -723,7 +723,7 @@
                 "yookassa",
                 "yoomoney"
             ],
-            "time": "2026-08-13T13:15:46+00:00"
+            "time": "2026-10-06T12:39:08+00:00"
         },
         {
             "name": "yoomoney/yookassa-sdk-validator",
@@ -773,7 +773,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.4",
+        "php": ">=8.1",
         "ext-pdo": "*",
         "ext-json": "*"
     },

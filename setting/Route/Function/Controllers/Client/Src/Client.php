@@ -28,7 +28,7 @@ class Client
         // LEFT JOIN с подписками - сохраняем тот же API.
         // Строка одна: с максимальным expiry (наследие дублей в старых БД без UNIQUE).
         $user = Database::send(
-            'SELECT u.*, s.status as sub_status, s.subscription, s.amount, s.count_days, s.count_devices, s.expiry
+            'SELECT u.*, s.status as sub_status, s.subscription, s.amount, s.count_days, s.count_devices, s.expiry, s.updated_at as sub_updated
              FROM qwees_users u
              LEFT JOIN qwees_subscriptions s ON s.id = (
                  SELECT s2.id FROM qwees_subscriptions s2 WHERE s2.uniID = u.uniID ORDER BY s2.expiry DESC, s2.id DESC LIMIT 1
@@ -38,7 +38,7 @@ class Client
         );
 
         if (empty($user) || empty($user[0]))
-            return ['id' => 0, 'first_name' => '', 'last_name' => '', 'uniID' => '', 'email' => '', 'status' => 'off', 'subscription' => '', 'amount' => 0, 'refer' => '', 'myrefer' => '', 'refer_link' => '', 'refer_id' => 0, 'refer_count' => 0, 'discount_percent' => 0, 'discount_uses' => 0, 'count_days' => 0, 'count_devices' => 0, 'expiry' => 0];
+            return ['id' => 0, 'first_name' => '', 'last_name' => '', 'uniID' => '', 'email' => '', 'status' => 'off', 'subscription' => '', 'amount' => 0, 'refer' => '', 'myrefer' => '', 'refer_link' => '', 'refer_id' => 0, 'refer_count' => 0, 'discount_percent' => 0, 'discount_uses' => 0, 'count_days' => 0, 'count_devices' => 0, 'expiry' => 0, 'updated_at' => ''];
 
         $data = $user[0];
 
@@ -60,7 +60,8 @@ class Client
             'discount_uses' => intval($data['discount_uses'] ?? 0),
             'count_days' => intval($data['count_days'] ?? 0),  // из qwees_subscriptions
             'count_devices' => intval($data['count_devices'] ?? 0),  // из qwees_subscriptions
-            'expiry' => intval($data['expiry'] ?? 0)// из qwees_subscriptions с проверкой истечения (мс)
+            'expiry' => intval($data['expiry'] ?? 0),// из qwees_subscriptions с проверкой истечения (мс)
+            'updated_at' => strval($data['sub_updated'] ?? '')// когда строку подписки трогали в последний раз
         ];
         self::$memo[$uniID] = $out;
         return $out;

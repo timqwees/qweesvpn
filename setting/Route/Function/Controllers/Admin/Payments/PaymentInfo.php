@@ -277,10 +277,13 @@ class PaymentInfo
         $incomeTotal = 0.0;
         $incomeCovered = 0;
         $recent = [];
+        $payErr = 0;
+        $payTruncated = false;
         $cursor = null;
         $pages = 0;
         do {
             $list = self::apiList('payments', $ff($from), $ff($to), $cursor);
+            if (($list['auth_error'] ?? false) || ($list['error'] ?? false)) { $payErr++; break; }
             if ($pages === 0 && ($list['auth_error'] ?? false)) return ['status' => 'error', 'message' => 'Касса: неверные ключи'];
             if ($pages === 0 && ($list['error'] ?? false)) return ['status' => 'error', 'message' => 'Касса недоступна'];
             if ($list['items'] === [] && $list['next'] === null) break;
@@ -323,12 +326,15 @@ class PaymentInfo
             $cursor = $list['next'];
             $pages++;
         } while ($cursor !== null && $pages < self::MAX_PAGES);
+        if ($cursor !== null) $payTruncated = true;//упёрлись в лимит страниц — цифры неполные
         $refunds = 0.0;
         $refundsCount = 0;
+        $refundErr = 0;
         $cursor = null;
         $pages = 0;
         do {
             $list = self::apiList('refunds', $ff($from), $ff($to), $cursor);
+            if (($list['auth_error'] ?? false) || ($list['error'] ?? false)) { $refundErr++; break; }
             if ($list['items'] === [] && $list['next'] === null && $pages === 0) break;
             foreach ($list['items'] as $r) {
                 if (!\is_array($r)) continue;
@@ -340,6 +346,7 @@ class PaymentInfo
             $cursor = $list['next'];
             $pages++;
         } while ($cursor !== null && $pages < self::MAX_PAGES);
+        if ($cursor !== null) $payTruncated = true;//возвраты тоже обрезались
         $net = max(0, $gross - $refunds);
         $commissionActual = $incomeCovered > 0 ? max(0, $gross - $incomeTotal) : null;
         $commission = $commissionActual ?? ($net * max(0, $commissionRate));
@@ -362,6 +369,7 @@ class PaymentInfo
         }
         $data = [
             'status' => 'ok', 'days' => $days, 'cached' => false,
+            'partial' => $payErr > 0 || $refundErr > 0, 'truncated' => $payTruncated,
             'range' => $range['fromStr'] !== '' ? ($range['fromStr'] . ' — ' . $range['toStr']) : ($days . ' дн.'),
             'gross' => round($gross, 2), 'refunds' => round($refunds, 2), 'refunds_count' => $refundsCount,
             'net' => round($net, 2), 'commission' => round($commission, 2),
@@ -389,7 +397,10 @@ class PaymentInfo
         $rows = [
             ['Статус', ($d['paid'] ?? false) ? 'Оплачен' : ($d['pay_status'] ?? '—')],
             ['ID платежа', $d['id'] ?? ''], ['Способ', $d['method'] ?? ''], ['Описание', $d['description'] ?? '—'],
-            ['Тариф', $d['tariff'] ?? '—'], ['Клиент', trim(($d['uniID'] ?? '') . ' ' . ($d['email'] ?? ''))],
+            ['Имя', ($d['client_name'] ?? '') ?: ($d['uniID'] ?? '—')],
+            ['ID клиента (uniID)', $d['uniID'] ?? '—'],
+            ['Email', $d['client_email'] ?? ($d['email'] ?? '—')],
+            ['Тариф', $d['tariff'] ?? '—'],
             ['Дата создания', $d['created_at'] ?? '—'], ['Оплачен', $d['captured_at'] ?? '—'],
             ['Комиссия кассы', ($d['commission'] ?? null) !== null ? $d['commission'] . ' ' . ($d['currency'] ?? 'RUB') : '—'],
             ['К получению', ($d['income'] ?? null) !== null ? $d['income'] . ' ' . ($d['currency'] ?? 'RUB') : '—'],

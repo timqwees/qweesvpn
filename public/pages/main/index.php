@@ -309,10 +309,10 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <div class="flex items-start justify-center gap-6 w-full">
                             <!-- BLOCK-1 => DISPLAY STATUS -->
                             <div
-                                data-reveal class="glow-card bank-glass relative min-h-[600px] flex flex-1 flex-col rounded-2xl overflow-hidden p-8" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>">
+                                data-reveal class="glow-card bank-glass relative min-h-[600px] flex flex-1 flex-col rounded-2xl overflow-hidden p-8" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>" data-sub-uid="<?= htmlspecialchars($user->getUniID()) ?>">
                                 <!-- шапка счёта: статус + локация -->
                                 <div class="flex items-center justify-between w-full">
-                                    <span class="bank-status <?= $vpnStatus === 'active' ? 'text-green-300 border-green-400/25 bg-green-400/10' : 'text-gray-400' ?>">
+                                    <span class="bank-status <?= $vpnStatus === 'active' ? 'text-green-300 border-green-400/25 bg-green-400/10' : 'text-gray-400' ?> text-sm sm:text-base">
                                         <span class="w-2 h-2 rounded-full <?= $vpnStatus === 'active' ? 'bg-green-400' : 'bg-gray-500' ?>"></span>
                                         <?= $vpnStatusObj->getStatusText() ?>
                                     </span>
@@ -337,8 +337,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                         <div class="bank-ticks absolute inset-0 rounded-full"></div>
                                         <div class="bank-ring<?= $ringOff ?> absolute inset-0 rounded-full" style="--pt:<?= $ringPct ?>"></div>
                                         <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                            <div class="bank-num text-5xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
-                                            <div class="bank-label mt-1"><?= $t('days_short') ?> из <?= $periodDays ?></div>
+                                            <div class="bank-num text-6xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
+                                            <div class="bank-label mt-1 text-sm"><?= $t('days_short') ?> из <?= $periodDays ?></div>
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
@@ -353,7 +353,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     </div>
                                 </div>
                                 <div class="mt-6">
-                                    <div class="flex items-center justify-between text-xs mb-1.5">
+        <div class="flex items-center justify-between text-xs sm:text-sm mb-1.5">
                                         <span class="text-gray-400"><?= rtrim($t('valid_until'), ':') ?> <?= $expiryDate ?></span>
                                         <span class="text-gray-300 tabular-nums" data-timeleft>—</span>
                                     </div>
@@ -393,7 +393,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
                             <!-- BLOCK-2 => INFORMATION PANELS -->
                             <div data-reveal data-reveal-delay="100" class="glow-card flex-1 h-full max-w-[350px] p-6 rounded-2xl">
-                                <ul class="flex flex-col gap-4 w-full text-xl">
+                                    <ul class="flex flex-col gap-4 w-full text-xl sm:text-2xl">
                                     <!-- content 1 -->
                                     <li
                                         class="gradient-border flex p-3 justify-between items-center w-full">
@@ -515,7 +515,7 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                         <!-- Header Card -->
                         <div class="flex flex-col gap-6">
                             <div class="flex items-center justify-between">
-                                <h1 class="bank-h1 text-3xl font-bold">
+                        <h1 class="bank-h1 text-4xl font-bold sm:text-5xl">
                                     <?php foreach (mb_str_split($t('profile')) as $letter): ?>
                                     <span class="loader-letter text-[white]"><?= htmlspecialchars($letter) ?></span>
                                 <?php endforeach; ?></h1>
@@ -1063,15 +1063,15 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                     data-section="main">
 
                     <!-- overview -->
-                    <div data-reveal class="z-10 w-full bank-tile bank-glass p-5" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>">
+                    <div data-reveal class="z-10 w-full bank-tile bank-glass p-5" data-sub-url="<?= htmlspecialchars($user->getSubscription()) ?>" data-sub-uid="<?= htmlspecialchars($user->getUniID()) ?>">
                         <div class="flex items-center justify-between gap-2">
                             <span class="bank-status <?= $vpnStatus === 'active' ? 'text-green-300 border-green-400/25 bg-green-400/10' : 'text-gray-400' ?>">
                                 <span class="w-2 h-2 rounded-full <?= $vpnStatus === 'active' ? 'bg-green-400' : 'bg-gray-500' ?>"></span>
                                 <?= htmlspecialchars($formattedVpnStatus['status_text']) ?>
                             </span>
                             <span class="text-right shrink-0">
-                                <span class="block text-xs text-gray-400 truncate" data-server><?= htmlspecialchars($formattedVpnStatus['location']) ?></span>
-                                <span class="block font-mono text-[10px] text-gray-600 mt-0.5"><?= htmlspecialchars($maskedUni) ?></span>
+                                <span class="block text-sm text-gray-400 truncate" data-server><?= htmlspecialchars($formattedVpnStatus['location']) ?></span>
+                                <span class="block font-mono text-xs text-gray-600 mt-0.5"><?= htmlspecialchars($maskedUni) ?></span>
                             </span>
                         </div>
                         <!-- сервер сменился: напомнить обновить подписку в приложении -->
@@ -1086,18 +1086,18 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <div class="bank-ticks absolute inset-0 rounded-full"></div>
                                 <div class="bank-ring<?= $ringOff ?> absolute inset-0 rounded-full" style="--pt:<?= $ringPct ?>"></div>
                                 <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                    <div class="bank-num text-4xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
-                                    <div class="bank-label mt-0.5" style="font-size:.65rem"><?= $t('days_short') ?> из <?= $periodDays ?></div>
+                                    <div class="bank-num text-5xl font-bold tabular-nums tracking-tight"><?= $daysLeftNum ?></div>
+                                    <div class="bank-label mt-0.5"><?= $t('days_short') ?> из <?= $periodDays ?></div>
                                 </div>
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="py-2 border-b border-white/[0.07]">
-                                    <div class="bank-label mb-0.5"><?= rtrim($t('duration_colon'), ':') ?></div>
-                                    <div class="text-lg font-semibold text-white tabular-nums"><?= $periodDays ?> <span class="text-xs font-normal text-gray-400"><?= $t('days_short') ?></span></div>
+                                    <div class="bank-label mb-0.5">IP смены</div>
+                                    <div class="text-lg sm:text-xl font-semibold text-white tabular-nums truncate max-w-full"><?= htmlspecialchars($formattedVpnStatus['ip_address'] ?: '—') ?></div>
                                 </div>
                                 <div class="py-2">
                                     <div class="bank-label mb-0.5"><?= rtrim($t('devices_colon'), ':') ?></div>
-                                    <div class="text-lg font-semibold text-white tabular-nums"><?= $devicesLabel ?></div>
+                                    <div class="text-lg sm:text-xl font-semibold text-white tabular-nums"><?= $devicesLabel ?></div>
                                 </div>
                             </div>
                         </div>
@@ -1115,52 +1115,16 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                     <!-- information -->
                     <div class="z-10 w-full h-full">
                         <ul class="flex flex-col justify-between items-center gap-4 h-full">
-                            <!-- block 1 -->
-                            <li
-                                class="glow-card_mobile relative w-full flex justify-between items-center p-[15px] rounded-xl">
-                                <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
-                                    <div class="flex items-center gap-4">
-                                        <img decoding="async" loading="lazy"
-                                            src="<?= $site['baseUrl'] . (new Setting\Route\Function\Controllers\Location\Location)->getLocation()['url'] ?>"
-                                            alt="" loading="lazy" decoding="async" class="rounded-md h-6">
-                                        <div class="flex flex-col justify-start text-lg text-white">
-                                            <p class="lowercase">
-                                                <?= htmlspecialchars($formattedVpnStatus['location'] ?: 'vpn') ?>
-                                            </p>
-                                            <p class="text-sm">
-                                                <strong class="text-white/50"><?= $t('status') ?>:</strong><span
-                                                    class="text-green-400">&nbsp;<?= htmlspecialchars($formattedVpnStatus['status_text']) ?></span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/network_on.svg"
-                                        alt="" loading="lazy" decoding="async" class="h-6">
-                                <?php else: ?>
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] . (new Setting\Route\Function\Controllers\Location\Location)->getLocation()['url'] ?>"
-                                        alt="" loading="lozy" decoding="async" class="rounded-md h-6">
-                                    <div class="flex flex-col items-center justify-start text-lg text-white">
-                                        <!-- no -->
-                                        <p class="uppercase">vpn <span class="text-[#FF6378]"><?= $t('inactive') ?></span></p>
-                                        <!-- yes -->
-                                    </div>
-                                    <img decoding="async" loading="lazy"
-                                        src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/network_off.svg"
-                                        alt="" loading="lozy" decoding="async" class="h-6">
-                                <?php endif; ?>
-                            </li>
-
                             <!-- Пробрная подписка -->
                             <?php if ($giftShow): ?>
-                            
+
                               <li class="w-full"> 
                                 <form action="/api/gifts/give" method="post">
                                   <button type="submit" class="bank-btn-light bank-btn-split w-full">
                                           <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/free.svg"
                                             alt="buy" loading="lazy" decoding="async"
                                             class="h-6 opacity-70">
-                                              
+                                            
                                           <span class="flex-1 text-center"><?= $t('trial') ?></span>
                                           <img decoding="async" loading="lazy" src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
                                             alt="" loading="lazy" decoding="async"
@@ -1198,21 +1162,33 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                             </li>
                             
                             <!-- block 3: только то, чего нет в overview -->
-                            <li data-reveal data-reveal-delay="170" class="bank-tile relative w-full flex justify-between gap-2 p-3 text-sm">
+                            <li data-reveal data-reveal-delay="170" class="bank-tile relative w-full flex justify-between gap-2 p-3 text-sm sm:text-base">
                                 <!-- 1: оплата -->
                                 <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
-                                    <span class="text-[11px] text-gray-500">Оплата</span>
-                                    <span class="text-sm font-semibold text-gray-100 tabular-nums truncate max-w-full"><?= $lastPayShort !== null ? htmlspecialchars($lastPayShort) : '—' ?></span>
+                                    <span class="text-xs text-gray-500">Оплата</span>
+                                    <?php if ($lastPayShort !== null): ?>
+                                        <?php $parts = explode(' · ', $lastPayShort); ?>
+                                        <span class="text-sm sm:text-base font-semibold text-gray-100 tabular-nums truncate max-w-full"><?= htmlspecialchars($parts[1] ?? '—') ?></span>
+                                    <?php else: ?>
+                                        <span class="text-sm sm:text-base font-semibold text-gray-100 tabular-nums truncate max-w-full">—</span>
+                                    <?php endif; ?>
                                 </div>
                                 <!-- 2: пинг -->
                                 <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
-                                    <span class="text-[11px] text-gray-500"><?= $t('ping') ?>, мс</span>
-                                    <span class="text-sm font-semibold tabular-nums <?= $formattedVpnStatus['ping_class'] ?>"><?= htmlspecialchars($formattedVpnStatus['ping_label']) ?></span>
+                                    <span class="text-xs text-gray-500"><?= $t('ping') ?>, мс</span>
+                                    <span class="text-sm sm:text-base font-semibold tabular-nums <?= $formattedVpnStatus['ping_class'] ?>"><?= htmlspecialchars($formattedVpnStatus['ping_label']) ?></span>
                                 </div>
-                                <!-- 3: IP -->
-                                <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
-                                    <span class="text-[11px] text-gray-500">IP</span>
-                                    <span class="text-[13px] font-semibold text-gray-100 tabular-nums truncate max-w-full"><?= htmlspecialchars($formattedVpnStatus['ip_address']) ?></span>
+                                <!-- 3: статус -->
+                                <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 text-center">
+                                    <span class="text-xs text-gray-500"><?= $t('status') ?></span>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] . (new \Setting\Route\Function\Controllers\Location\Location)->getLocation()['url'] ?>"
+                                            alt="" loading="lazy" decoding="async" class="rounded h-4 w-5 object-cover">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] . ($formattedVpnStatus['status_img'] ?? '/public/assets/images/icons/services/default/network_' . ($user->getStatus() === 'on' ? 'on' : 'off') . '.svg') ?>"
+                                            alt="" loading="lazy" decoding="async" class="h-4 w-4">
+                                    </div>
                                 </div>
                             </li>
                         </ul>
@@ -1251,13 +1227,13 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     </div>
                                 </div>
                                 <div class="flex flex-col gap-1 min-w-0">
-                                    <h2 class="text-white text-xl font-semibold truncate" data-user-name>
+                                    <h2 class="text-white text-xl sm:text-2xl font-semibold truncate" data-user-name>
                                         <?= htmlspecialchars($formattedUserProfile['full_name']) ?>
                                     </h2>
-                                    <p class="text-sm text-gray-400" data-profile-status>
+                                    <p class="text-sm sm:text-base text-gray-400" data-profile-status>
                                         <?= $formattedUserProfile['status_text'] ?>
                                     </p>
-                                    <p class="text-xs text-gray-500 truncate"><?= htmlspecialchars($user->getEmail()) ?></p>
+                                    <p class="text-xs sm:text-sm text-gray-500 truncate"><?= htmlspecialchars($user->getEmail()) ?></p>
                                 </div>
                             </div>
 
@@ -1265,32 +1241,32 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-green-400">
                                         <i class="fa fa-wifi"></i>
-                                        <span class="text-xs font-medium">VPN</span>
+                                        <span class="text-sm font-medium">VPN</span>
                                     </div>
                                     <span
-                                        class="text-white text-sm font-semibold"><?= $formattedUserProfile['subscription_status'] ?></span>
+                                        class="text-white text-base font-semibold"><?= $formattedUserProfile['subscription_status'] ?></span>
                                 </div>
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-blue-400">
                                         <i class="fa fa-language"></i>
-                                        <span class="text-xs font-medium"><?= $t('language') ?></span>
+                                        <span class="text-sm font-medium"><?= $t('language') ?></span>
                                     </div>
                                     <span
-                                        class="text-white text-sm font-semibold"><?= htmlspecialchars($formattedUserProfile['language']) ?></span>
+                                        class="text-white text-base font-semibold"><?= htmlspecialchars($formattedUserProfile['language']) ?></span>
                                 </div>
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-purple-400">
                                         <i class="fa fa-server"></i>
-                                        <span class="text-xs font-medium"><?= $t('remaining') ?></span>
+                                        <span class="text-sm font-medium"><?= $t('remaining') ?></span>
                                     </div>
-                                    <span class="text-white text-sm font-semibold" data-timeleft></span>
+                                    <span class="text-white text-base font-semibold" data-timeleft></span>
                                 </div>
                                 <div class="glow-card_mobile flex flex-col gap-2 p-4 rounded-xl">
                                     <div class="flex items-center gap-2 text-yellow-400">
                                         <i class="fa fa-palette"></i>
-                                        <span class="text-xs font-medium"><?= $t('theme') ?></span>
+                                        <span class="text-sm font-medium"><?= $t('theme') ?></span>
                                     </div>
-                                    <span class="text-white text-sm font-semibold theme-display"
+                                    <span class="text-white text-base font-semibold theme-display"
                                         data-theme-text><?= $formattedUserProfile['theme'] ?></span>
                                 </div>
                             </div>
@@ -1304,8 +1280,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                     <li class="glow-card_mobile flex p-4 justify-between items-center rounded-xl">
                                         <!-- info -->
                                         <div class="flex flex-col justify-center w-[150px] gap-1">
-                                            <h4 class="text-white text-sm font-semibold"><?= $t('vpn_key') ?></h4>
-                                            <code id="vpn-key" class="overflow-hidden h-8 break-all text-[12px] text-white/50">
+                                            <h4 class="text-white text-base font-semibold"><?= $t('vpn_key') ?></h4>
+                                            <code id="vpn-key" class="overflow-hidden h-8 break-all text-xs text-white/50">
                                                    <?php echo htmlspecialchars($user->getSubscription()); ?>
                                             </code>
                                         </div>
@@ -1349,9 +1325,9 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                                 <img decoding="async" loading="lazy"
                                                     src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/flags/<?= $srv['flag'] ?>"
                                                     alt="<?= $srv['code'] ?>" class="w-7 h-5 rounded object-cover">
-                                                <span class="text-white text-sm font-medium flex-1"><?= htmlspecialchars($srv['country']) ?></span>
+                                                <span class="text-white text-sm sm:text-base font-medium flex-1"><?= htmlspecialchars($srv['country']) ?></span>
                                                 <?php if ($srv['code'] === $currentServerCode): ?>
-                                                    <span class="text-xs text-green-400"><?= $t('server_current') ?></span>
+                                                    <span class="text-xs sm:text-sm text-green-400"><?= $t('server_current') ?></span>
                                                 <?php endif; ?>
                                             </label>
                                         <?php endforeach; ?>
@@ -1880,8 +1856,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
         </div>
 
         <script>
-            // Устанавливаем тему в localStorage из PHP при загрузке
-            const currentThemeFromPHP = '<?= $formattedUserProfile['theme'] ?>';
+            // Устанавливаем тему в localStorage из PHP при загрузке (кодовое имя, не перевод)
+            const currentThemeFromPHP = '<?= ($formattedUserProfile['theme'] ?? '') === $t('light') ? 'light' : 'dark' ?>';
             if (!localStorage.getItem('theme')) {
                 localStorage.setItem('theme', currentThemeFromPHP);
             }
@@ -1986,7 +1962,8 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                 let container = document.getElementById('notification-container') || ((newContainer = document.createElement('div')) => (newContainer.id = 'notification-container', newContainer.className = 'fixed right-2 top-2 z-[999] flex flex-col gap-2', document.body.appendChild(newContainer), newContainer))();
                 const element = container.appendChild(document.createElement('div'));
                 element.className = `px-6 py-3 rounded-lg text-white z-50 transform translate-x-full transition-transform duration-300 ${{ success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' }[type] || 'bg-blue-500'}`;
-                element.innerHTML = '<i class="fa-solid fa-info-circle"></i> ' + msg;
+                element.innerHTML = '<i class="fa-solid fa-info-circle"></i> ';
+                element.appendChild(document.createTextNode(String(msg ?? '')));
                 setTimeout(() => element.classList.remove('translate-x-full'), 100);
                 setTimeout(() => element.classList.add('translate-x-full'), 4100);
                 setTimeout(() => (element.remove(), container.children.length || container.remove()), 4400);

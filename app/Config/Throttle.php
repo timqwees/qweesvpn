@@ -14,14 +14,28 @@ class Throttle
         return rtrim((string) sys_get_temp_dir(), '/\\') . '/qwees_throttle.json';
     }
 
-    /** IP клиента (за Cloudflare — реальный). */
+    /**
+     * IP клиента. CF_CONNECTING_IP ставит сам Cloudflare (через CDN не подделать),
+     * общий X-Forwarded-For слушаем только за приватным прокси — иначе любой
+     * ротацией заголовка обходил бы лимиты и заливал чужие бакеты.
+     */
     public static function ip(): string
     {
         $cf = trim((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
-        if ($cf !== '') return $cf;
-        $xff = trim((string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''));
-        if ($xff !== '') return trim(explode(',', $xff)[0]);
-        return (string) ($_SERVER['REMOTE_ADDR'] ?? 'cli');
+        if ($cf !== '' && filter_var($cf, FILTER_VALIDATE_IP)) return $cf;
+        $remote = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $behindProxy = $remote === ''
+            || $remote === '127.0.0.1' || $remote === '::1'
+            || str_starts_with($remote, '10.') || str_starts_with($remote, '192.168.')
+            || (bool) preg_match('/^172\.(1[6-9]|2\d|3[01])\./', $remote);
+        if ($behindProxy) {
+            $xff = trim((string) ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''));
+            if ($xff !== '') {
+                $first = trim(explode(',', $xff)[0]);
+                if (filter_var($first, FILTER_VALIDATE_IP)) return $first;
+            }
+        }
+        return $remote !== '' ? $remote : 'cli';
     }
 
     /** Разрешён ли вызов (и фиксируем попытку). $max попыток за $windowSec. */

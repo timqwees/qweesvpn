@@ -62,10 +62,13 @@ $(function () {
     if (!host) return;
     const cur = host.getAttribute('data-sub-url') || '';
     if (!cur) return;
+    // Ключ на пользователя: второй аккаунт в том же браузере не ловит чужой баннер.
+    const uid = host.getAttribute('data-sub-uid') || 'common';
+    const LS_KEY = 'qwees_sub_url_' + uid;
     let saved = null;
-    try { saved = localStorage.getItem('qwees_sub_url'); } catch (e) {}
+    try { saved = localStorage.getItem(LS_KEY); } catch (e) {}
     if (!saved) {
-      try { localStorage.setItem('qwees_sub_url', cur); } catch (e) {}
+      try { localStorage.setItem(LS_KEY, cur); } catch (e) {}
       return;
     }
     if (saved === cur) return;
@@ -73,7 +76,7 @@ $(function () {
     if (!bar) return;
     bar.hidden = false;
     const remember = function () {
-      try { localStorage.setItem('qwees_sub_url', cur); } catch (e) {}
+      try { localStorage.setItem(LS_KEY, cur); } catch (e) {}
       bar.hidden = true;
     };
     const copyBtn = bar.querySelector('[data-subwatch-copy]');
@@ -159,9 +162,9 @@ $(function () {
           const amt = Number(p.amount || 0).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
           return '<div class="flex items-center gap-3 p-3 rounded-lg bg-white/[0.04] hover:bg-white/[0.07] transition-colors">'
             + '<span class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0"><i class="fa-solid fa-receipt text-green-400 text-sm"></i></span>'
-            + '<span class="flex-1 min-w-0"><span class="block font-semibold text-[white] tabular-nums">' + escHtml(amt) + '</span>'
-            + '<span class="block text-xs text-gray-500 tabular-nums">' + escHtml(p.date || '') + '</span></span>'
-            + '<a href="/api/payment/receipt?id=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener" class="shrink-0 text-xs font-medium px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 transition-colors">' + escHtml($box.data('receipt')) + ' <i class="fa-solid fa-download text-[10px]"></i></a>'
+            + '<span class="flex-1 min-w-0"><span class="block font-semibold text-[white] tabular-nums text-base">' + escHtml(amt) + '</span>'
+            + '<span class="block text-xs sm:text-sm text-gray-500 tabular-nums">' + escHtml(p.date || '') + '</span></span>'
+            + '<a href="/api/payment/receipt?id=' + encodeURIComponent(p.id) + '" target="_blank" rel="noopener" class="shrink-0 text-xs sm:text-sm font-medium px-3 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 transition-colors">' + escHtml($box.data('receipt')) + ' <i class="fa-solid fa-download text-xs"></i></a>'
             + '</div>';
         }).join(''));
       })
@@ -337,5 +340,13 @@ $(function () {
       showSection(sectionId);
     });
   }
+
+  // Пробная подписка: один сабмит на форму (даблклик не плодит выдачи).
+  $(document).off('submit.giftsonce').on('submit.giftsonce', 'form[action="/api/gifts/give"]', function (e) {
+    const $f = $(this);
+    if ($f.data('submitted')) { e.preventDefault(); return false; }
+    $f.data('submitted', true);
+    $f.find('button[type="submit"]').attr('disabled', 'disabled');
+  });
 
 });

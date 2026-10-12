@@ -22,16 +22,15 @@ $(document).ready(function () {
     $('[data-button="verefy"]', $authForm).attr('disabled', 'disabled');
   });
 
-  let expectedCode = null;
   let mailSent = false;
 
+  // Код сверяет сервер: 4 цифры — разблокируем и пробуем отправить,
+  // неверный код сервер отклонит тостом (попытка код не гасит).
   function checkVerefyAndAutoSubmit() {
-    if (!expectedCode) return;
     let raw = String($('#verefy').val() || '');
     let val = raw.replace(/\D/g, '').slice(0, 4);
     if (raw !== val) $('#verefy').val(val);
-    const expected = String(expectedCode).replace(/\D/g, '').slice(0, 4);
-    if (val === expected && val.length === 4) {
+    if (val.length === 4) {
       $('#verefy_status').addClass('hidden');
       $('#verefy').removeClass('border-red-500').addClass('border-green-500');
       const $btn = $('[data-button="verefy"]');
@@ -46,9 +45,8 @@ $(document).ready(function () {
       $('#verefy').removeClass('border-red-500 border-green-500');
       $('[data-button="verefy"]').attr('disabled', 'disabled');
     } else {
-      $('#verefy_status').removeClass('hidden');
-      $('#verefy').addClass('border-red-500').removeClass('border-green-500');
-      $('#verefy_status').text(prefix_message_status + 'Неверный код верефикации');
+      $('#verefy_status').addClass('hidden');
+      $('#verefy').removeClass('border-red-500 border-green-500');
       $('[data-button="verefy"]').attr('disabled', 'disabled');
     }
   }
@@ -102,7 +100,6 @@ $(document).ready(function () {
           response = {};
         }
         if (response.success) {
-          expectedCode = response.code;
           bindVerefyHandlers();
         } else {
           message_status.removeClass('hidden');

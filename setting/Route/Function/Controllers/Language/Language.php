@@ -59,7 +59,7 @@ class Language
                 'no' => 'Нет',
                 'remaining' => 'Осталось',
                 'days' => 'дней',
-                'days_short' => 'дн.',
+                'days_short' => 'дн',
                 'theme' => 'Тема',
                 'dark' => 'Темная',
                 'light' => 'Светлая',

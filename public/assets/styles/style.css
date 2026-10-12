@@ -697,6 +697,7 @@ html {
 
 .outer_mobile {
     padding: 3px 3px 3px 3px;
+    background: linear-gradient(145deg, rgba(18, 22, 20, 0.98) 0%, rgba(10, 12, 11, 0.99) 100%);
     position: relative;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.2),
@@ -1021,12 +1022,12 @@ li.gradient-border:last-child {
     justify-content: center;
     gap: 0.6rem;
     width: 100%;
-    padding: 0.9rem 1rem;
+    padding: 1rem 1.2rem;
     border-radius: 0.9rem;
     background: #4ade80;
     color: #052012;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1rem;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px rgba(74, 222, 128, 0.16);
     transition: background 0.2s ease;
 }
@@ -1075,17 +1076,17 @@ li.gradient-border:last-child {
     border-radius: 1rem;
 }
 .bank-label {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     color: #9ca3af;
 }
 .bank-status {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    padding: 0.35rem 0.8rem;
-    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 /* лёгкое стекло для hero-поверхностей: только главный обзор и шапка

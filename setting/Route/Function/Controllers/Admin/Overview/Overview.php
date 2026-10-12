@@ -65,7 +65,6 @@ class Overview
     private static function build(int $nowMs): array
     {
         self::ensureSnapshots();
-        self::backfillPermission();
         $servers = [];
         foreach (ServerNetwork::getServerCodes() as $code) {
             $servers[] = self::serverData((string) $code, $nowMs);
@@ -291,19 +290,6 @@ class Overview
         return ['cuts' => $cuts, 'peak' => isset($peak[0]['m']) && $peak[0]['m'] !== null ? (int) $peak[0]['m'] : null];
     }
 
-    /** Раздаём право monitoring всем, у кого уже есть main (аддитивно, идемпотентно). */
-    private static function backfillPermission(): void
-    {
-        $groups = new Groups();
-        foreach ((array) (new GetUsers())->getUsers() as $u) {
-            $name = (string) ($u['username'] ?? '');
-            if ($name === '') continue;
-            if (!$groups->isPermission($name, 'main')) continue;
-            foreach (['monitoring', 'profit'] as $perm) {
-                if (!$groups->isPermission($name, $perm)) $groups->addPermission($name, $perm);
-            }
-        }
-    }
 
     // ==================== Самопроверки ====================
 
@@ -454,7 +440,7 @@ class Overview
     public static function cleanupPreview(): array
     {
         $nowMs = (int) (microtime(true) * 1000);
-        $rows = Database::send("SELECT s.uniID, u.email, s.status, s.expiry FROM qwees_subscriptions s LEFT JOIN qwees_users u ON u.uniID = s.uniID WHERE (s.status <> 'on' OR s.expiry <= ?) AND s.status NOT IN ('pending_vpn','banned')", [$nowMs]);
+        $rows = Database::send("SELECT s.uniID, u.email, s.status, s.expiry FROM qwees_subscriptions s LEFT JOIN qwees_users u ON u.uniID = s.uniID WHERE s.expiry <= ? AND s.status NOT IN ('pending_vpn','banned')", [$nowMs]);
         $rows = \is_array($rows) ? $rows : [];
         $expired = [];
         $off = [];
@@ -483,12 +469,22 @@ class Overview
     {
         $nowMs = (int) (microtime(true) * 1000);
         $res = ['status' => 'ok', 'db_deleted' => 0, 'panel_deleted' => [], 'panel_failed' => []];
-        $rows = Database::send("SELECT uniID FROM qwees_subscriptions WHERE (status <> 'on' OR expiry <= ?) AND status NOT IN ('pending_vpn','banned')", [$nowMs]);
+        $rows = Database::send("SELECT uniID FROM qwees_subscriptions WHERE expiry <= ? AND status NOT IN ('pending_vpn','banned')", [$nowMs]);
         $rows = \is_array($rows) ? $rows : [];
         if ($rows !== []) {
-            $del = Database::send("DELETE FROM qwees_subscriptions WHERE (status <> 'on' OR expiry <= ?) AND status NOT IN ('pending_vpn','banned')", [$nowMs]);
+            $del = Database::send("DELETE FROM qwees_subscriptions WHERE expiry <= ? AND status NOT IN ('pending_vpn','banned')", [$nowMs]);
             if ($del === false) return ['status' => 'error', 'message' => 'Не удалось очистить базу'];
             $res['db_deleted'] = \count($rows);
+        }
+        // Автоудаление просроченных pending_vpn (выдача не удалась даже после добивки)
+        $dead = Database::send("SELECT uniID FROM qwees_subscriptions WHERE expiry <= ? AND status = 'pending_vpn'", [$nowMs]);
+        if (\is_array($dead) && $dead !== []) {
+            Database::send("DELETE FROM qwees_subscriptions WHERE expiry <= ? AND status = 'pending_vpn'", [$nowMs]);
+            $res['db_deleted'] += \count($dead);
+            foreach ($dead as $d) {
+                $u = (string) ($d['uniID'] ?? '');
+                if ($u !== '') \Setting\Route\Function\Controllers\Client\Src\Client::forget($u);
+            }
         }
         $health = self::getHealth(true);
         foreach ((array) ($health['ghosts'] ?? []) as $g) {

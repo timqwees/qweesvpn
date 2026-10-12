@@ -266,37 +266,6 @@ $adminRole = $adminMenu->getRole($menuId);
                             <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
                         </li>
                         <?php endif; ?>
-                        <!-- База данных -->
-                        <details>
-                            <summary
-                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150 list-none">
-                                <i class="fa-solid fa-angle-right text-gray-500"></i>
-                                <i class="fa-regular fa-folder f-closed text-gray-500"></i><i class="fa-regular fa-folder-open f-open text-gray-500"></i>
-                                <span>База данных</span>
-                            </summary>
-                            <ul class="pl-5 m-0 relative">
-                                <?php foreach (Setting\Route\Function\Controllers\Admin\AdminDatabase::getTables() as $tableName): ?>
-                                    <?php if ($groups->isPermission($adminUsername,'database')): ?>
-                                        <li class="list-none relative" data-toggle-section="database">
-                                            <a href="/admin/database?table=<?= urlencode($tableName) ?>"
-                                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
-                                                <i class="fa-solid fa-database text-gray-500"></i>
-                                                <span><?= htmlspecialchars($tableName) ?></span>
-                                            </a>
-                                        </li>
-                                    <?php else: ?>
-                                    <li class="list-none relative" data-toggle-section="database">
-                                            <a href="/admin/database?table=<?= urlencode($tableName) ?>"
-                                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
-                                                <i class="fa-solid fa-database text-gray-500"></i>
-                                                <span><?= htmlspecialchars($tableName) ?></span>
-                                            </a>
-                                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
-                                        </li>
-                                    <?php endif; ?>
-                                <?php endforeach; ?>
-                            </ul>
-                        </details>
                     </ul>
                 </details>
             </li>
@@ -389,6 +358,39 @@ $adminRole = $adminMenu->getRole($menuId);
                             <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
                         </li>
                         <?php endif; ?>
+
+                        <!-- База данных -->
+                        <details>
+                            <summary
+                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150 list-none">
+                                <i class="fa-solid fa-angle-right text-gray-500"></i>
+                                <i class="fa-regular fa-folder f-closed text-gray-500"></i><i class="fa-regular fa-folder-open f-open text-gray-500"></i>
+                                <span>База данных</span>
+                            </summary>
+                            <ul class="pl-5 m-0 relative">
+                                <?php foreach (Setting\Route\Function\Controllers\Admin\AdminDatabase::getTables() as $tableName): ?>
+                                    <?php if ($groups->isPermission($adminUsername,'database')): ?>
+                                        <li class="list-none relative" data-toggle-section="database">
+                                            <a href="/admin/database?table=<?= urlencode($tableName) ?>"
+                                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
+                                                <i class="fa-solid fa-database text-gray-500"></i>
+                                                <span><?= htmlspecialchars($tableName) ?></span>
+                                            </a>
+                                        </li>
+                                    <?php else: ?>
+                                    <li class="list-none relative" data-toggle-section="database">
+                                            <a href="/admin/database?table=<?= urlencode($tableName) ?>"
+                                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
+                                                <i class="fa-solid fa-database text-gray-500"></i>
+                                                <span><?= htmlspecialchars($tableName) ?></span>
+                                            </a>
+                                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                                        </li>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </ul>
+                        </details>
+                        
                     </ul>
                 </details>
             </li>

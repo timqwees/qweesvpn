@@ -149,41 +149,51 @@ class Gifts implements InterfaceGifts
 
 	public function giveGifts() : void
 	{
-		$uniID = (string) (new GetUser())->getUniID();//получаем ID
-		if ($uniID === '') Network::onRedirect('/');//пустого не берем
+		$uniID = (string) (new GetUser())->getUniID();
+		if ($uniID === '') Network::onRedirect('/');
+		if (!$this->isEnabled()) Network::onRedirect('/');
 		$days = $this->getDays();
-		if ($days < 1) Network::onRedirect('/');;//срок беплатной подписки не настроен корректно
-		$nowMs = time() * 1000;//мс как везде
+		if ($days < 1) Network::onRedirect('/');
+		$nowMs = time() * 1000;
 		$newExpiry = $nowMs + $days * 86400000;
-		$users = $this->data['users'] ?? [];//получаем заранее данные, чтобы провреять был он уже или нет
-		$xray = new Xray();//xnтбы выдавать в панель
-		
+		$users = $this->data['users'] ?? [];
+		$xray = new Xray();
 		$row = Database::send('SELECT status, subscription, expiry, count_days FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
 		$cur = (\is_array($row) && isset($row[0])) ? $row[0] : null;
-		if ($cur !== null) {//пользователь имеет данные в таблице подписок
-			$status = (string) ($cur['status'] ?? '');//статус получаем
-			if ($status === 'on') Network::onRedirect('/');;//получить пробную нельзя есть есть уже подписка
+		$granted = false;
+		if ($cur !== null) {
+			$status = (string) ($cur['status'] ?? '');
+			if ($status === 'on') Network::onRedirect('/');
 			if (\in_array($uniID, $users, true)) Network::onRedirect('/');
-      $vpnResult = $xray->addClient((int) $days, $uniID, 0);
-      if(\is_array($vpnResult)){//при успехе
-   			Database::send("UPDATE qwees_subscriptions SET status = 'on', subscription = ?, count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [(string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry, $uniID]);
-				$this->addUser($uniID);//добавляю пользователя в список
-      }
-		} else {//первый раз
-			//а если его в списке не было то выдаем так как это може быть пользователь который просто не оплатил и получил статус off
-			if (\in_array($uniID, $users, true)) Network::onRedirect('/');;//уже в списке
-      $vpnResult = $xray->addClient((int) $days, $uniID, 0);
-      if(\is_array($vpnResult)){//при успехе
-        Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', ?, ?, ?)", [$uniID, (string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry]);
-				$this->addUser($uniID);//добавляю пользователя в список
-      }
+			$vpnResult = $xray->addClient((int) $days, $uniID, 0);
+			if (\is_array($vpnResult)) {
+				Database::send("UPDATE qwees_subscriptions SET status = 'on', subscription = ?, count_days = ?, expiry = ?, updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [(string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry, $uniID]);
+				$this->addUser($uniID);
+				$granted = true;
+			}
+		} else {
+			if (\in_array($uniID, $users, true)) Network::onRedirect('/');
+			$vpnResult = $xray->addClient((int) $days, $uniID, 0);
+			if (\is_array($vpnResult)) {
+				Database::send("INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'on', ?, ?, ?)", [$uniID, (string) ServerNetwork::getSubscriptionUrl($uniID), $days, $newExpiry]);
+				$this->addUser($uniID);
+				$granted = true;
+			}
 		}
-		file_put_contents(
-			$_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
-			\sprintf("[%s] [ПРОБНАЯ ПОДПИСКА - ВЫДАЧА] %s: выдано %d дней\n", date('Y-m-d H:i:s'), $uniID, $days),
-			FILE_APPEND
-		);
-		Network::onRedirect('/');;//ключ VPN докинем при выкате через Xray
+		if ($granted) {
+			file_put_contents(
+				$_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+				\sprintf("[%s] [ПРОБНАЯ ПОДПИСКА - ВЫДАЧА] %s: выдано %d дней\n", date('Y-m-d H:i:s'), $uniID, $days),
+				FILE_APPEND
+			);
+		} else {
+			file_put_contents(
+				$_ENV['LOG_FILE_NAME'] ?? 'qwees.log',
+				\sprintf("[%s] [ПРОБНАЯ ПОДПИСКА - ОШИБКА] %s: xray addClient не удался\n", date('Y-m-d H:i:s'), $uniID),
+				FILE_APPEND
+			);
+		}
+		Network::onRedirect('/');
 	}
 
 	// ==================== Админка ====================
