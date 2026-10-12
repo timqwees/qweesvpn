@@ -143,6 +143,17 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= $t('profile') ?></title>
+    <meta property="og:title" content="QweesVPN" />
+    <meta property="og:description" content="<?= $t('og_description') ?>" />
+    <meta property="og:image" content="<?= $site['baseUrl'] ?>/public/assets/images/background/og/open_graph.jpeg" />
+    <meta property="og:url" content="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] ?>" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="QweesVPN" />
+    <meta name="twitter:description" content="<?= $t('og_description') ?>" />
+    <meta name="twitter:image" content="<?= $site['baseUrl'] ?>/public/assets/images/background/og/open_graph.jpeg" />
     <!-- ========== manifest Apps ================ -->
     <link rel="icon" type="image/png" href="/public/assets/images/icons/logo/manifest/favicon-96x96.png"
         sizes="96x96" />
@@ -1991,16 +2002,17 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
             function shareReferralLink() {
                 const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https' : 'http';
                 const refLink = proto + '://' + location.host + '/reflink=<?= $user->getMyRefer() ?>';
+                const shareText = 'Привет! Я пользуюсь QweesVPN, хочешь +7 дней бесплатно? Переходи по моей реферальной ссылке: ' + refLink;
                 if (navigator.share) {
                     navigator.share({
-                        title: '<?= $t('referal_link') ?>',
-                        text: '<?= $t('invite_bonus_text') ?>',
+                        title: 'QweesVPN',
+                        text: shareText,
                         url: refLink
                     }).catch(() => {
-                        copyToClipboard(refLink, '<?= $t('referal_link') ?>');
+                        copyToClipboard(shareText, '<?= $t('referal') ?>');
                     });
                 } else {
-                    copyToClipboard(refLink, '<?= $t('referal_link') ?>');
+                    copyToClipboard(shareText, '<?= $t('referal') ?>');
                 }
             }
 
