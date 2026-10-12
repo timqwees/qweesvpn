@@ -1158,10 +1158,27 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                                             src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow.svg"
                                             alt="" class="h-5 opacity-60">
                                     </a>
+                                    <?php endif; ?>
+                                </li>
+                                
+                                <?php if ($user->getStatus() === 'on' && !empty($user->getSubscription())): ?>
+                                <li data-reveal data-reveal-delay="130" class="w-full">
+                                    <button type="button" onclick="shareReferralLink()"
+                                        class="bank-btn-ghost bank-btn-split w-full">
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/gift.svg"
+                                            alt="" loading="lazy" decoding="async"
+                                            class="h-6 opacity-70">
+                                        <span class="flex-1 text-center font-semibold"><?= $t('invite_friend') ?></span>
+                                        <img decoding="async" loading="lazy"
+                                            src="<?= $site['baseUrl'] ?>/public/assets/images/icons/services/default/arrow_white.svg"
+                                            alt="" loading="lazy" decoding="async"
+                                            class="h-5 opacity-60">
+                                    </button>
+                                </li>
                                 <?php endif; ?>
-                            </li>
-                            
-                            <!-- block 3: только то, чего нет в overview -->
+                                
+                                <!-- block 3: только то, чего нет в overview -->
                             <li data-reveal data-reveal-delay="170" class="bank-tile relative w-full flex justify-between gap-2 p-3 text-sm sm:text-base">
                                 <!-- 1: оплата -->
                                 <div class="flex flex-1 min-w-0 flex-col items-center justify-center gap-0.5 text-center">
@@ -1971,6 +1988,22 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
 
             // ============================================================================
             // Универсальная функция копирования
+            function shareReferralLink() {
+                const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https' : 'http';
+                const refLink = proto + '://' + location.host + '/reflink=<?= $user->getMyRefer() ?>';
+                if (navigator.share) {
+                    navigator.share({
+                        title: '<?= $t('referal_link') ?>',
+                        text: '<?= $t('invite_bonus_text') ?>',
+                        url: refLink
+                    }).catch(() => {
+                        copyToClipboard(refLink, '<?= $t('referal_link') ?>');
+                    });
+                } else {
+                    copyToClipboard(refLink, '<?= $t('referal_link') ?>');
+                }
+            }
+
             function copyToClipboard(text, label = <?= json_encode($t('text_default')) ?>) {
                 if (!text) {
                     showNotification(<?= json_encode($t('nothing_to_copy')) ?>, 'error');
