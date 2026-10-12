@@ -2002,18 +2002,14 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
             function shareReferralLink() {
                 const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https' : 'http';
                 const refLink = proto + '://' + location.host + '/reflink=<?= $user->getMyRefer() ?>';
-                const bonusDays = <?= (int) (\Setting\Route\Function\Controllers\Refer\Config\ReferConfig::getAll()['referral_days'] ?? 3) ?>;
-                const shareText = 'Привет! Я пользуюсь QweesVPN, хочешь +' + bonusDays + ' дней бесплатно? Переходи по моей реферальной ссылке:';
                 if (navigator.share) {
                     navigator.share({
-                        title: 'QweesVPN',
-                        text: shareText,
                         url: refLink
                     }).catch(() => {
-                        copyToClipboard(shareText + ' ' + refLink, '<?= $t('referal') ?>');
+                        copyToClipboard(refLink, '<?= $t('referal') ?>');
                     });
                 } else {
-                    copyToClipboard(shareText + ' ' + refLink, '<?= $t('referal') ?>');
+                    copyToClipboard(refLink, '<?= $t('referal') ?>');
                 }
             }
 
