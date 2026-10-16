@@ -118,7 +118,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 <!-- KPI: пользователи -->
                 <div>
                     <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Пользователи</h2>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5 flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-users text-blue-400"></i>
@@ -197,7 +197,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 </div>
                 <div>
                     <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Подписки</h2>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5 flex items-center gap-3">
                             <div class="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-bolt text-green-400"></i>
@@ -289,7 +289,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         <h2 class="text-[11px] uppercase tracking-wider text-gray-500">Новые пользователи — пришло в месяц</h2>
                         <span class="q-tip" tabindex="0" data-tip="Количество новых пользователей по месяцам. Данные из /api/admin/stats (ежечасный кэш)."><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
                     </div>
-                    <div class="h-[220px] w-full relative">
+                    <div class="h-[220px] min-h-[200px] w-full relative">
                         <canvas data-chart="chart_new_users" class="w-full h-full"></canvas>
                         <div data-chart-empty="chart_new_users" class="hidden absolute inset-0 flex items-center justify-center text-sm text-gray-500">Собираю данные…</div>
                     </div>
@@ -318,28 +318,27 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     <span data-ov-badge class="hidden text-xs font-medium px-2.5 py-1 rounded-full"></span>
                     <span class="ml-auto text-xs text-gray-500">Обновлено: <span data-ov-updated>—</span></span>
                     <button data-ov-refresh
-                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors">
+                         class="text-xs font-medium px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors">
                         <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
                     </button>
                 </div>
 
                 <!-- Онлайн и пользователи -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">В сети сейчас</div>
-                         <div class="text-3xl font-bold text-emerald-400" data-ov-online data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
-                         <div class="relative w-16 h-16 mt-2">
+                         <div class="text-2xl sm:text-3xl font-bold text-emerald-400" data-ov-online data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                         <div class="relative w-12 h-12 sm:w-16 sm:h-16 mt-2">
                              <div data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">—</div>
                              <canvas data-chart="chart_online_main" class="relative z-10 w-full h-full"></canvas>
                          </div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Средний за сутки</div>
-                        <div class="text-3xl font-bold text-cyan-400" data-ov-avg data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                        <div class="text-2xl sm:text-3xl font-bold text-cyan-400" data-ov-avg data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                     </div>
                         <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                             <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пик сегодня</div>
-                            <div class="text-3xl font-bold text-white" data-ov-peak data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-white" data-ov-peak data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                         </div>
                         <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                             <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Показ скорости в мониторинге</div>
@@ -352,17 +351,17 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пробных подписей</div>
-                        <div class="text-3xl font-bold text-amber-400" data-ov-trials data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                        <div class="text-2xl sm:text-3xl font-bold text-amber-400" data-ov-trials data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                         <div class="text-xs text-gray-500 mt-1">в течение 30 дней</div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Активные подписки</div>
-                        <div class="text-3xl font-bold text-emerald-400" data-ov-active data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                        <div class="text-2xl sm:text-3xl font-bold text-emerald-400" data-ov-active data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пользователей</div>
                         <div class="flex items-end gap-3">
-                            <div class="text-3xl font-bold text-white" data-ov-users data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                            <div class="text-2xl sm:text-3xl font-bold text-white" data-ov-users data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                             <div class="h-8 w-24">
                                 <canvas data-chart="chart_users_spark" class="w-full h-full"></canvas>
                             </div>
@@ -376,7 +375,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         <h2 class="text-[11px] uppercase tracking-wider text-gray-500">Новые пользователи</h2>
                         <span class="q-tip" tabindex="0" data-tip="Регистрация новых пользователей по месяцам. Lazy: данные появятся после входа в раздел Мониторинг."><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
                     </div>
-                    <div class="h-[300px] w-full">
+                    <div class="h-[280px] min-h-[240px] w-full">
                         <canvas data-chart="chart_users_monthly" class="w-full h-full"></canvas>
                     </div>
                 </div>
@@ -384,7 +383,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 <!-- Трафик -->
                 <div>
                     <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Трафик (↓ + ↑)</h2>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                             <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Всего</div>
                             <div class="text-2xl font-bold text-white" data-ov-t-total>—</div>
@@ -445,7 +444,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Клиенты x-ui панелей</h3>
                         <span class="text-xs text-gray-500">обновлено: <span data-ov-pc-updated>—</span></span>
                     </div>
-                    <div class="grid grid-cols-6 gap-2 text-center mb-3">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center mb-3">
                         <div class="bg-white/5 rounded-lg px-3 py-2.5">
                             <div class="text-2xl font-bold text-gray-200" data-ov-pc-total>—</div>
                             <div class="text-[10px] text-gray-500">Клиенты</div>
@@ -1042,9 +1041,9 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             var st = ovAvgPeak(histPairs);
                             var $c = $('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-1 min-w-0');
                             $c.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text(title));
-                            $c.append($('<div>').addClass('text-3xl font-bold text-white').html(big + ' <span class="text-sm font-medium text-gray-500">' + suffix + '</span>'));
+                            $c.append($('<div>').addClass('text-2xl sm:text-3xl font-bold text-white').html(big + ' <span class="text-sm font-medium text-gray-500">' + suffix + '</span>'));
                             $c.append($('<div>').addClass('text-xs text-gray-400 truncate').text(sub || ''));
-                            $c.append($('<div>').addClass('flex justify-between text-[11px] text-gray-500')
+                                $c.append($('<div>').addClass('flex justify-between text-[10px] sm:text-[11px] text-gray-500')
                                 .append($('<span>').text('СРЕДНЕЕ ' + (st.avg === null ? '—' : (Math.round(st.avg * 10) / 10) + suffix)))
                                 .append($('<span>').text('ПИК ' + (st.peak === null ? '—' : (Math.round(st.peak * 10) / 10) + suffix))));
                             $c.append($('<div>').addClass('h-14').append($('<canvas>').attr('id', idp).css({ width: '100%', height: '100%' })));
@@ -1054,7 +1053,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         (d.servers || []).forEach(function (s) {
                             var p = 'ovc_' + String(s.code).replace(/[^a-z0-9]/gi, '') + '_';
                             var $srv = $('<div>').addClass('flex flex-col gap-4');
-                            $srv.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Сервер · ' + (s.country || s.code) + ' · ' + s.code));
+                            $srv.append($('<div>').addClass('text-[10px] sm:text-[11px] uppercase tracking-wider text-gray-500').text('Сервер · ' + (s.country || s.code) + ' · ' + s.code));
                             if (s.stale) {
                                 $srv.append($('<div>').addClass('rounded-xl bg-red-500/5 ring-1 ring-red-500/20 p-6 text-sm text-red-400').text('Нет связи с панелью ' + (s.country || s.code)));
                                 $w.append($srv);
@@ -1065,17 +1064,17 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             var swapPct = s.swap_total ? (s.swap_used / s.swap_total * 100) : 0;
                             var h = s.history || {};
                             // Ряд 1: ЦП / Память / Подкачка / Диск
-                            var $row = $('<div>').addClass('grid grid-cols-2 lg:grid-cols-4 gap-4');
+                            var $row = $('<div>').addClass('grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4');
                             $row.append(ovMetricCard(p + 'cpu', 'ЦП', (s.cpu ?? '—'), s.cpu_sub || '', h.cpu || [], '%', '#2f81f7'));
                             $row.append(ovMetricCard(p + 'mem', 'Память', (s.mem_total ? (Math.round(memPct * 10) / 10) : '—'), s.mem_h || '', h.mem || [], '%', '#2f81f7'));
                             var $swap = $('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-1 min-w-0');
                             $swap.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Подкачка'));
-                            $swap.append($('<div>').addClass('text-3xl font-bold text-white').html((s.swap_total ? (Math.round(swapPct * 10) / 10) : '0') + ' <span class="text-sm font-medium text-gray-500">%</span>'));
+                             $swap.append($('<div>').addClass('text-2xl sm:text-3xl font-bold text-white').html((s.swap_total ? (Math.round(swapPct * 10) / 10) : '0') + ' <span class="text-sm font-medium text-gray-500">%</span>'));
                             $swap.append($('<div>').addClass('text-xs text-gray-400 truncate').text(s.swap_h || ''));
                             $row.append($swap);
                             var $disk = $('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-1 min-w-0');
                             $disk.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Диск'));
-                            $disk.append($('<div>').addClass('text-3xl font-bold text-white').html((s.disk_total ? (Math.round(diskPct * 10) / 10) : '—') + ' <span class="text-sm font-medium text-gray-500">%</span>'));
+                            $disk.append($('<div>').addClass('text-2xl sm:text-3xl font-bold text-white').html((s.disk_total ? (Math.round(diskPct * 10) / 10) : '—') + ' <span class="text-sm font-medium text-gray-500">%</span>'));
                             $disk.append($('<div>').addClass('text-xs text-gray-400 truncate').text(s.disk_h || ''));
                             $disk.append($('<div>').addClass('flex justify-between text-[11px] text-gray-500').append($('<span>').text('СВОБОДНО ' + (s.disk_free_h || '—'))));
                             $row.append($disk);
@@ -2183,7 +2182,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             </div>
                             <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-6">
                                 <div class="text-sm text-blue-400 mb-1">Возвраты, 30 дн (касса)</div>
-                                <div class="text-3xl font-bold text-blue-400">
+                                <div class="text-2xl sm:text-3xl font-bold text-blue-400">
                                     <span data-kr="refunds">…</span> ₽
                                 </div>
                             </div>
@@ -2566,7 +2565,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 </div>
 
                 <!-- Доп. KPI: LTV, интервал, клиенты -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
                         <div class="flex items-center gap-1.5 mb-1">
                             <div class="text-xs text-gray-500">Средний LTV</div>
