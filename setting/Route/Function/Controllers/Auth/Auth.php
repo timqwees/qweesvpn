@@ -113,6 +113,7 @@ class Auth extends Network
             return;
         }
         self::establishUserSession((string) $user[0]['uniID']);
+        \Setting\Route\Function\Controllers\User\UserActivity::log((string) $user[0]['uniID'], 'login');
         self::onRedirect('/');
     }
 
@@ -179,7 +180,12 @@ class Auth extends Network
         } catch (\Exception $e) {
             return ['success' => false, 'message' => 'Ошибка: ' . $e->getMessage()];
         }
-        if (!$saved) {
+         if (!$saved) {
+            file_put_contents(
+                $_ENV['LOG_FILE_NAME'] ?? 'app.log',
+                \sprintf("[%s] [РЕГИСТРАЦИЯ - ОШИБКА INSERT]: %s (%s) — uniID: %s\n", date('Y-m-d H:i:s'), $userData['first_name'] . ' ' . ($userData['last_name'] ?? ''), $userData['email'], $uniID),
+                FILE_APPEND
+            );
             return ['success' => false, 'message' => 'Ошибка записи в базу данных'];
         }
         $pendingRefer = Session::init('pending_refer_code') ?? '';

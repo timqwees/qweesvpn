@@ -46,3 +46,29 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Таблица платежей
+CREATE TABLE IF NOT EXISTS qwees_payments (
+    payment_id TEXT NOT NULL,
+    uniID TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    amount REAL NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'RUB',
+    status TEXT NOT NULL DEFAULT '',
+    tariff TEXT NOT NULL DEFAULT '',
+    method TEXT NOT NULL DEFAULT '',
+    description TEXT NOT NULL DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (payment_id)
+);
+
+-- Снимки трафика по серверам (для графиков мониторинга)
+CREATE TABLE IF NOT EXISTS qwees_traffic_snapshots (
+    server TEXT NOT NULL,
+    up_bytes INTEGER NOT NULL DEFAULT 0,
+    down_bytes INTEGER NOT NULL DEFAULT 0,
+    online_now INTEGER NOT NULL DEFAULT 0,
+    at_ms INTEGER NOT NULL,
+    PRIMARY KEY (server, at_ms)
+);

@@ -13,7 +13,6 @@ class PaymentLedger
 {
     public static function ensureTable(): void
     {
-        Database::send('CREATE TABLE IF NOT EXISTS qwees_payments (payment_id VARCHAR(64) NOT NULL, uniID VARCHAR(255) NOT NULL DEFAULT \'\', email VARCHAR(255) NOT NULL DEFAULT \'\', amount DECIMAL(10,2) NOT NULL DEFAULT 0, currency VARCHAR(8) NOT NULL DEFAULT \'RUB\', status VARCHAR(32) NOT NULL DEFAULT \'\', tariff VARCHAR(64) NOT NULL DEFAULT \'\', method VARCHAR(32) NOT NULL DEFAULT \'\', description VARCHAR(255) NOT NULL DEFAULT \'\', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (payment_id))');
     }
 
     /** Миграция существующих таблиц (CREATE IF NOT EXISTS колонку не добавит). */
@@ -39,6 +38,18 @@ class PaymentLedger
         if (!$has) {
             Database::send('ALTER TABLE qwees_payments ADD COLUMN method VARCHAR(32) NOT NULL DEFAULT \'\'');
         }
+    }
+
+    /**
+     * Нормализация даты кассы (ISO) в формат леджера Y-m-d H:i:s.
+     * null — пишем временем вставки (поведение вебхука без изменений).
+     */
+    private static function normCreatedAt(mixed $v): ?string
+    {
+        if (!\is_string($v) || $v === '') return null;
+        $ts = strtotime($v);
+        if (!$ts) return null;
+        return date('Y-m-d H:i:s', $ts);
     }
 
     /**
@@ -75,20 +86,52 @@ class PaymentLedger
             (string) ($p['description'] ?? ''),
         ];
         if (Database::isMysql()) {
-            $res = Database::send(
-                'INSERT INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                 ON DUPLICATE KEY UPDATE uniID = VALUES(uniID), email = VALUES(email), amount = VALUES(amount),
-                 currency = VALUES(currency), status = VALUES(status), tariff = VALUES(tariff), method = VALUES(method),
-                 description = VALUES(description), updated_at = CURRENT_TIMESTAMP',
-                $params
-            );
+            $createdAt = self::normCreatedAt($p['created_at'] ?? null);
+            if ($createdAt !== null) {
+                // Дата из кассы (импорт истории): периоды выручки честные.
+                $res = Database::send(
+                    'INSERT INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                     ON DUPLICATE KEY UPDATE uniID = VALUES(uniID), email = VALUES(email), amount = VALUES(amount),
+                     currency = VALUES(currency), status = VALUES(status), tariff = VALUES(tariff), method = VALUES(method),
+                     description = VALUES(description), created_at = VALUES(created_at), updated_at = CURRENT_TIMESTAMP',
+                    array_merge($params, [$createdAt])
+                );
+            } else {
+                $res = Database::send(
+                    'INSERT INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                     ON DUPLICATE KEY UPDATE uniID = VALUES(uniID), email = VALUES(email), amount = VALUES(amount),
+                     currency = VALUES(currency), status = VALUES(status), tariff = VALUES(tariff), method = VALUES(method),
+                     description = VALUES(description), updated_at = CURRENT_TIMESTAMP',
+                    $params
+                );
+            }
         } else {
-            $res = Database::send(
-                'INSERT OR REPLACE INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
-                $params
-            );
+            // SQLite: REPLACE пересоздаёт строку — уносим исходный created_at, иначе
+            // переход pending->succeeded сдвинет дату и перекосит выручку по дням.
+            // Дата из кассы (импорт) пишется как есть — она неизменяема.
+            $created = self::normCreatedAt($p['created_at'] ?? null);
+            if ($created === null) {
+                try {
+                    $ex = Database::send('SELECT created_at FROM qwees_payments WHERE payment_id = ? LIMIT 1', [$id]);
+                    if (\is_array($ex) && isset($ex[0]['created_at'])) $created = (string) $ex[0]['created_at'];
+                } catch (\Throwable) {
+                }
+            }
+            if ($created !== null && $created !== '') {
+                $res = Database::send(
+                    'INSERT OR REPLACE INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                    array_merge($params, [$created])
+                );
+            } else {
+                $res = Database::send(
+                    'INSERT OR REPLACE INTO qwees_payments (payment_id, uniID, email, amount, currency, status, tariff, method, description, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)',
+                    $params
+                );
+            }
         }
         return $res !== false;
     }

@@ -1,9 +1,330 @@
-# обновление v5.1.0
+# QweesVPN v6.0.0
 
-## v5.1.0
-- **Приглашения друзей:** кнопка "Пригласить друга 🎁" в мобильном overview для активных подписок; Web Share API + fallback на копирование; текст "Привет! Я пользуюсь QweesVPN, хочешь +7 дней бесплатно?"; иконка `gift.svg`.
-- **Мобильный UI продолжительная доработка:** блок статуса упрощён (флаг + иконка), "IP смены" в overview, `bank-btn-ghost` для invite-кнопки, белая стрелка `arrow_white.svg`.
-- **Язык:** `days_short` → `'дн'`, добавлены `invite`, `invite_friend`, `referal` (ru/en).
+> **QweesVPN** — полностью самостоятельный VPN-сервис (PHP 8.4.1 + SQLite/3x-ui v3.10.2)
+> с банковской темой, живой админкой, реферальной системой и Web Share API для мобильных.
+
+---
+
+## 🚀 v6.1.0 — Советник цен по реальным тарифам + ленивая админка
+
+### 💰 Советник цен: один на всю админку (ROI), цель — маржа 30%
+
+- Группировка по **реальным ячейкам PriceConfig** (`count_devices` × `count_days` → `basic/clasic/pro` + месяцы). Старая группировка по URL складывала всё в «Оплаченная» со средней ценой, неприменимой ни к чему.
+- Строки с суммой 0 (бесплатные выдачи, триалы) исключены из статистики тарифов — раньше роняли среднее в ноль и давали фантомы вида «Надо 165₽».
+- Математика на клиента/мес: `net = R·(1−c) − F`, маржа `net/R`; статусы `loss` / `low` / `ok`; цена для цели `R ≥ F/(1−c−m)`.
+- **Лесенка цен**: за месяц длинный срок дешевле короткого. Поднятие, ломающее порядок, тянет короткие сроки вверх (только вверх); пустые периоды, попавшие под каскад, добавляются строкой `ladder`.
+- Таблица всегда показывает **все 12 ячеек** (`3 тарифа × 4 срока`), пустые — со статусом `empty`; под таблицей — объяснение маржи.
+- Дубли из Прибыли и Прогноза удалены (в ROI копия раньше рендерилась в скрытую секцию подарков).
+
+### 📈 Фактическая выручка (30д) = касса
+
+- Источник правды — ЮKassa. Прогноз берёт `PaymentInfo::cachedRevenue()` (файловый кэш 1ч, **без сети** — та же цифра что в Прибыли); без кэша — fallback на леджер.
+- Импорт чеков теперь пишет дату платежа из кассы (`normCreatedAt`), а не момент импорта — раньше 90 дней платежей складывались в одну дату и ломали 30-дневное окно.
+
+### 📈 Прогноз: чистка и честность
+
+- `active_subscriptions` — уникальные клиенты (были строки подписок); дедуплика таблиц постоянных/пробников по `uniID`.
+- График переименован в «Прогноз /мес по месяцам создания» — строится по месяцу создания подписки, не «история выручки».
+- При ошибке API KPI сбрасываются, а не показывают stale.
+
+### 📊 Графики: редизайн + спиннер + «Обновить»
+
+- Шапка с кнопкой обновления и штампом времени; спиннер первой загрузки; удалены мёртвые `chart_clients` (рендера не было) и `chart_online`; `buildPlansChart` больше не убивает canvas и умеет в retry; `destroyAdminCharts()` для refresh; убран дублирующий вызов.
+
+### 🐢 Ленивая загрузка по разделам
+
+Старт страницы — только видимая секция (main: overview + today-users + stats). Остальное — по открытию, с кэшем и кнопкой обновления:
+
+| Раздел | При открытии | Кэш | Спиннер | Обновить |
+|---|---|---|---|---|
+| Мониторинг | кэш (не форс) | 60с/SWR + 5с панели | QSpin на форсе | есть |
+| Прогноз / Прибыль / ROI | кэш | 2мин / pfCache / roiCache | есть | есть (в ROI добавлена) |
+| Серверы / Переезд | 1 раз | до перезагрузки | спиннер кнопки | добавлены |
+| Графики | 1 раз | `__chartsDone` | бокс-спиннер | добавлена |
+
+- Убран лишний `/overview` из `fillStats` (берётся из `__overviewTotals`); `/stats` при старте — только если видна главная.
+- Открытие Прибыли/ROI больше не тянет 2 запроса кассы ради чужих карточек.
+
+### 🔧 Мониторинг и нагрузка на 3x-ui
+
+- `panelBatch`: сборка списка путей через `array_merge` — оператор `+` молча выкидывал `netUp/netDown/online`, графики скорости и онлайна были пустыми.
+- `turn_speed_show` добавлен в `build()` и `extractHealthFromOverview` (фронт читал несуществующее поле).
+- `historyWindow`: три простых запроса вместо UNION (голые легии с LIMIT не принимает MySQL, скобочные — SQLite).
+- `serverDataCached`: force-скан тоже пишется в 5-сек кэш (параллельные health+overview делят один скан); `buildHealth` без force; `getOverview(true)` реально форсит (`rebuild($fresh)`).
+- SWR-роут пересобирает в фоне только если кэшу > 60с (`shouldRefreshBackground`); `getCached` проверяет `CACHE_V`.
+- `loadOverview`: **один** запрос `/overview` вместо параллельных health+overview; интервал 60с — дешёвый кэш.
+
+### 🐛 Инцидент с мёртвым JS
+
+Незакрытый `if (turnSpeedShow)` ронял весь блок мониторинга (обзор, прогноз, цены, графики главной). Введён `node --check` по всем инлайн-блокам — добавлен в рутину проверки.
+
+### 💬 Остальное
+
+- 14 иконок `ⓘ` переведены с нативного `title` (не работает на тач) на компонент `.q-tip` (ховер + фокус + тап).
+- Сайдбар: «Логи» проверяли право `roi` → `logs`; заглушка Цен имела `data-section="charts"`.
+- Серверы/переезд: кнопки обновления, `error`-ветки вместо вечного «проверка…», селекторы без инъекций, фикс `%` в прогресс-баре, guard параллельных опросов переноса, превью без XSS.
+- «Новые пользователи»: график отвязан от успеха `/overview` (данные из локальной БД), пустое состояние, кап retry CDN, guards межблочных вызовов.
+- `GIFT_USERS` — `JSON_HEX_*` против разрыва скрипта.
+
+## 🚀 v6.0.0 — Прогноз прибыли + умные цены
+
+### 📈 Прогнозирование прибыли (переработанная секция)
+
+Секция «Прогназирование прибыли» → «Прогнозирование прибыли» (popover `roi`):
+
+**KPI grid:**
+| Показатель | Данные |
+|---|---|
+| Фактическая выручка (30д) | `Finance::report(30).gross` (ЮKassa → fallback ledger → `qwees_payments`) |
+| Прогнозируемая | `Σ active подписок × amount/days×30` |
+| Прогноз min/max | `predicted × 0.5 / 0.9` (пессим/опт) |
+| Постоянных | `≥2 платежа` |
+| Средний LTV | `Σ LTV / active` |
+| Интервал покупки | средний `days` между платежами постоянных |
+| Всего клиентов | `active_subscriptions` |
+| Вероятных покупок | `trial_conversions.length` |
+
+**Таблицы:** Прогнозируемые постоянные клиенты (uniID, LTV, платежей, доход/мес, след. платёж) + Конверсия пробников (uniID, пробный срок, покупок, первый платёж, интервал).
+
+**График → История выручки по месяцам** (переименован из «Прогноз», чтобы не вводить в заблуждение; fallback на `predicted` при пустых данных).
+
+`API: GET /api/admin/analytics/ltv` (кэш 2 мин, `fresh=1` только по кнопке) — `CACHE_V=10`, TTL 2 мин. Дашборд `data-ov-forecast` читает кэш из overview без пересчёта.
+
+### 💰 Советник цен (только в ROI, цель — маржа 30%)
+
+1. `buildPriceOptimization` в `Overview.php`:
+   - Группирует active платные подписки по **реальным ячейкам PriceConfig** (`count_devices` × `count_days` → `basic/clasic/pro` + месяцы; прочее — «Другое»)
+   - На клиента/мес: `net = R·(1−c) − F`, маржа `net/R`; статусы `loss` / `low` / `ok`
+   - Цель `N/R ≥ 30%` → `R ≥ F/(1−c−m)`, цена подписки = `R·days/30`
+   - Отдаёт `new_price`, `margin`, `uplift_month`, `config_price`, `total_uplift_month`
+2. Frontend (только ROI): **В конфиге → Надо** + маржа-бейдж + **+Прибыль/мес**, шапка с потенциалом; reason-тултипы с цифрами
+3. `actual_monthly_revenue` теперь кросс‑СУБД (PHP `strtotime` вместо `DATE('now','-N days')`)
+
+### 🎯 KPI «Пробных подписей» на dashboard
+
+`trials_count` (active trial/free) из `buildHealthData` → `data-ov-trials` (amber), рядом с «В сети сейчас».
+
+### ⚡ Оптимизация сервера 3x-ui
+
+| Запрос | Было | Стало |
+|---|---|---|
+| curl_multi к панелям | каждый `?fresh=1` (health + overview) | **кешир. 5 сек** (`serverDataCached`) |
+| `/panel/api/clients/list` → subscriptions | каждый обзор | **кешир. 30 сек** (`checkSubscriptionsBulkCached`) |
+| `syncPanelExpiryToDb` | N `UPDATE` | **1 batch `CASE WHEN`** |
+| `historyWindow` | 5 SQL (3 cuts + 2 agg) | **3** (UNION + 2) |
+| `userStats` | 3 subquery + `CURDATE()` | **1 запрос + PHP date** (SQLite‑compatible) |
+
+### 🧹 Cleanup
+
+- `body class` — убрано `flex item-center overflow-x-hidden` (мусор)
+- `fa fa-lock` → `fa-solid fa-lock` (FA 7.0.1); опечатка «Прогназирование» → «Прогнозирование», иконка `text-purple-400`
+- inline `<style>`: `:root` vars задаются локально в секции (мониторинг несёт минимум, gifts — полный набор)
+- избыточный параметр `buildHealth($fresh)` → `buildHealth()` (всегда force)
+- удалены dead code path'и (`checkSubscription` одиночный, `$payAggFull`/`$allLtv`), `readVar`/`writeVar` теперь с TTL
+- один LTV-запрос на страницу (`window.QLtvFetch`), один рендер цен (`window.QPrices`), одни деньги (`window.QMoney`)
+
+## 🚀 v5.1.0 — Финальная стабилизация
+
+### 📊 Мониторинг 3x-ui (переработанная секция)
+
+**Новый блок "Клиенты x-ui панелей"** в разделе Мониторинг:
+
+| Элемент | Описание |
+|--------|----------|
+| **Счётчики** | Всего / В сети / Не в сети — live-синхронisation через `panel_clients_list` |
+| **Таблица клиентов** | Группа · Вкл · В сети · Клиент (email + subId) · Сервер · Трафик |
+| **Сортировка** | По трафику DESC (топ клиентов вверху) |
+| **Кеш** | `health_cache.json` — TTL 5 мин + SWR; `CACHE_V = 3` |
+
+**Изменения в `Overview::buildHealth`:**
+- Сравнение `panel_clients` vs `db_rows` → теперь только активные подписки (`active_db_rows`)
+- Добавлены `panel_online`, `panel_offline`, `panel_by_server`
+- `panel_clients_list` — массив всех inbound-клиентов (server, country, email, subId, enable, online, up, down)
+
+### 👤 Активность пользователя переведена с БД на JSON
+
+| Было | Стало |
+|------|-------|
+| Таблица `qwees_user_activity` в SQLite | JSON-файлы `storage/activity/{xx}/{uniID}.json` |
+| INSERT-запросы на каждую активность | Атомарная запись `flock`-ом, ротация 100 записей |
+| TTL 30 дней (автоочистка) | ✅ |
+
+**`UserActivity.php`** — новый класс с методами `log()` / `getActions()`.
+
+Где логируется:
+| Событие | Где |
+|---------|-----|
+| `login` | `Auth::auth()` |
+| `subscribe` | `Kassa::handleNotification()` |
+
+### 🗄️ Админ-панель
+
+| Фича | Статус |
+|------|--------|
+| **Клиенты x-ui** | Блок в Monitoring (не кнопка) |
+| **"История"** | Переименовано из "Сбор истории", синяя кнопка |
+| **"Очистить неактивные"** | Кнопка в карточке мониторинга |
+| **Мини-меню в `database.php`** | Стилизовано как `sidebar.php` (260↔64 collapsible) |
+| **Модальное окно "Сводка пользователя"** | Упрощено: убрана кнопка "Клиенты x-ui", активность показывается в таблице |
+| **Кэш `getTables()`** | 60 сек (`AdminDatabase_tables_cache.json`) |
+| **`Users` сортировка** | `created_at DESC`, limit 100 |
+| **Реферальные бонусы** | `[АКТИВАЦИЯ]`, `[БОНУС-РЕФЕРЕРУ]`, `[БОНУС-ДНИ]` удалены из логов; осталось `[БОНУС-РЕФЕРАЛУ]` |
+
+**API эндпоинты:**
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| GET | `/api/admin/health` | Самопроверка БД↔панель + список клиентов |
+| GET | `/api/admin/panel-clients` | Все клиенты панелей (все серверы) |
+| POST | `/api/admin/panel-client-del` | Удаление клиента (subId + server) |
+| GET | `/api/admin/user-activity?id={uniID}` | JSON-история активности пользователя |
+
+### 🐞 Исправления
+
+| Баг | Решение |
+|-----|---------|
+| `Database::initSchemaName()` | Исправлено: теперь SQLite использует `schema_sqlite.sql` вместо `schema.sql` |
+| `Gifts::giveGifts()` | Синтаксическая ошибка (`getUniID())`) исправлена |
+| `Auth::registerUser()` | Добавлено логирование INSERT |
+| `AdminDatabase::ensureSubscriptionUnique()` | Очищен (таблицы создаются через `onTableAllExists`) |
+| `PaymentLedger::ensureTable()` | Пустой (таблица из schema) |
+| `Overview::ensureSnapshots()` | Пустой (таблица из schema) |
+
+### 💰 Покупка и выдача VPN
+
+| Этап | Детали |
+|------|--------|
+| **YooKassa webhook** → `Kassa::handleNotification` | Идемпотентная обработка |
+| **`addClientFailover`** | Фолбэк по панелям, pin/unpin в `Network` |
+| **`pending_vpn`** → **`on`** | Воркер `retryPendingForUser` + ленивая добивка на главной |
+| **`POST /api/admin/retry-pending`** | Ручной запуск добивки |
+| **`/pay/status`** | Сессия платежа живёт до терминального статуса |
+
+### 📱 Мобильный UI (v5.0.1)
+
+| Элемент | Улучшение |
+|---------|-----------|
+| **Шрифты** | Увеличены в overview, профиле, истории платежей |
+| **`.bank-status`** | `border-radius: 10px` |
+| **`days_short`** | → `'дн'` (без точки) |
+| **OG-мета** | `open_graph.jpeg` для превью в мессенджерах |
+| **"Пригласить друга 🎁"** | Кнопка в мобильном overview |
+| **Web Share API** | + fallback на копирование реферальной ссылки |
+
+### ⚡ Скорость
+
+| Метрика | До | После |
+|---------|-----|-------|
+| `/about` | 2 сек | 0.1 сек |
+| `/admin` | ~5 сек | 1–2.7 сек |
+| Домены | 13 сек | 0.37 сек |
+| MySQL соединения | persistent PDO | ✅ |
+| `getTables()` | каждый запрос | кэш 60 сек |
+| `getHealth()` | живой | кэш 5 мин + SWR |
+
+### 🛡️ Безопасность
+
+- `.htaccess`: закрыты `setting`, `app`, `vendor`, `.env`, логи
+- Security-заголовки: `nosniff`, `SAMEORIGIN`
+- `.env` выведен из git; `.gitignore` для кэшей и секретов
+- Email-коды: TTL 15 мин, серверная валидация, троттлинг 8/15 мин
+- Сессии пользователей и админа — разделены (cookie + 7 дней)
+- `vwees` защищён от смены роли
+- Подпись реферальной ссылки: двойная проверка (`id` в индексе + `metadata.uniID`)
+
+---
+
+## Архитектура проекта
+
+```
+qweesvpn/
+├── app/
+│   ├── Config/Database.php      ← SQLite/MySQL абстракция, initSchemaName()
+│   ├── Config/Security.php      ← .htaccess, headers
+│   └── Models/
+│       ├── Network/Network.php  ← Серверный роутинг (pin/unpin)
+│       ├── Money.php            ← Финансы из ЮKassa
+│       └── Vpn/
+│           └── V2ray/Xray.php   ← 3x-ui API (add/update/delete клиент)
+├── public/
+│   ├── pages/
+│   │   ├── admin/
+│   │   │   ├── index.php        ← Мониторинг, пользователи, финансы
+│   │   │   ├── database.php     ← Админ БД (мини-меню)
+│   │   │   ├── chat_admin.php   ← Поддержка
+│   │   │   └── gifts_admin.php  ← Триалы/подарки
+│   │   └── user/                ← Кабинет клиента (bank-style)
+│   ├── components/              ← UI-компоненты
+│   ├── images/                  ← Ассеты
+│   └── api.php                  ← Точка входа роутов
+├── setting/
+│   ├── Route/
+│   │   ├── Routes.php           ← Все роуты (71 строк)
+│   │   ├── Function/
+│   │   │   └── Controllers/
+│   │   │       ├── Auth/Auth.php
+│   │   │       ├── Kassa/Kassa.php
+│   │   │       ├── Kassa/PaymentLedger.php
+│   │   │       ├── User/UserActivity.php  ← JSON-хранилище активности
+│   │   │       ├── Admin/
+│   │   │       │   ├── Overview/
+│   │   │       │   │   ├── Overview.php    ← getHealth/buildHealth
+│   │   │       │   │   └── HealthCache.php
+│   │   │       │   └── AdminDatabase.php   ← getTables (кеш)
+│   │   │       └── Refer/
+│   │   │           └── Tools/ReferRepository.php
+│   │   └── Middleware/
+│   └── Schema/
+│       ├── schema.sql            ← MySQL (5 таблиц)
+│       └── schema_sqlite.sql     ← SQLite (5 таблиц)
+└── storage/
+    ├── activity/{xx}/{uniID}.json  ← JSON активность
+    └── sqlite/                    ← database.sqlite
+```
+
+### Таблицы БД (5)
+
+| Таблица | Назначение |
+|---------|------------|
+| `qwees_users` | Пользователи (uniID, email, refer) |
+| `qwees_refer` | Реферальная история (takes_left) |
+| `qwees_subscriptions` | Подписки (status, expiry, tariff) |
+| `qwees_payments` | Платёжный леджер (payment_id, amount, status) |
+| `qwees_traffic_snapshots` | Снапшоты трафика x-ui |
+
+> **Удалено:** `qwees_user_activity` (переведена на JSON)
+
+---
+
+## API (админка)
+
+| Метод | Путь | Auth | Тело | Ответ |
+|-------|------|------|------|------|
+| GET | `/api/admin/health` | `monitoring` | — | Самопроверка, `panel_clients_list` |
+| GET | `/api/admin/panel-clients` | `monitoring` | — | `{clients: [...], total}` |
+| POST | `/api/admin/panel-client-del` | `admin` | `subId, server` | `{status: ok, result}` |
+| GET | `/api/admin/user-activity` | `monitoring` | `?id={uniID}` | `{status: ok, actions: [...]}` |
+| GET | `/api/admin/user-summary` | `monitoring` | `?id={uniID}` | Полные данные пользователя |
+| GET | `/api/admin/today-users` | `monitoring` | — | 50 новых за сегодня |
+| POST | `/api/admin/retry-pending` | `admin` | — | Статус добивки `pending_vpn` |
+
+---
+
+## Быстрый старт
+
+```bash
+# 1. Переменные окружения
+cp .env.example .env
+
+# 2. Серверная схема
+php -r "require 'vendor/autoload.php'; App\Config\Database::getConnection();"
+
+# 3. Веб-сервер
+php -S localhost:8000 -t public
+
+# 4. Админ
+# → /admin  (логин через email-код)
+```
 
 ## v5.0.1
 - **Исправлена пробная подписка:** синтаксическая ошибка `getUniID())` в `Gifts::giveGifts()` блокировала выдачу; логика `addClient` теперь проверяется по факту успеха, ошибка записывается в лог.

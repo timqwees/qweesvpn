@@ -201,6 +201,7 @@ class PaymentInfo
                     'tariff' => (string) ($md['tariff'] ?? ''),
                     'method' => (string) (($p['payment_method'] ?? [])['type'] ?? ''),
                     'description' => (string) ($p['description'] ?? ''),
+                    'created_at' => (string) ($p['created_at'] ?? ''),
                 ]);
                 $imported++;
             }
@@ -243,6 +244,24 @@ class PaymentInfo
             'fromStr' => '',
             'toStr' => '',
         ];
+    }
+
+    /**
+     * Выручка из файлового кэша кассы БЕЗ сети: null если кэша нет/протух.
+     * Ключ 1-в-1 как в syncRevenue — цифра совпадает с разделом прибыли.
+     */
+    public static function cachedRevenue(int $days, float $commissionRate = 0.0): ?array
+    {
+        $range = self::parseRange($days, null, null);
+        $days = $range['days'];
+        $key = "v6:d$days:r" . round($commissionRate, 4) . ':' . $range['fromStr'] . '_' . $range['toStr'];
+        if (!is_file(self::REVENUE_FILE)) return null;
+        $hit = json_decode((string) @file_get_contents(self::REVENUE_FILE), true);
+        if (!\is_array($hit) || ($hit['key'] ?? '') !== $key) return null;
+        if ((time() - (int) ($hit['at'] ?? 0)) >= self::REVENUE_TTL) return null;
+        $data = $hit['data'] ?? null;
+        if (!\is_array($data) || ($data['status'] ?? '') !== 'ok') return null;
+        return $data;
     }
 
     /**

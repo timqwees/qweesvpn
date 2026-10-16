@@ -68,13 +68,6 @@ class Bonus implements InterfaceReferBonus
         $daysResult = $this->addBonusDays($referrerId, $days);
         $count = $this->repo->incrementReferrer($referrerId);
 
-        $this->log->log('БОНУС-РЕФЕРЕРУ', [
-            'referrer_id' => $referrerId,
-            'new_referral_id' => $newReferralId,
-            'days' => $daysResult['added'] ? $days : 0,
-            'refer_count' => $count,
-        ]);
-
         return ['days' => $daysResult['added'] ? $days : 0, 'refer_count' => $count];
     }
 
@@ -141,20 +134,17 @@ class Bonus implements InterfaceReferBonus
                 "INSERT INTO qwees_subscriptions (uniID, status, subscription, count_days, expiry) VALUES (?, 'off', 'bonus', ?, ?)",
                 [$uniID, $days, $expiry]
             );
-            $this->log->log('БОНУС-ДНИ', ['uniID' => $uniID, 'days' => $days, 'mode' => 'pending(подписки не было)']);
             return ['added' => true, 'expiry' => $expiry, 'pending' => true];
         }
 
         $vpn = $this->xray->xui_update($uniID, $days);
         if (($vpn['status'] ?? '') !== 'ok') {
             $expiry = $this->extendExpiryDbOnly($uniID, $days);
-            $this->log->log('БОНУС-ДНИ', ['uniID' => $uniID, 'days' => $days, 'mode' => 'только БД', 'expiry' => $expiry]);
             return ['added' => true, 'expiry' => $expiry, 'pending' => false];
         }
 
         $row = Database::send('SELECT expiry FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
         $expiry = (\is_array($row) && isset($row[0])) ? (int) ($row[0]['expiry'] ?? 0) : 0;
-        $this->log->log('БОНУС-ДНИ', ['uniID' => $uniID, 'days' => $days, 'mode' => 'панель+БД']);
         return ['added' => true, 'expiry' => $expiry, 'pending' => false];
     }
 

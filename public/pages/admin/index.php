@@ -61,7 +61,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
 
 <?php include 'includes/head.php'; ?>
 
-<body class="bg-no-repeat flex item-center w-full overflow-x-hidden bg-[#0f1115] text-gray-200">
+<body class="bg-[#0f1115] text-gray-200 antialiased">
     <div class="min-h-screen flex w-full mx-auto">
 
         <!-- оверлей (мобильная шторка) -->
@@ -167,7 +167,34 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     </div>
                 </div>
 
+                <!-- Список новых пользователей за сегодня -->
+                <div class="mt-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500">Новые пользователи сегодня</h2>
+                        <span class="text-xs text-gray-500" data-today-users-count>0</span>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-3">
+                        <div class="flex flex-col gap-1.5 max-h-56 overflow-y-auto" data-today-users>
+                            <div class="text-gray-500 text-xs">Загрузка...</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- KPI: подписки -->
+                <!-- Модальное окно сводки пользователя -->
+                <div id="user-summary-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center p-4">
+                    <div id="user-summary-modal-bg" class="absolute inset-0 bg-black/60"></div>
+                    <div class="relative bg-[#16181d] rounded-xl ring-1 ring-white/10 w-full max-w-lg z-10 overflow-hidden">
+                        <div class="flex items-center justify-between p-4 border-b border-white/[0.07]">
+                            <div class="font-semibold text-white">Сводка пользователя</div>
+                            <button type="button" id="user-summary-close"
+                                class="p-2 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-white/10 transition-colors">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div id="user-summary-content" class="max-h-[70vh] overflow-y-auto"></div>
+                    </div>
+                </div>
                 <div>
                     <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Подписки</h2>
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -241,28 +268,30 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     <button data-toggle-section="profit" class="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-300 text-sm hover:border-green-400 hover:text-green-400 transition-all whitespace-nowrap">
                         <i class="fa-solid fa-wallet text-gray-500"></i><span>Прибыль</span>
                     </button>
-                    <?php endif; ?>
+                     <?php endif; ?>
                 </div>
 
-                <!-- Графики -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
-                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Структура базы</h2>
-                        <div class="h-[300px]">
-                            <canvas data-chart="chart_clients"></canvas>
-                        </div>
+                <!-- График новых пользователей -->
+                <style>
+                    .q-tip { position: relative; display: inline-flex; cursor: help; outline: none; }
+                    .q-tip::after {
+                        content: attr(data-tip); position: absolute; right: -4px; top: calc(100% + 8px);
+                        width: max-content; max-width: 240px; z-index: 30;
+                        background: #0d1117; color: #e6e9ee; border: 1px solid rgba(255,255,255,.1);
+                        border-radius: 10px; padding: 8px 10px; font-size: 11px; line-height: 1.45; font-weight: 400;
+                        opacity: 0; visibility: hidden; transform: translateY(-3px); transition: opacity .15s, transform .15s;
+                        pointer-events: none; white-space: normal; text-align: left;
+                    }
+                    .q-tip:hover::after, .q-tip:focus::after, .q-tip:focus-within::after, .q-tip:active::after { opacity: 1; visibility: visible; transform: none; }
+                </style>
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500">Новые пользователи — пришло в месяц</h2>
+                        <span class="q-tip" tabindex="0" data-tip="Количество новых пользователей по месяцам. Данные из /api/admin/stats (ежечасный кэш)."><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
                     </div>
-                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
-                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Новые пользователи</h2>
-                        <div class="h-[300px]">
-                            <canvas data-chart="chart_users_monthly"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
-                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500 mb-3">Онлайн сейчас</h2>
-                        <div class="h-[300px]">
-                            <canvas data-chart="chart_online"></canvas>
-                        </div>
+                    <div class="h-[220px] w-full relative">
+                        <canvas data-chart="chart_new_users" class="w-full h-full"></canvas>
+                        <div data-chart-empty="chart_new_users" class="hidden absolute inset-0 flex items-center justify-center text-sm text-gray-500">Собираю данные…</div>
                     </div>
                 </div>
             </section>
@@ -298,20 +327,57 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">В сети сейчас</div>
-                        <div class="text-3xl font-bold text-white" data-ov-online>—</div>
+                         <div class="text-3xl font-bold text-emerald-400" data-ov-online data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                         <div class="relative w-16 h-16 mt-2">
+                             <div data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг" class="absolute inset-0 flex items-center justify-center text-xs text-gray-400">—</div>
+                             <canvas data-chart="chart_online_main" class="relative z-10 w-full h-full"></canvas>
+                         </div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
-                        <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пик сегодня</div>
-                        <div class="text-3xl font-bold text-white" data-ov-peak>—</div>
+                        <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Средний за сутки</div>
+                        <div class="text-3xl font-bold text-cyan-400" data-ov-avg data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                    </div>
+                        <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пик сегодня</div>
+                            <div class="text-3xl font-bold text-white" data-ov-peak data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                        </div>
+                        <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
+                            <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Показ скорости в мониторинге</div>
+                            <label class="relative inline-flex items-center cursor-pointer mt-1">
+                                <input type="checkbox" id="speed-toggle" class="sr-only" />
+                                <span class="h-6 w-11 rounded-full bg-gray-600 peer-checked:bg-green-500 transition-colors inline-block"></span>
+                                <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5"></span>
+                            </label>
+                            <span class="text-xs text-gray-400 mt-1 block" id="speed-toggle-label">вкл.</span>
+                        </div>
+                    <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
+                        <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пробных подписей</div>
+                        <div class="text-3xl font-bold text-amber-400" data-ov-trials data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                        <div class="text-xs text-gray-500 mt-1">в течение 30 дней</div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Активные подписки</div>
-                        <div class="text-3xl font-bold text-emerald-400" data-ov-active>—</div>
+                        <div class="text-3xl font-bold text-emerald-400" data-ov-active data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                     </div>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Пользователей</div>
-                        <div class="text-3xl font-bold text-white" data-ov-users>—</div>
+                        <div class="flex items-end gap-3">
+                            <div class="text-3xl font-bold text-white" data-ov-users data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
+                            <div class="h-8 w-24">
+                                <canvas data-chart="chart_users_spark" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
                         <div class="text-xs text-gray-500 mt-1">+<span data-ov-new>0</span> сегодня</div>
+                    </div>
+                </div>
+
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[11px] uppercase tracking-wider text-gray-500">Новые пользователи</h2>
+                        <span class="q-tip" tabindex="0" data-tip="Регистрация новых пользователей по месяцам. Lazy: данные появятся после входа в раздел Мониторинг."><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
+                    </div>
+                    <div class="h-[300px] w-full">
+                        <canvas data-chart="chart_users_monthly" class="w-full h-full"></canvas>
                     </div>
                 </div>
 
@@ -349,7 +415,6 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                 class="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-500/10 ring-1 ring-red-500/25 text-red-300 hover:bg-red-500/20 transition-colors">
                                 <i class="fa-solid fa-broom mr-1"></i>Очистить неактивные
                             </button>
-                            <span class="ml-auto text-xs text-gray-500">панель: <b class="text-gray-300" data-h-panel>—</b> · подписок в БД: <b class="text-gray-300" data-h-db>—</b></span>
                         </div>
                         <div class="hidden rounded-lg bg-red-500/5 ring-1 ring-red-500/20 p-3 flex-col gap-2 text-xs" data-cu-preview></div>
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
@@ -366,12 +431,495 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     </div>
                 </div>
 
+                <!-- Клиенты x-ui -->
+<div class="xui rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-3" data-ov-panel-clients>
+                    <style>
+                    .client-traffic-cell { box-sizing: border-box; background: rgba(255,255,255,0.04); border-radius: 999px; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 2px 10px; display: flex; }
+                    .client-traffic-cell-used { font-variant-numeric: tabular-nums; white-space: nowrap; flex: 0 0 72px; min-width: 72px; font-size: 12px; text-align: end; color: #e5e7eb; }
+                    .client-traffic-cell-bar { flex: 60px; min-width: 48px; }
+                    .client-traffic-cell-bar .ant-progress-rail { height: 8px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+                    .client-traffic-cell-bar .ant-progress-track { height: 100%; background: #22c55e; }
+                    .client-traffic-cell.is-unlimited .client-traffic-cell-bar .ant-progress-track { background: #7c3aed8c; border: 1px solid #7c3aed59; }
+                    </style>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Клиенты x-ui панелей</h3>
+                        <span class="text-xs text-gray-500">обновлено: <span data-ov-pc-updated>—</span></span>
+                    </div>
+                    <div class="grid grid-cols-6 gap-2 text-center mb-3">
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-gray-200" data-ov-pc-total>—</div>
+                            <div class="text-[10px] text-gray-500">Клиенты</div>
+                        </div>
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-emerald-400" data-ov-pc-on>—</div>
+                            <div class="text-[10px] text-gray-500">В сети</div>
+                        </div>
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-red-400" data-ov-pc-exhausted>—</div>
+                            <div class="text-[10px] text-gray-500">Исчерпано</div>
+                        </div>
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-orange-400" data-ov-pc-near>—</div>
+                            <div class="text-[10px] text-gray-500">Почти исчерпано</div>
+                        </div>
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-gray-400" data-ov-pc-off>—</div>
+                            <div class="text-[10px] text-gray-500">Отключено</div>
+                        </div>
+                        <div class="bg-white/5 rounded-lg px-3 py-2.5">
+                            <div class="text-2xl font-bold text-emerald-300" data-ov-pc-active>—</div>
+                            <div class="text-[10px] text-gray-500">Активна</div>
+                        </div>
+                    </div>
+                    <style>
+                    :root {
+                        --ant-blue-1: #111a2c; --ant-blue-7: #3c89e8; --ant-green-1: #162312; --ant-green-7: #6abe39;
+                        --ant-orange-1: #2b1910; --ant-purple-1: #1a1325; --ant-info-bg: #111a2c;
+                        --ant-color-text-secondary: rgba(255,255,255,.65); --ant-color-warning-bg: #2b2111; --ant-color-warning-text: #d89614;
+                        --ant-color-fill-tertiary: rgba(255,255,255,.08); --ant-color-success-bg: #162312; --ant-color-text: rgba(255,255,255,.85);
+                        --ant-color-border: #50566e; --ant-color-fill-quaternary: rgba(255,255,255,.04); --ant-border-radius: 6px;
+                    }
+.client-traffic-cell {
+    box-sizing: border-box;
+    background: var(--ant-color-fill-quaternary, rgba(255,255,255,.04));
+    border-radius: 999px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 2px 10px;
+    display: flex;
+}
+    .ov-pc-wrapper {
+        max-height: 400px;
+        overflow-y: auto;
+        overflow-x: auto;
+        min-width: min-content;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+    .table-cell-uniform {
+        background: rgba(255,255,255,0.05);
+        border-radius: 6px;
+        padding: 4px 8px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 24px;
+        white-space: nowrap;
+    }
+ .table-speed-tag {
+        background: rgba(6,115,230,0.12);
+        color: #3b82f6;
+        border-radius: 6px;
+        font-size: 11px;
+        padding: 2px 10px;
+        min-width: 140px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .type-free {
+        background: var(--ant-blue-1);
+        color: var(--ant-blue-7);
+        border-radius: var(--ant-border-radius);
+        font-size: 11px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .type-paid {
+        background: var(--ant-green-1);
+        color: var(--ant-green-7);
+        border-radius: var(--ant-border-radius);
+        font-size: 11px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .type-trial {
+        background: var(--ant-orange-1);
+        color: #d89614;
+        border-radius: var(--ant-border-radius);
+        font-size: 11px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .type-bonus {
+        background: var(--ant-purple-1);
+        color: var(--ant-purple-7);
+        border-radius: var(--ant-border-radius);
+        font-size: 11px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .table-speed-tag-empty {
+        background: var(--ant-info-bg);
+        color: var(--ant-color-text-secondary);
+        border-radius: var(--ant-border-radius);
+        font-size: 11px;
+        font-weight: 500;
+        padding: 2px 10px;
+        min-width: 140px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+    .duration-cell-value {
+        background: var(--ant-green-1);
+        color: var(--ant-green-7);
+        border-radius: 6px;
+        font-size: 12px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .duration-cell-warning {
+        background: var(--ant-color-warning-bg);
+        color: var(--ant-color-warning-text);
+        border-radius: 6px;
+        font-size: 12px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .dot-tag {
+        background: var(--ant-color-fill-tertiary);
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .dot-tag.xui.online {
+        background: var(--ant-color-success-bg);
+        color: var(--ant-green-7);
+    }
+    .dot-tag.xui.offline {
+        background: var(--ant-color-fill-tertiary);
+        color: var(--ant-color-text-secondary);
+    }
+    .online-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-right: 5px;
+        flex-shrink: 0;
+    }
+    .dot-tag.xui.online .online-dot {
+        background: var(--ant-green-7);
+        box-shadow: 0 0 6px var(--ant-green-7);
+    }
+    .dot-tag.xui.offline .online-dot {
+        background: var(--ant-color-text-secondary);
+    }
+.email-cell {
+    flex-direction: column;
+    display: flex;
+}
+/* Ant Design v5 table emulation */
+[data-ov-pc-table] {
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+.ov-pc-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.ov-pc-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+.ov-pc-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+.ov-pc-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+[data-ov-pc-table] .ant-table-thead {
+    background: var(--ant-color-bg-container);
+    border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+[data-ov-pc-tbody].ant-table-tbody tr {
+    background: transparent;
+    border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+[data-ov-pc-tbody].ant-table-tbody tr:last-child {
+    border-bottom: none;
+}
+[data-ov-pc-tbody].ant-table-tbody tr.ant-table-cell-row-hover {
+}
+[data-ov-pc-tbody].ant-table-tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.015);
+}
+[data-ov-pc-table] .ant-table-cell {
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    text-align: unset;
+    vertical-align: middle;
+}
+[data-ov-pc-table] .ant-table-cell-row-hover {
+}
+.ant-table-measure-row {
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    font-size: 0;
+}
+/* Cell uniform tags */
+.client-traffic-cell {
+    box-sizing: border-box;
+    background: var(--ant-color-fill-quaternary, #1a1d23);
+    border-radius: 999px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    padding: 2px 10px;
+    display: flex;
+}
+.client-traffic-cell.is-unlimited {
+    background: rgba(110, 110, 120, 0.3);
+}
+.client-traffic-cell-limit {
+    font-size: 12px;
+    color: #9aa0a6;
+    white-space: nowrap;
+}
+.client-traffic-cell-used {
+    font-size: 12px;
+    color: var(--ant-color-text);
+.ant-progress-rail {
+    width: 100%;
+    height: 6px;
+    background: var(--ant-color-border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0 8px;
+    flex-shrink: 0;
+}
+.ant-progress-track {
+    height: 100%;
+    background: var(--ant-blue-7);
+    border-radius: 999px;
+    transition: width 320ms ease;
+}
+.ant-progress.is-unlimited .ant-progress-track {
+    width: 100%;
+    background: var(--ant-color-text-quaternary);
+}
+/* Action buttons in Actions column */
+.pc-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+    .pc-actions .pc-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background: var(--ant-color-fill-tertiary);
+        color: var(--ant-color-text-secondary);
+        border: 1px solid var(--ant-color-border-secondary);
+        cursor: pointer;
+        font-size: 11px;
+        transition: all 150ms ease;
+    }
+    .pc-actions .pc-btn:hover {
+        background: rgba(58, 139, 232, 0.2);
+        color: var(--ant-blue-7);
+    }
+    .pc-actions .pc-btn-danger:hover {
+        background: var(--ant-color-error-bg);
+        color: var(--ant-color-error-text);
+    }
+/* Checkbox column cell */
+.pc-checkbox-cell {
+    text-align: center;
+    padding: 0 !important;
+}
+/* ant-switch for Включён */
+.pc-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+.pc-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+    .pc-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--ant-color-border);
+        border-radius: 999px;
+        transition: 0.2s;
+    }
+    .pc-slider:before {
+        content: "";
+        position: absolute;
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background: var(--ant-color-bg-container);
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+    .pc-switch input:checked + .pc-slider {
+        background: var(--ant-blue-7);
+    }
+.pc-switch input:checked + .pc-slider:before {
+    transform: translateX(20px);
+}
+/* Server tag */
+    .server-tag {
+        background: var(--ant-color-bg-container);
+        border: 1px solid var(--ant-color-border-secondary);
+        color: var(--ant-color-text);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-family: monospace;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .server-tag .server-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ant-green-7);
+        box-shadow: 0 0 6px var(--ant-green-7);
+    }
+.server-tag.offline .server-dot {
+    background: #64748b;
+    box-shadow: none;
+}
+    /* Group tag - авто-ширина с минимумом 50px, использует цвета из duration-cell-value / table-speed-tag */
+    .group-tag {
+        min-width: 50px !important;
+        border-radius: 6px;
+        font-size: 12px;
+        padding: 2px 10px;
+        text-align: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+    }
+    .group-tag-empty {
+        background: var(--ant-color-fill-tertiary);
+        border: 1px solid var(--ant-color-border-secondary);
+        color: var(--ant-color-text-secondary);
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 11px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+/* Incoming count tag */
+.inbound-tag {
+    background: rgba(12, 26, 46, 0.3);
+    border: 1px solid var(--ant-color-primary-border);
+    color: var(--ant-blue-8);
+    border-radius: 4px;
+     padding: 2px 8px;
+     font-size: 11px;
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+}
+/* Empty state */
+.pc-empty {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+    font-size: 12px;
+}
+</style>
+                    <div class="ov-pc-wrapper">
+                        <table class="w-full text-xs whitespace-nowrap ant-table ant-table-default ant-table-scroll-position-start ant-table-borderless ant-table-no-borders" data-ov-pc-table>
+                            <colgroup>
+                                <col class="w-[90px]">
+                                <col class="w-[220px]">
+                                <col class="w-[150px]">
+                                <col class="w-[300px]">
+                                <col class="w-[216px]">
+                                <col class="w-[170px]">
+                            </colgroup>
+                            <thead class="ant-table-thead">
+                                <tr class="ant-table-row">
+                                    <th class="ant-table-cell text-center">В сети</th>
+                                    <th class="ant-table-cell text-center">Клиент</th>
+                                    <th class="ant-table-cell text-center">Группа</th>
+                                    <th class="ant-table-cell text-center">Трафик</th>
+                                    <th class="ant-table-cell text-center speed-col">Скорость</th>
+                                    <th class="ant-table-cell text-center">Длительность</th>
+                                    <!-- <th class="ant-table-cell text-center">Привязанные входящие</th> -->
+                                </tr>
+                            </thead>
+                            <tbody class="ant-table-tbody" data-ov-pc-tbody></tbody>
+                        </table>
+                    </div>
+
                 <!-- Серверы -->
                 <div data-ov-servers class="flex flex-col gap-4"></div>
                 </div>
             </section>
             <script defer>
                 $(document).ready(function () {
+                    window.__sectionLoaded = window.__sectionLoaded || {};
                     function ovVisible() {
                         return $('[data-section="monitoring"]:not(.hidden)').length > 0;
                     }
@@ -391,11 +939,13 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         if (ovCharts[id]) { try { ovCharts[id].destroy(); } catch (e) {} delete ovCharts[id]; }
                     }
                     function ovSpark(id, pairs, color, fill) {
+                        pairs = pairs || [];
+                        if (!pairs.length) return;
                         var el = document.getElementById(id);
                         if (!el || typeof Chart === 'undefined') return;
                         ovDestroyChart(id);
                         var labels = pairs.map(function (p) { return p[0]; });
-                        var vals = pairs.map(function (p) { return p[1]; });
+                        var vals = pairs.map(function (p) { return Number((p && p[1]) || 0); });
                         var ctx = el.getContext('2d');
                         var g = ctx.createLinearGradient(0, 0, 0, el.height || 56);
                         g.addColorStop(0, color + '55'); g.addColorStop(1, color + '00');
@@ -407,7 +957,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     }
                     function ovAvgPeak(pairs) {
                         if (!pairs || !pairs.length) return { avg: null, peak: null };
-                        var vs = pairs.map(function (p) { return Number(p[1]) || 0; });
+                        var vs = pairs.map(function (p) { return Number((p && p[1]) || 0); });
                         return { avg: vs.reduce(function (a, b) { return a + b; }, 0) / vs.length, peak: Math.max.apply(null, vs) };
                     }
                     function ovSpeed(bps) {
@@ -418,6 +968,8 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         return (bps / Math.pow(1024, i)).toFixed(2) + ' ' + u[i - 1];
                     }
                     function ovTrafficChart(id, ups, downs) {
+                        ups = ups || []; downs = downs || [];
+                        if (!ups.length && !downs.length) return;
                         var el = document.getElementById(id);
                         if (!el || typeof Chart === 'undefined') return;
                         ovDestroyChart(id);
@@ -441,9 +993,11 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var $b = $('[data-ov-badge]');
                         if (!text) { $b.addClass('hidden'); return; }
                         $b.removeClass('hidden');
-                        var cls = kind === 'red'
-                            ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/25'
-                            : 'bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/25';
+        var cls = kind === 'red'
+            ? 'bg-red-500/10 text-red-400 ring-1 ring-red-500/25'
+            : kind === 'blue'
+                ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/25'
+                : 'bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/25';
                         $b.attr('class', 'text-xs font-medium px-2.5 py-1 rounded-full ' + cls).text(text);
                     }
                     function renderOverview(d) {
@@ -451,18 +1005,23 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var t = d.totals || {}, u = d.users || {}, tr = d.traffic || {};
                         $('[data-ov-online]').text(t.online_now ?? '—');
                         $('[data-ov-peak]').text(t.peak_today ?? '—');
+                        $('[data-ov-avg]').text(t.online_avg != null ? t.online_avg : '—');
                         $('[data-ov-active]').text(u.active ?? '—');
+                $('[data-ov-trials]').text(d.trials_count ?? 0);
                         $('[data-ov-users]').text(u.total ?? '—');
                         $('[data-ov-new]').text(u.new_today ?? 0);
+                    lazyHints();
                         $('[data-ov-t-total]').text(ovBytes((t.up_total || 0) + (t.down_total || 0)));
                         $('[data-ov-t-total-up]').text(ovBytes(t.up_total || 0));
                         $('[data-ov-t-total-down]').text(ovBytes(t.down_total || 0));
                         ovPeriod('[data-ov-t-24h]', tr['24h']);
                         ovPeriod('[data-ov-t-7d]', tr['7d']);
                         ovPeriod('[data-ov-t-30d]', tr['30d']);
-                        if (d.stale) ovBadge('red', 'Панель недоступна');
-                        else if (d.collecting) ovBadge('yellow', 'Сбор истории трафика');
-                        else ovBadge(null);
+                renderMainCharts(t);
+                lazyHints();
+                if (d.stale) ovBadge('red', 'Панель недоступна');
+                else if (d.collecting) ovBadge('blue', 'История');
+                else ovBadge(null);
                         $('[data-ov-updated]').text(new Date(d.at_ms || Date.now()).toLocaleTimeString('ru-RU'));
                         var $w = $('[data-ov-servers]').empty();
                         Object.keys(ovCharts).forEach(ovDestroyChart);
@@ -522,38 +1081,40 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             $row.append($disk);
                             $srv.append($row);
                             // Ряд 2: трафик + соединения
+                            var turnSpeedShow = !!d.turn_speed_show;
                             var $row2 = $('<div>').addClass('grid grid-cols-1 lg:grid-cols-3 gap-4');
                             var $tr = $('<div>').addClass('lg:col-span-2 rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-2 min-w-0');
-                            var lastUp = (h.netUp && h.netUp.length) ? h.netUp[h.netUp.length - 1][1] : 0;
-                            var lastDown = (h.netDown && h.netDown.length) ? h.netDown[h.netDown.length - 1][1] : 0;
-                            var $trHead = $('<div>').addClass('flex flex-wrap items-baseline gap-x-4 gap-y-1');
-                            $trHead.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Общая скорость передачи трафика'));
-                            $trHead.append($('<div>').addClass('ml-auto text-xs text-gray-400').html('↑ Загрузка <b class="text-white">' + ovSpeed(lastUp) + '</b> &nbsp; ↓ Скачать <b class="text-white">' + ovSpeed(lastDown) + '</b>'));
-                            $tr.append($trHead);
-                            $tr.append($('<div>').addClass('h-44').append($('<canvas>').attr('id', p + 'traf').css({ width: '100%', height: '100%' })));
-                            var avgUp = ovAvgPeak(h.netUp || []).avg || 0, avgDown = ovAvgPeak(h.netDown || []).avg || 0;
-                            $tr.append($('<div>').addClass('grid grid-cols-3 gap-2 text-xs')
-                                .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Отправлено')).append($('<div>').addClass('text-white font-bold text-base').text(s.net_sent_h || s.up_total_h || '—')))
-                                .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Получено')).append($('<div>').addClass('text-white font-bold text-base').text(s.net_recv_h || s.down_total_h || '—')))
-                                .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Среднее за период')).append($('<div>').addClass('text-white font-bold text-base').text('↑ ' + ovSpeed(avgUp) + ' ↓ ' + ovSpeed(avgDown)))));
-                            $srv.append($tr);
-                            ovDrawQueue.push({ traf: p + 'traf', ups: h.netUp || [], downs: h.netDown || [] });
-                            var $conn = $('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-2 min-w-0');
+                            if (turnSpeedShow) {
+                                var lastUp = (h.netUp && h.netUp.length) ? h.netUp[h.netUp.length - 1][1] : 0;
+                                var lastDown = (h.netDown && h.netDown.length) ? h.netDown[h.netDown.length - 1][1] : 0;
+                                var $trHead = $('<div>').addClass('flex flex-wrap items-baseline gap-x-4 gap-y-1');
+                                $trHead.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Общая скорость передачи трафика'));
+                                $trHead.append($('<div>').addClass('ml-auto text-xs text-gray-400').html('↑ Загрузка <b class="text-white">' + ovSpeed(lastUp) + '</b> &nbsp; ↓ Скачать <b class="text-white">' + ovSpeed(lastDown) + '</b>'));
+                                $tr.append($trHead);
+                                $tr.append($('<div>').addClass('h-44').append($('<canvas>').attr('id', p + 'traf').css({ width: '100%', height: '100%' })));
+                                var avgUp = ovAvgPeak(h.netUp || []).avg || 0, avgDown = ovAvgPeak(h.netDown || []).avg || 0;
+                                $tr.append($('<div>').addClass('grid grid-cols-3 gap-2 text-xs')
+                                    .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Отправлено')).append($('<div>').addClass('text-white font-bold text-base').text(s.net_sent_h || s.up_total_h || '—')))
+                                    .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Получено')).append($('<div>').addClass('text-white font-bold text-base').text(s.net_recv_h || s.down_total_h || '—')))
+                                    .append($('<div>').append($('<div>').addClass('text-gray-500 text-[11px] uppercase').text('Среднее за период')).append($('<div>').addClass('text-white font-bold text-base').text('↑ ' + ovSpeed(avgUp) + ' ↓ ' + ovSpeed(avgDown)))));
+                                ovDrawQueue.push({ traf: p + 'traf', ups: h.netUp || [], downs: h.netDown || [] });
+                            }
+                            var $conn = $('<div>').addClass((turnSpeedShow ? 'lg:col-span-1' : 'lg:col-span-3') + ' rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 flex flex-col gap-2 min-w-0');
                             $conn.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500').text('Количество соединений'));
                             $conn.append($('<div>').addClass('text-3xl font-bold text-white').html(((s.tcp || 0) + (s.udp || 0)) + ' <span class="text-sm font-medium text-gray-500">открытых сокетов</span>'));
                             $conn.append($('<div>').addClass('flex gap-4 text-xs text-gray-400').html('<span><i class="text-[#2f81f7]">—</i> TCP <b class="text-white">' + (s.tcp ?? '—') + '</b></span><span><i class="text-gray-500">—</i> UDP <b class="text-white">' + (s.udp ?? '—') + '</b></span>'));
                             $conn.append($('<div>').addClass('h-44').append($('<canvas>').attr('id', p + 'conn').css({ width: '100%', height: '100%' })));
                             ovDrawQueue.push({ id: p + 'conn', pairs: h.online || [], color: '#2f81f7' });
-                            $row2.append($tr); $row2.append($conn);
+                            if (turnSpeedShow) $row2.append($tr); $row2.append($conn);
                             $srv.append($row2);
                             // Ряд 3: аптайм / панель / сеть / топ
                             var $row3 = $('<div>').addClass('grid grid-cols-1 lg:grid-cols-3 gap-4');
                             $row3.append($('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 text-xs')
                                 .append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500 mb-2').text('Время работы'))
-                                .append($('<div>').addClass('flex gap-6').append($('<div>').append($('<div>').addClass('text-gray-500').text('OS')).append($('<div>').addClass('text-white font-bold text-base').text(s.uptime_h || '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('Панель')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_uptime_h || '—')))));
+                                .append($('<div>').addClass('flex gap-6').append($('<div>').append($('<div>').addClass('text-gray-500').text('OS')).append($('<div>').addClass('text-white font-bold text-base').text(s.uptime_h || '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('Панель')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_uptime_h || '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('В сети')).append($('<div>').addClass('text-emerald-400 font-bold text-base').text(s.online_now ?? '—')))));
                             $row3.append($('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 text-xs')
                                 .append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500 mb-2').text('Панель · ' + (s.ip || '')))
-                                .append($('<div>').addClass('flex gap-6').append($('<div>').append($('<div>').addClass('text-gray-500').text('Память')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_mem_h || '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('Потоки')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_threads ?? '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('В сети')).append($('<div>').addClass('text-emerald-400 font-bold text-base').text(s.online_now ?? '—')))));
+                                .append($('<div>').addClass('flex gap-6').append($('<div>').append($('<div>').addClass('text-gray-500').text('Память')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_mem_h || '—'))).append($('<div>').append($('<div>').addClass('text-gray-500').text('Потоки')).append($('<div>').addClass('text-white font-bold text-base').text(s.panel_threads ?? '—')))));
                             var $top = $('<div>').addClass('rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4 text-xs');
                             $top.append($('<div>').addClass('text-[11px] uppercase tracking-wider text-gray-500 mb-2').text('Топ по трафику'));
                             if ((s.top || []).length) {
@@ -580,16 +1141,149 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         else $dot.removeClass('hidden bg-red-500').addClass('bg-green-500');
                     }
                     var ovRetried = false;
-                    window.__healthLoaded = false;
+                    // Общие хелперы без дублей: деньги + один LTV-запрос на страницу + один рендер цен
+                    if (!window.QMoney) window.QMoney = function (v) { v = Number(v || 0); return v.toLocaleString('ru-RU', { maximumFractionDigits: v < 100 && v % 1 !== 0 ? 2 : 0 }) + '₽'; };
+                    if (!window.QLtvFetch) window.QLtvFetch = function (fresh) {
+                        if (!fresh && window.QLtvFetch._d) { var d = $.Deferred(); d.resolve(window.QLtvFetch._d); return d.promise(); }
+                        if (window.QLtvFetch._p) return window.QLtvFetch._p;
+                        window.QLtvFetch._p = $.ajax({ url: '/api/admin/analytics/ltv' + (fresh ? '?fresh=1' : ''), method: 'GET', dataType: 'json', timeout: fresh ? 120000 : 20000 })
+                            .done(function (d) { if (!fresh || d) window.QLtvFetch._d = d; })
+                            .always(function () { window.QLtvFetch._p = null; });
+                        return window.QLtvFetch._p;
+                    };
+                    if (!window.QPrices) window.QPrices = function ($tb, $ex, p) {
+                        $tb = $($tb); $ex = $($ex); $tb.empty();
+                        if (!p) { $ex.text('не хватает данных'); return; }
+                        var tariffs = p.tariffs || [];
+                        if (!tariffs.length) { $ex.text(p.explain || 'Нет активных платных подписок — данных для анализа недостаточно.'); $tb.append('<tr><td colspan="6" class="py-3 text-center text-gray-500">Нет данных</td></tr>'); return; }
+                        // заголовок ставит вызывающий — тут только строки
+                        tariffs.forEach(function (t) {
+                            var hasNew = Number(t.new_price || 0) > 0;
+                            var st = t.status || 'ok';
+                            var stBadge = st === 'loss'
+                                ? '<span class="text-red-400 font-medium">убыток</span>'
+                                : (st === 'low' ? '<span class="text-amber-400 font-medium">низкая</span>'
+                                : (st === 'ladder' ? '<span class="text-blue-400 font-medium">лесенка</span>'
+                                : (st === 'empty' ? '<span class="text-gray-500">—</span>' : '<span class="text-emerald-400">ок</span>')));
+                            var marginTxt = (t.margin != null ? (Number(t.margin).toFixed(1) + '%') : '—') + ' ' + stBadge;
+                            $tb.append($('<tr>').addClass('border-b border-white/5')
+                                .append($('<td>').addClass('py-1').text(t.name))
+                                .append($('<td>').addClass('py-1').attr('title', 'Средний чек по факту: ' + window.QMoney(t.old_price)).text(t.config_price != null ? window.QMoney(t.config_price) : '—'))
+                                .append($('<td>').addClass('py-1 ' + (hasNew ? 'text-amber-400 font-medium' : 'text-emerald-400')).attr('title', t.reason || '').text(hasNew ? window.QMoney(t.new_price) : '—'))
+                                .append($('<td>').addClass('py-1').text(t.count))
+                                .append($('<td>').addClass('py-1').html(marginTxt))
+                                .append($('<td>').addClass('py-1 ' + (Number(t.uplift_month || 0) > 0 ? 'text-emerald-400 font-medium' : 'text-gray-500')).attr('title', t.reason || '').text(Number(t.uplift_month || 0) > 0 ? ('+' + window.QMoney(t.uplift_month)) : '—')));
+                        });
+                    };
+                    var LAZY_HINTS = {
+                        monitoring: 'Собираются при посещении раздела Мониторинг',
+                        forecast: 'Собираются при посещении раздела Прогноз прибыли'
+                    };
+                    function lazyHints() {
+                        $('[data-lazy-hint]').each(function () {
+                            var $el = $(this);
+                            var v = $.trim($el.text());
+                            if (v === '—' || v === '') {
+                                var key = $(this).data('lazy-hint');
+                                $el.html('<span class="text-xs text-gray-500">' + (LAZY_HINTS[key] || key) + '</span>');
+                            }
+                        });
+                    };
+                     function renderMainCharts(totals) {
+                        totals = totals || {};
+                        if (typeof Chart === 'undefined') {
+                            window.__rmcTries = (window.__rmcTries || 0) + 1;
+                            if (window.__rmcTries > 50) { $('[data-chart-empty="chart_new_users"]').text('Не загрузилась библиотека графиков. Проверьте сеть.').show(); return; }
+                            setTimeout(function(){ renderMainCharts(totals); }, 200); return;
+                        }
+                        window.__rmcTries = 0;
+                        var statsReady = !!(window.__adminStats && window.__adminStats.financial);
+                        var on = Number(totals.online_now || 0), all = Number(totals.clients || 0);
+                        var $oc = $('#chart_online_main');
+                        if ($oc.length && all > 0) {
+                            $oc[0].previousElementSibling && ($oc[0].previousElementSibling.style.display='none');
+                            if (!$oc[0].__chart) $oc[0].__chart = new Chart($oc, {
+                                type: 'doughnut',
+                                data: { labels: ['В сети', 'Не в сети'], datasets: [{ data: [on, Math.max(0, all - on)], backgroundColor: ['rgba(52,211,153,0.85)', 'rgba(148,163,184,0.25)'], borderWidth: 0 }] },
+                                options: { cutout: '64%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                            }); else { $oc[0].__chart.data.datasets[0].data = [on, Math.max(0, all - on)]; $oc[0].__chart.update(); }
+                        }
+                        var muc = (window.__adminStats && window.__adminStats.financial && window.__adminStats.financial.monthlyUsersChart) || [];
+                        if (!statsReady) return;
+                        var $empty2 = $('[data-chart-empty="chart_new_users"]');
+                        if (!muc.length) { $empty2.text('Нет данных — пользователи пока не регистрировались.').show(); return; }
+                        $empty2.hide();
+                        var $bar2 = $('[data-chart="chart_new_users"]').get(0);
+                        var $bar3 = $('[data-chart="chart_users_monthly"]:visible').get(0);
+                        var labels = muc.map(function(r){return r.month;});
+                        var vals = muc.map(function(r){return (r.users_count||0);});
+                        if ($bar2 && Chart) {
+                            var bctx = $bar2.getContext('2d');
+                            var bgrad = bctx.createLinearGradient(0, 0, 0, $bar2.height || 220);
+                            bgrad.addColorStop(0, 'rgba(96,165,250,0.95)');
+                            bgrad.addColorStop(1, 'rgba(59,130,246,0.12)');
+                            var bmax = Math.max.apply(null, vals.concat([0]));
+                            var cfg = {
+                                type: 'bar',
+                                data: { labels: labels, datasets: [{ label: 'Новых', data: vals, backgroundColor: bgrad, hoverBackgroundColor: 'rgb(147,197,253)', borderRadius: 7, borderSkipped: false, barPercentage: 0.55, categoryPercentage: 0.68 }] },
+                                options: {
+                                    responsive: true, maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            backgroundColor: '#0d1117', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+                                            titleColor: '#9aa4b2', bodyColor: '#e6e9ee', padding: 10, displayColors: false,
+                                            callbacks: { label: function (c) { return ' ' + Number(c.parsed.y || 0).toLocaleString('ru-RU') + ' новых'; } }
+                                        }
+                                    },
+                                    scales: {
+                                        x: { grid: { display: false }, ticks: { color: '#9aa4b2' } },
+                                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#9aa4b2', stepSize: Math.max(1, Math.ceil(bmax / 5)), callback: function (v) { return v + ' чел.'; } } }
+                                    }
+                                }
+                            };
+                            if (!$bar2.__chart) $bar2.__chart = new Chart($bar2, cfg);
+                            else { $bar2.__chart.data = { labels: labels, datasets: cfg.data.datasets }; $bar2.__chart.update(); }
+                        }
+                        if ($bar3 && Chart) {
+                            var cfg2 = {
+                                type: 'line',
+                                data: { labels: labels, datasets: [{ data: vals, borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: 'rgb(59,130,246)' }] },
+                                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){return Number(c.parsed.y).toLocaleString('ru-RU') + ' новых';} } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.06)' } }, y: { grid: { color: 'rgba(255,255,255,0.06)' } } } }
+                            };
+                            if (!$bar3.__chart) $bar3.__chart = new Chart($bar3, cfg2);
+                            else { $bar3.__chart.data = { labels: labels, datasets: cfg2.data.datasets }; $bar3.__chart.update(); }
+                        }
+                        var $sp = $('#chart_users_spark');
+                        if ($sp.length && Chart && muc.length) {
+                            if (!$sp[0].__chart) $sp[0].__chart = new Chart($sp, {
+                                type: 'line',
+                                data: { labels: labels, datasets: [{ data: vals, borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.4, fill: true, pointRadius: 2, pointBackgroundColor: 'rgb(59,130,246)' }] },
+                                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true, callbacks: { label: function(c){return Number(c.parsed.y).toLocaleString('ru-RU') + ' новых';} } } }, scales: { x: { display: false, grid: { display: false } }, y: { display: false, grid: { display: false } } } }
+                            }); else { $sp[0].__chart.data.datasets[0].data = vals; $sp[0].__chart.data.labels = labels; $sp[0].__chart.update(); }
+                        }
+                    }
+                    window.renderMainCharts = renderMainCharts;
                     function renderHealth(h) {
                         if (!h || h.status !== 'ok') return;
+                        var ts = (h.turn_speed_show !== undefined) ? !!h.turn_speed_show : true;
+                        $('#speed-toggle').prop('checked', ts).off('change.toggleSpeed').on('change.toggleSpeed', function () {
+                            var val = $(this).is(':checked') ? 'on' : 'off';
+                            $('#speed-toggle-label').text($(this).is(':checked') ? 'вкл.' : 'выкл.');
+                            $.ajax({ url: '/api/admin/monitoring/toggle_flag', method: 'POST', dataType: 'json', timeout: 15000, data: { flag: 'turn_speed_show', value: val }, success: function (r) { $('#speed-toggle-label').text(r.status === 'ok' ? 'сохранено' : 'ошибка'); } });
+                            renderPanelClients(h);
+                        });
+                        $('#speed-toggle-label').text(ts ? 'вкл.' : 'выкл.');
+                        $('[data-ov-pill-text]').text('Готово');
+                        $('[data-ov-pill-dot]').attr('class', 'w-2 h-2 rounded-full bg-emerald-400');
+                        $('[data-ov-updated]').text(new Date(h.at_ms || Date.now()).toLocaleTimeString('ru-RU'));
                         var $pill = $('[data-h-pill]');
                         if (h.ok) $pill.attr('class', 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 ring-1 ring-emerald-500/25 text-emerald-300 text-sm').text('Всё сходится');
                         else $pill.attr('class', 'inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 ring-1 ring-yellow-500/25 text-yellow-300 text-sm').text('Есть расхождения');
-                        $('[data-h-panel]').text(h.panel_clients ?? '—');
-                        $('[data-h-db]').text(h.db_rows ?? '—');
-                        $('[data-h-missing-n]').text(h.missing_count ?? 0);
-                        $('[data-h-ghosts-n]').text(h.ghosts_count ?? 0);
+        $('[data-h-panel]').text(h.panel_clients ?? '—');
+        $('[data-h-panel-on]').text(h.panel_enabled ?? 0);
+        $('[data-h-panel-off]').text(h.panel_disabled ?? 0);
+                        $('[data-h-missing-n]').text(h.missing_count ?? 0);                        $('[data-h-ghosts-n]').text(h.ghosts_count ?? 0);
                         var $m = $('[data-h-missing]').empty();
                         if (!(h.missing || []).length) $m.append($('<span>').addClass('text-emerald-400/70').text('пусто — все оплаченные с ключами'));
                         (h.missing || []).forEach(function (r) {
@@ -610,11 +1304,209 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                 .append($('<span>').addClass('text-gray-500').text(x.ok ? 'reality/pbk/sni на месте' : (x.error || 'проверки не прошли'))));
                         });
                     }
-                    function loadHealth(force) {
-                        if (!force && (window.__healthLoaded || !ovVisible())) return;
-                        $.ajax({
-                            url: '/api/admin/health' + (force ? '?fresh=1' : ''), method: 'GET', dataType: 'json', timeout: 60000,
-                            success: function (hh) { window.__healthLoaded = true; renderHealth(hh); }
+                    function renderForecast(d) {
+                        if (!d || d.error) {
+                            $('[data-fc-period-label]').text('Ошибка: ' + (d && d.error ? d.error : 'Нет данных'));
+                            $('[data-fc="actual"],[data-fc="predicted"],[data-fc="forecast-min"],[data-fc="forecast-max"],[data-fc="forecast-base"],[data-fc="forecast-opt"],[data-fc="forecast-pes"],[data-fc="avg_ltv"],[data-fc="repeat-days"]').text('—');
+                            $('[data-fc="recurring"],[data-fc="recurring-suffix"],[data-fc="total_clients"],[data-fc="trial-convert"]').text(0);
+                            $('[data-fc-recurring-clients]').html('<tr><td colspan="6" class="py-4 text-center text-gray-500">Ошибка загрузки</td></tr>');
+                            $('[data-fc-trial-table]').html('<tr><td colspan="5" class="py-4 text-center text-gray-500">Ошибка загрузки</td></tr>');
+                            return;
+                        }
+                        var m = d.metrics || {};
+                        $('[data-fc-period-label]').text('Период: ' + (d.period_label || 'все время'));
+                        function fmt(v) { if (v === null || v === undefined || v === '') return 'не хватает данных'; v = Number(v); return isFinite(v) ? (v.toLocaleString('ru-RU') + ' ₽') : 'не хватает данных'; }
+                        $('[data-fc="actual"]').text(fmt(m.actual_monthly_revenue));
+                        $('[data-fc="predicted"]').text(fmt(m.predicted_monthly_revenue));
+                        $('[data-fc="forecast-min"]').text(fmt(m.forecast_min));
+                        $('[data-fc="forecast-max"]').text(fmt(m.forecast_max));
+                        $('[data-fc="recurring"]').text(m.recurring_clients ?? 0);
+                        $('[data-fc="recurring-suffix"]').text(m.recurring_clients ?? 0);
+                        $('[data-fc="avg_ltv"]').text(m.avg_ltv ? (m.avg_ltv + ' ₽') : 'не хватает данных');
+                        $('[data-fc="total_clients"]').text(m.active_subscriptions ?? 0);
+                        $('[data-fc="repeat-days"]').text(m.repeat_purchase_days ? (m.repeat_purchase_days + ' дн') : 'не хватает данных');
+                        var tc = d.trial_conversions || [];
+                        $('[data-fc="trial-convert"]').text(tc.length ? tc.length : '—');
+        var predicted = m.predicted_monthly_revenue || 0;
+        $('[data-fc="forecast-base"]').text(fmt(predicted * 0.7));
+        $('[data-fc="forecast-opt"]').text(fmt(predicted * 0.9));
+            $('[data-fc="forecast-pes"]').text(fmt(predicted * 0.5));
+
+                        var $rc = $('[data-fc-recurring-clients]').empty();
+                        (d.recurring_clients || []).forEach(function (c) {
+                            var ne = c.next_month_expectation || {};
+                            var monthLabel = (c.next_payment ? c.next_payment.slice(0, 7) : (ne.month || '—'));
+                            var expectVal = ne.expected ? (Number(ne.expected).toLocaleString('ru-RU') + ' ₽') : 'не хватает данных';
+                            $rc.append($('<tr>').addClass('border-b border-white/5')
+                                .append($('<td>').addClass('py-2').text((c.uniID || '').slice(0, 8)))
+                                .append($('<td>').addClass('py-2').text(c.ltv ? (Number(c.ltv).toLocaleString('ru-RU') + ' ₽') : 'не хватает данных'))
+                                .append($('<td>').addClass('py-2').text(c.pay_count || '—'))
+                                .append($('<td>').addClass('py-2').text(c.expected_month ? (Number(c.expected_month).toLocaleString('ru-RU') + ' ₽') : 'не хватает данных'))
+                                .append($('<td>').addClass('py-2').text(c.next_payment || 'не хватает данных'))
+                                .append($('<td>').addClass('py-2').text(monthLabel + ': ' + expectVal)));
+                        });
+                        if (!(d.recurring_clients || []).length) $rc.append($('<tr><td colspan="6" class="py-4 text-center text-gray-500">Нет постоянных клиентов</td></tr>'));
+
+                        var $tt = $('[data-fc-trial-table]').empty();
+                        (tc || []).forEach(function (c) {
+                            $tt.append($('<tr>').addClass('border-b border-white/5')
+                                .append($('<td>').addClass('py-2').text((c.uniID || '').slice(0, 8)))
+                                .append($('<td>').addClass('py-2').text(c.trial_days ? (c.trial_days + 'д') : '—'))
+                                .append($('<td>').addClass('py-2').text(c.pay_count || '—'))
+                                .append($('<td>').addClass('py-2').text(c.first_payment || '—'))
+                                .append($('<td>').addClass('py-2').text(c.interval || '—')));
+                        });
+                        if (!tc.length) $tt.append($('<tr><td colspan="5" class="py-4 text-center text-gray-500">Нет пробников с покупками</td></tr>'));
+
+                        if (!window.__fcChart) {
+                            if (typeof Chart === 'undefined' || !document.getElementById('fc-forecast')) return;
+                            var mr = d.monthly_revenue || {};
+                            var labels = Object.keys(mr).sort();
+                            var data = labels.map(function (k) { return mr[k] || 0; });
+                            if (!labels.length) { labels = ['Сегодня']; data = [m.predicted_monthly_revenue || 0]; }
+                            window.__fcChart = new Chart(document.getElementById('fc-forecast'), {
+                                type: 'line',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Прогноз (₽)',
+                                        data: data,
+                                        borderColor: 'rgb(139, 92, 246)',
+                                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                        tension: 0.4,
+                                        fill: true,
+                                        pointBackgroundColor: '#fff',
+                                        pointBorderColor: 'rgb(139, 92, 246)',
+                                        pointBorderWidth: 2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: { mode: 'index', intersect: false },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grid: { color: 'rgba(255,255,255,0.06)' },
+                                            ticks: {
+                                                callback: function (value) { return value.toLocaleString('ru-RU') + ' ₽'; },
+                                                color: '#9aa4b2'
+                                            }
+                                        },
+                                        x: { grid: { display: false }, ticks: { color: '#9aa4b2' } }
+                                    },
+                                    plugins: {
+                                        legend: { display: true, position: 'top', labels: { color: '#9aa4b2' } },
+                                        title: { display: true, text: 'Прогноз /мес по месяцам создания', color: '#e6e9ee', font: { size: 14 } },
+                                        tooltip: {
+                                            backgroundColor: '#0d1117', borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+                                            titleColor: '#9aa4b2', bodyColor: '#e6e9ee',
+                                            callbacks: { label: function (c) { return ' ' + c.dataset.label + ': ' + Number(c.parsed.y || 0).toLocaleString('ru-RU') + ' ₽'; } }
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            var mr2 = d.monthly_revenue || {};
+                            var labels2 = Object.keys(mr2).sort();
+                            var data2 = labels2.map(function (k) { return mr2[k] || 0; });
+                            if (!labels2.length) { labels2 = ['Сегодня']; data2 = [m.predicted_monthly_revenue || 0]; }
+                            window.__fcChart.data.labels = labels2;
+                            window.__fcChart.data.datasets[0].data = data2;
+                            window.__fcChart.update();
+                        }
+                    }
+                    function loadForecast(force) {
+                        if (!force && !$('[data-section="forecast"]:not(.hidden)').length) return;
+                        if (!force && window.__fcLoading) return;
+                        window.__fcLoading = true;
+                        $('[data-fc-refresh]').prop('disabled', true);
+                        if (force && window.QSpin) QSpin.show('Обновление бюджета…');
+                        var days = $('[data-fc-days].bg-blue-600').data('fc-days');
+                        var month = $('[data-fc-month]').val();
+                        var url = '/api/admin/analytics/ltv';
+                        if (days) url += '?days=' + encodeURIComponent(days);
+                        else if (month) url += '?month=' + encodeURIComponent(month);
+                        else if (force) url += '?fresh=1';
+                        // days/month всегда свежий срез, базовый экран — кэш (тяжёлый скан не чаще раза в 2 мин)
+                        var needFresh = !!days || !!month || !!force;
+                        var isSlice = !!(days || month);
+                        var req = (needFresh && window.QLtvFetch && !days && !month)
+                            ? window.QLtvFetch(true)
+                            : $.ajax({ url: url, method: 'GET', dataType: 'json', timeout: needFresh ? 120000 : 20000 });
+                        req.done(function (d) { renderForecast(d); if (d && !d.error && !isSlice) window.QLtvFetch._d = d; })
+                            .fail(function (xhr) { $('[data-fc-period-label]').text('Ошибка загрузки: ' + (xhr.status || 'нет соединения')); })
+                            .always(function () { $('[data-fc-refresh]').prop('disabled', false); window.__fcLoading = false; if (window.QSpin) QSpin.hide(); });
+                    }
+                    function renderPanelClients(h) {
+                        if (!h || h.status !== 'ok') return;
+                        $('[data-ov-pc-total]').text(h.panel_clients ?? 0);
+                        $('[data-ov-pc-on]').text(h.panel_online ?? 0);
+                        $('[data-ov-pc-off]').text(h.panel_disabled ?? 0);
+                        $('[data-ov-pc-active]').text(h.panel_active ?? 0);
+                        $('[data-ov-pc-exhausted]').text(h.panel_exhausted ?? 0);
+                        $('[data-ov-pc-near]').text(h.panel_near_expiry ?? 0);
+                        $('[data-ov-pc-updated]').text(new Date(h.at_ms || Date.now()).toLocaleTimeString('ru-RU'));
+                        var tbody = $('[data-ov-pc-tbody]').empty();
+                        var turnSpeedShow = !!h.turn_speed_show;
+                        $('.speed-col').toggle(turnSpeedShow);
+                        var list = (h.panel_clients_list || []);
+                        var pcColspan = turnSpeedShow ? 6 : 5;
+                        if (!list.length) {
+                            tbody.append('<tr class="ant-table-measure-row"><td></td></tr><tr><td colspan="' + pcColspan + '" class="pc-empty">Нет клиентов в панелях</td></tr>');
+                            return;
+                        }
+                        tbody.append('<tr class="ant-table-measure-row"><td></td></tr>');
+            list.forEach(function (c) {
+                var esc = function (s) { return $('<div>').text(s == null ? '' : String(s)).html(); };
+                var onlineTag = c.online ?
+                    '<span class="ant-tag ant-tag-filled dot-tag xui online"><span class="online-dot"></span>В сети</span>' :
+                    '<span class="ant-tag ant-tag-filled dot-tag xui offline"><span class="online-dot"></span>Не в сети</span>';
+                var used = (c.up || 0) + (c.down || 0);
+                            var total = (c.totalGB || 0);
+                            var limitLabel = total <= 0 ? '∞' : ovBytes(total);
+                            var usedLabel = ovBytes(used);
+                            var barCls = total <= 0 ? 'client-traffic-cell-bar ant-progress is-unlimited' : 'client-traffic-cell-bar ant-progress';
+                            var barWidth = total <= 0 ? '100%' : (Math.min(100, (used / total) * 100)).toFixed(0) + '%';
+                            if (c.expiry_days_num !== undefined && c.expiry_days_num <= 3 && c.expiry_days_num >= 0) {
+                                barCls += ' traffic-low';
+                            }
+                            var trafficCell = '<div class="client-traffic-cell ' + (total <= 0 ? 'is-unlimited' : '') + '">' +
+                                '<span class="client-traffic-cell-used">' + usedLabel + '</span>' +
+                                '<div class="' + barCls + '">' +
+                                    '<div class="ant-progress-rail"><div class="ant-progress-track" style="width:' + barWidth + '"></div></div>' +
+                                '</div>' +
+                                '<span class="client-traffic-cell-limit">' + limitLabel + '</span>' +
+                            '</div>';
+                            var speedTag;
+                            var hasSpd = (Number(c.up) || 0) > 0 || (Number(c.down) || 0) > 0;
+                            if (turnSpeedShow && c.online && hasSpd) {
+                                speedTag = '<span class="table-speed-tag">↑ ' + esc(c.up_h || '0.00 KB') + ' / ↓ ' + esc(c.down_h || '0.00 KB') + '</span>';
+                            } else {
+                                speedTag = '<span class="table-speed-tag-empty">—</span>';
+                            }
+                             var durationTag = '<span class="text-gray-500">—</span>';
+                             if (c.expiry_days) {
+                                 var durCls = (c.expiry_days_num !== undefined && c.expiry_days_num <= 3) ? 'duration-cell-warning' : 'duration-cell-value';
+                                 durationTag = '<span class="' + durCls + '">' + esc(c.expiry_days) + '</span>';
+                             }
+                             var emailCell = '<div class="font-mono text-xs break-all email-cell">' + esc(c.email || c.subId || '—') + '</div>' + (c.subId ? '<div class="text-gray-400 text-[10px] break-all email-cell">' + esc(c.subId) + '</div>' : '');
+                             var groupTag;
+                             if (c.group && c.group !== 'Оплаченная') {
+                                 var tagCls = (c.group === 'Бесплатные') ? 'type-free group-tag' : (c.group === 'Пробная') ? 'type-trial group-tag' : (c.group === 'Бонусная') ? 'type-bonus group-tag' : 'duration-cell-warning group-tag';
+                                 groupTag = '<span class="' + tagCls + '">' + esc(c.group) + '</span>';
+                             } else {
+                                 groupTag = '<span class="group-tag-empty">—</span>';
+                             }
+                             var $tr = $('<tr>').addClass('ant-table-row ant-table-cell-row-hover text-gray-200').attr('data-row-key', (c.subId || c.email || ''));
+                             $tr.append(
+                                     '<td class="ant-table-cell text-center">' + onlineTag + '</td>' +
+                                     '<td class="ant-table-cell text-center">' + emailCell + '</td>' +
+                                     '<td class="ant-table-cell text-center">' + groupTag + '</td>' +
+                                     '<td class="ant-table-cell text-center">' + trafficCell + '</td>' +
+                                     (turnSpeedShow ? '<td class="ant-table-cell text-center">' + speedTag + '</td>' : '') +
+                                     '<td class="ant-table-cell text-center">' + durationTag + '</td>');
+                             tbody.append($tr);
                         });
                     }
                     function cuList(items, key1, key2) {
@@ -659,41 +1551,84 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                 if (!r || r.status !== 'ok') { $box.html('<div class="text-red-400">Ошибка: ' + ((r && r.message) || 'неизвестно') + '</div>'); return; }
                                 var h = '<div class="text-emerald-300 font-medium">Готово: строк БД ' + (r.db_deleted || 0) + ', ключей ' + ((r.panel_deleted || []).length) + '</div>';
                                 if ((r.panel_failed || []).length) {
-                                    h += '<div class="text-yellow-300">Не удалились (' + r.panel_failed.length + '): ' + r.panel_failed.map(function (f) { return f.key; }).join(', ') + '</div>';
+                                    h += '<div class="text-yellow-300">Не удалились (' + r.panel_failed.length + '): ' + r.panel_failed.map(function (f) { return $('<div>').text(f.key).html(); }).join(', ') + '</div>';
                                 }
                                 h += '<div><button data-cu-cancel class="text-xs font-medium px-4 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300">Закрыть</button></div>';
                                 $box.html(h);
-                                window.__healthLoaded = false;
-                                loadHealth(true);
+                                loadOverview(true);
                             },
                             error: function () { if (window.QSpin) QSpin.hide(); $btn.prop('disabled', false).text('Повторить'); }
                         });
                     });
                     function loadOverview(force) {
-                        if (!force && !ovVisible()) return;
+                        if (!force && !($('[data-section="monitoring"]:not(.hidden)').length || $('[data-section="main"]:not(.hidden)').length)) return;
                         if (force && window.QSpin) QSpin.show('Обновление…');
-                        loadHealth(force);
                         var $btn = $('[data-ov-refresh]');
                         if (force) $btn.find('i').addClass('fa-spin');
+                        // Один запрос: overview уже содержит все health-поля — панели дёргаем раз, а не два
+                        var op = '/api/admin/overview' + (force ? '?fresh=1' : '');
                         $.ajax({
-                            url: '/api/admin/overview' + (force ? '?fresh=1' : ''), method: 'GET', dataType: 'json', timeout: 60000,
+                            url: op, method: 'GET', dataType: 'json', timeout: 60000,
                             success: function (dd) {
+                                if (!dd || dd.status !== 'ok') { ovBadge('red', (dd && dd.error) || 'Ошибка загрузки'); return; }
+                                renderOverview(dd);
+                                renderHealth(dd);
+                                renderPanelClients(dd);
+                                window.__overviewTotals = dd.totals || {};
+                                if (dd.refreshing && !force && !ovRetried) {
+                                    ovRetried = true;
+                                    setTimeout(function () { window.__ovLoading = false; loadOverview(false); }, 8000);
+                                }
+                                if (!dd.refreshing) ovRetried = false;
+                            },
+                            error: function (xhr) {
+                                if ((xhr.statusText || '') === 'timeout') {
+                                    ovBadge('red', 'Превышено время ожидания');
+                                    $('[data-ov-pill-text]').text('Превышено время ожидания');
+                                } else {
+                                    ovBadge('red', 'Ошибка загрузки');
+                                    $('[data-ov-pill-text]').text('Ошибка подключения');
+                                }
+                                $('[data-ov-pill-dot]').attr('class', 'w-2 h-2 rounded-full bg-red-400');
+                            },
+                            complete: function () {
                                 $btn.find('i').removeClass('fa-spin');
                                 if (window.QSpin) QSpin.hide();
-                                renderOverview(dd);
-                                if (dd && dd.refreshing && !force && !ovRetried) {
-                                    ovRetried = true;
-                                    setTimeout(function () { loadOverview(false); }, 8000);
-                                }
-                                if (dd && !dd.refreshing) ovRetried = false;
-                            },
-                            error: function () { $btn.find('i').removeClass('fa-spin'); if (window.QSpin) QSpin.hide(); ovBadge('red', 'Ошибка загрузки'); }
+                                window.__ovLoading = false;
+                            }
                         });
                     }
                     $('[data-ov-refresh]').on('click', function () { loadOverview(true); });
-                    $(document).on('click', '[data-toggle-section="monitoring"]', function () { loadOverview(true); });
-                    setInterval(function () { loadOverview(false); }, 30000);
-                    loadOverview(false);
+                    $(document).on('click', '[data-toggle-section="forecast"]', function () { setTimeout(function () { loadForecast(false); }, 150); });
+                    $(document).on('click', '[data-fc-days]', function () {
+                        $('[data-fc-days]').removeClass('bg-blue-600 text-white').addClass('bg-white/5 text-gray-300');
+                        $(this).addClass('bg-blue-600 text-white').removeClass('bg-white/5 text-gray-300');
+                        $('[data-fc-month]').val('');
+                        loadForecast(true);
+                    });
+                    $(document).on('change', '[data-fc-month]', function () {
+                        $('[data-fc-days]').removeClass('bg-blue-600 text-white').addClass('bg-white/5 text-gray-300');
+                        loadForecast(true);
+                    });
+                    $(document).on('click', '[data-fc-refresh]', function () { loadForecast(true); });
+                    $(document).on('click', '[data-toggle-section="monitoring"]', function () { setTimeout(function () { loadOverview(false); }, 150); });
+                    var monitoringInterval = null;
+                    function startMonitoringInterval() {
+                        stopMonitoringInterval();
+                        monitoringInterval = setInterval(function () {
+                            loadOverview(false);
+                        }, 60000);
+                    }
+                    function stopMonitoringInterval() {
+                        if (monitoringInterval) { clearInterval(monitoringInterval); monitoringInterval = null; }
+                    }
+                    $(document).on('click', '[data-toggle-section]', function () {
+                        var sec = $(this).data('toggle-section');
+                        if (sec === 'monitoring') { startMonitoringInterval(); }
+                        else { stopMonitoringInterval(); }
+                    });
+                    if (ovVisible()) startMonitoringInterval();
+                    $(window).on('beforeunload', function () { stopMonitoringInterval(); });
                 });
             </script>
             <?php else: ?>
@@ -711,10 +1646,16 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="servers">
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center gap-3">
                     <h1 class="text-2xl font-bold text-gray-100 mb-4 md:mb-0">Серверы</h1>
-                    <button data-srv-add-open
-                        class="text-xs font-medium px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors">
-                        <i class="fa-solid fa-plus mr-1"></i>Добавить сервер
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button data-srv-refresh
+                            class="text-xs font-medium px-4 py-2 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors" title="Обновить список">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
+                        </button>
+                        <button data-srv-add-open
+                            class="text-xs font-medium px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-500 transition-colors">
+                            <i class="fa-solid fa-plus mr-1"></i>Добавить сервер
+                        </button>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" data-srv-list>
                     <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-6 text-sm text-gray-400">Загрузка…</div>
@@ -785,14 +1726,21 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             </section>
             <script defer>
                 $(document).ready(function () {
-                    var srvLoaded = false, srvRaw = {}, srvEditCode = null;
+                    var srvLoaded = false, srvLoading = false, srvRaw = {}, srvEditCode = null;
                     function srvVisible() { return $('[data-section="servers"]:not(.hidden)').length > 0; }
-                    function srvLoad() {
-                        if (srvLoaded || !srvVisible()) return;
-                        srvLoaded = true;
+                    function srvLoad(force) {
+                        if (!force && (srvLoaded || !srvVisible())) return;
+                        if (srvLoading) return;
+                        srvLoading = true;
+                        $('[data-srv-refresh]').find('i').addClass('fa-spin');
                         $.ajax({
                             url: '/api/admin/relocation', method: 'GET', dataType: 'json', timeout: 60000,
                             success: function (d) {
+                                if (!d || d.status === 'error') {
+                                    $('[data-srv-list]').html('<div class="rounded-xl bg-red-500/5 ring-1 ring-red-500/20 p-6 text-sm text-red-400">Ошибка загрузки: ' + ((d && d.message) || 'неизвестно') + '</div>');
+                                    return;
+                                }
+                                srvLoaded = true;
                                 srvRaw = d.raw || {};
                                 var $w = $('[data-srv-list]').empty();
                                 var codes = Object.keys(srvRaw);
@@ -812,11 +1760,20 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                         url: '/api/admin/relocation?action=check&code=' + encodeURIComponent(code), method: 'GET', dataType: 'json', timeout: 30000,
                                         success: function (r) {
                                             var c = (r && r.check) || {};
-                                            $('[data-srv-check="' + code + '"]').text(c.ok ? c.note : ('нет: ' + (c.note || ''))).toggleClass('text-green-400', !!c.ok).toggleClass('text-red-400', !c.ok);
+                                            $(document).find('[data-srv-check]').filter(function () { return $(this).attr('data-srv-check') === code; })
+                                                .text(c.ok ? c.note : ('нет: ' + (c.note || ''))).toggleClass('text-green-400', !!c.ok).toggleClass('text-red-400', !c.ok);
+                                        },
+                                        error: function () {
+                                            $(document).find('[data-srv-check]').filter(function () { return $(this).attr('data-srv-check') === code; })
+                                                .text('ошибка проверки').addClass('text-red-400');
                                         }
                                     });
                                 });
-                            }
+                            },
+                            error: function () {
+                                $('[data-srv-list]').html('<div class="rounded-xl bg-red-500/5 ring-1 ring-red-500/20 p-6 text-sm text-red-400">Ошибка сети. Нажмите «Обновить».</div>');
+                            },
+                            complete: function () { srvLoading = false; $('[data-srv-refresh]').find('i').removeClass('fa-spin'); }
                         });
                     }
                     function srvCollect() {
@@ -824,7 +1781,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         $('[data-srv-f]').each(function () { o[$(this).attr('data-srv-f')] = $(this).val(); });
                         o.code = (o.code || '').toLowerCase().trim();
                         o.XUI_INBOUND_NUMBER = parseInt(o.XUI_INBOUND_NUMBER || '0', 10) || 0;
-                        if (!o.flag) o.flag = 'default.svg';
+                        if (!o.flag) o.flag = 'none.svg';
                         if (!o.XUI_LOGIN_NAME_COOKIE) o.XUI_LOGIN_NAME_COOKIE = 'x-ui';
                         return o;
                     }
@@ -933,8 +1890,9 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         if (window.QSpin) QSpin.show('Перенос клиентов…');
                         srvDelTick(code, target);
                     });
-                    $(document).on('click', '[data-toggle-section="servers"]', function () { setTimeout(srvLoad, 350); });
-                    srvLoad();
+                    $(document).on('click', '[data-toggle-section="servers"]', function () { setTimeout(function () { srvLoad(false); }, 350); });
+                    $(document).on('click', '[data-srv-refresh]', function () { srvLoaded = false; srvLoad(true); });
+                    srvLoad(false);
                 });
             </script>
             <?php else: ?>
@@ -952,7 +1910,13 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="relocation">
                 <div class="py-6 flex-col flex md:flex-row justify-between items-center gap-3">
                     <h1 class="text-2xl font-bold text-gray-100 mb-4 md:mb-0">Переезд: серверы и домены</h1>
-                    <span class="text-xs text-gray-500">аварийный центр при блокировках</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-gray-500">аварийный центр при блокировках</span>
+                        <button data-rl-refresh
+                            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors" title="Обновить данные">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Серверы -->
@@ -1033,15 +1997,20 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             </section>
             <script defer>
                 $(document).ready(function () {
-                    var rlLoaded = false;
+                    var rlLoaded = false, rlLoading = false;
                     function rlVisible() { return $('[data-section="relocation"]:not(.hidden)').length > 0; }
-                    function rlGet(url, ok) {
-                        $.ajax({ url: url, method: 'GET', dataType: 'json', timeout: 60000, success: ok });
+                    function rlGet(url, ok, fail) {
+                        $.ajax({ url: url, method: 'GET', dataType: 'json', timeout: 60000, success: ok, error: fail || function () {} });
                     }
-                    function rlLoad() {
-                        if (rlLoaded || !rlVisible()) return;
-                        rlLoaded = true;
+                    function rlLoad(force) {
+                        if (!force && (rlLoaded || !rlVisible())) return;
+                        if (rlLoading) return;
+                        rlLoading = true;
+                        $('[data-rl-refresh]').find('i').addClass('fa-spin');
+                        var pending = 2;
+                        function one() { if (--pending <= 0) { rlLoading = false; $('[data-rl-refresh]').find('i').removeClass('fa-spin'); } }
                         rlGet('/api/admin/relocation?action=servers', function (d) {
+                            rlLoaded = true;
                             var $t = $('[data-rl-servers]').empty(), $sel = $('[data-rl-target]').empty();
                             (d.servers || []).forEach(function (s) {
                                 $t.append($('<tr>').addClass('border-t border-white/5')
@@ -1054,6 +2023,10 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             });
                             if (d.raw) $('[data-rl-json]').val(JSON.stringify(d.raw, null, 2));
                             (d.servers || []).forEach(function (s) { rlCheck(s.code); });
+                            one();
+                        }, function () {
+                            $('[data-rl-servers]').html('<tr><td colspan="5" class="py-3 text-red-400">Ошибка сети. Нажмите «Обновить».</td></tr>');
+                            one();
                         });
                         rlGet('/api/admin/relocation?action=domains', function (d) {
                             var $t = $('[data-rl-domains]').empty();
@@ -1067,38 +2040,49 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             var $e = $('[data-rl-exposure]').empty(), x = d.exposure || {};
                             if (x.exposed) $e.html('<span class="inline-block px-3 py-1.5 rounded-lg bg-red-500/10 ring-1 ring-red-500/30 text-red-400 font-medium">ОПАСНО: нет deny-правил для секретов! ' + $('<div>').text(x.note || '').html() + '</span>');
                             else if (x.checked) $e.html('<span class="inline-block px-3 py-1.5 rounded-lg bg-green-500/10 ring-1 ring-green-500/30 text-green-400">deny-правила на месте' + (x.note ? ' · ' + $('<div>').text(x.note).html() : '') + '</span><div class="mt-2 text-gray-500 font-mono text-[11px]">nginx: location ~ ^/(setting|app|vendor)/ { deny all; } + location = /.env { deny all; }</div>');
+                            one();
+                        }, function () {
+                            $('[data-rl-domains]').html('<tr><td colspan="3" class="py-3 text-red-400">Ошибка сети. Нажмите «Обновить».</td></tr>');
+                            one();
                         });
                     }
                     function rlCheck(code) {
-                        var $c = $('[data-rl-check="' + code + '"]');
+                        var $c = $(document).find('[data-rl-check]').filter(function () { return $(this).attr('data-rl-check') === code; });
                         $c.text('…');
                         rlGet('/api/admin/relocation?action=check&code=' + encodeURIComponent(code), function (d) {
-                            var c = d.check || {};
+                            var c = (d && d.check) || {};
                             $c.text(c.ok ? c.note : ('нет: ' + (c.note || '')));
                             $c.toggleClass('text-green-400', !!c.ok).toggleClass('text-red-400', !c.ok);
-                        });
+                        }, function () { $c.text('ошибка проверки').addClass('text-red-400'); });
                     }
                     $(document).on('click', '[data-rl-checkbtn]', function () { rlCheck($(this).attr('data-rl-checkbtn')); });
                     $('[data-rl-preview]').on('click', function () {
                         var t = $('[data-rl-target]').val();
-                        $('[data-rl-preview]').text('Считаю…');
+                        var $pv = $('[data-rl-preview]').text('Считаю…');
                         rlGet('/api/admin/relocation?action=preview&target=' + encodeURIComponent(t), function (p) {
-                            if (p.status !== 'ok') { $('[data-rl-preview]').text('Ошибка: ' + (p.message || '')); return; }
-                            $('[data-rl-preview]').html('На <b>' + t + '</b>: перенести <b>' + p.move + '</b>, уже там ' + p.already + '. Панель цели: ' + (p.target_ok ? '<b class="text-green-400">доступна</b>' : '<b class="text-red-400">НЕДОСТУПНА</b> (' + (p.target_note || '') + ')'));
-                        });
+                            if (!p || p.status !== 'ok') { $pv.text('Ошибка: ' + ((p && p.message) || '')); return; }
+                            $pv.empty()
+                                .append(document.createTextNode('На ')).append($('<b>').text(t))
+                                .append(document.createTextNode(': перенести ')).append($('<b>').text(p.move))
+                                .append(document.createTextNode(', уже там ' + (p.already || 0) + '. Панель цели: '))
+                                .append(p.target_ok ? $('<b>').addClass('text-green-400').text('доступна') : $('<b>').addClass('text-red-400').text('НЕДОСТУПНА (' + (p.target_note || '') + ')'));
+                        }, function () { $pv.text('Ошибка сети'); });
                     });
+                    var rlPolling = false;
                     function rlPollTick() {
+                        if (!rlVisible()) { rlPolling = false; return; }
                         $.ajax({
                             url: '/api/admin/relocation', method: 'POST', data: { action: 'tick' }, dataType: 'json', timeout: 120000,
                             success: function (r) {
                                 var st = r.state || {};
                                 var total = st.total || 0, done = st.done || 0;
-                                $('[data-rl-bar]').css('width', total ? (done / total * 100) : 0 + '%');
+                                $('[data-rl-bar]').css('width', (total ? (done / total * 100) : 0) + '%');
                                 $('[data-rl-status]').text('Готово ' + done + ' из ' + total + ' · успешно ' + (st.ok || 0));
                                 var $f = $('[data-rl-failed]').empty();
                                 (st.failed || []).forEach(function (f) { $f.append($('<div>').text((f.email || f.uniID) + ': ' + (f.error || ''))); });
                                 if (st.status === 'running') setTimeout(rlPollTick, 3000);
                                 else {
+                                    rlPolling = false;
                                     $('[data-rl-status]').append(document.createTextNode(st.status === 'done' ? ' · ЗАВЕРШЕНО' : ' · завершено с ошибками'));
                                     if ((st.failed || []).length) $('[data-rl-retry]').removeClass('hidden');
                                 }
@@ -1106,6 +2090,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             error: function () { setTimeout(rlPollTick, 5000); }
                         });
                     }
+                    function rlPollStart() { if (rlPolling) return; rlPolling = true; rlPollTick(); }
                     $('[data-rl-start]').on('click', function () {
                         if (!confirm('Перенести клиентов на ' + $('[data-rl-target]').val() + '?')) return;
                         $('[data-rl-progress]').removeClass('hidden');
@@ -1114,14 +2099,14 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             url: '/api/admin/relocation', method: 'POST', data: { action: 'start', target: $('[data-rl-target]').val() }, dataType: 'json', timeout: 60000,
                             success: function (r) {
                                 if (r.status !== 'ok') { $('[data-rl-status]').text('Ошибка: ' + (r.message || '')); return; }
-                                rlPollTick();
+                                rlPollStart();
                             }
                         });
                     });
                     $('[data-rl-retry]').on('click', function () {
                         $.ajax({
                             url: '/api/admin/relocation', method: 'POST', data: { action: 'retry' }, dataType: 'json', timeout: 30000,
-                            success: function () { $('[data-rl-retry]').addClass('hidden'); rlPollTick(); }
+                            success: function () { $('[data-rl-retry]').addClass('hidden'); rlPollStart(); }
                         });
                     });
                     $('[data-rl-save]').on('click', function () {
@@ -1135,8 +2120,9 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             error: function () { if (window.QSpin) QSpin.hide(); }
                         });
                     });
-                    $(document).on('click', '[data-toggle-section="relocation"]', function () { setTimeout(rlLoad, 350); });
-                    rlLoad();
+                    $(document).on('click', '[data-toggle-section="relocation"]', function () { setTimeout(function () { rlLoad(false); }, 350); });
+                    $(document).on('click', '[data-rl-refresh]', function () { rlLoaded = false; rlLoad(true); });
+                    rlLoad(false);
                 });
             </script>
             <?php else: ?>
@@ -1153,24 +2139,31 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             <?php if ($groups->isPermission($adminUsername,'charts')): ?>
             <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="charts">
                 <!-- Заголовок -->
-                <div class="py-6 flex-col flex md:flex-row justify-between items-center">
+                <div class="py-6 flex-col flex md:flex-row justify-between items-center gap-3">
                     <h1 class="text-2xl font-bold text-gray-100 mb-4 md:mb-0">
                         Графики и аналитика
                     </h1>
+                    <div class="flex items-center gap-2">
+                        <span data-charts-updated class="text-xs text-gray-500"></span>
+                        <button data-charts-refresh
+                            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
+                        </button>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div class="h-[400px]">
-                        <canvas data-chart="chart_clients"></canvas>
-                    </div>
-                    <div class="h-[400px]">
-                        <canvas data-chart="chart_revenue_monthly"></canvas>
-                    </div>
+                <div data-charts-loading class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-6 text-sm text-gray-400 flex items-center gap-3">
+                    <i class="fa-solid fa-circle-notch fa-spin text-blue-400"></i>Собираю данные…
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div class="h-[400px]">
-                        <h3 class="text-lg font-semibold text-gray-300 mb-4">Статистика пользователей по месяцам</h3>
-                        <canvas data-chart="chart_users_monthly"></canvas>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <h3 class="font-semibold text-gray-300 mb-3">Прибыль по месяцам</h3>
+                        <div class="h-[300px]"><canvas data-chart="chart_revenue_monthly" class="w-full h-full"></canvas></div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <h3 class="font-semibold text-gray-300 mb-3">Новые пользователи по месяцам</h3>
+                        <div class="h-[300px]"><canvas data-chart="chart_users_monthly" class="w-full h-full"></canvas></div>
                     </div>
                 </div>
 
@@ -1210,23 +2203,22 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     </div>
 
                     <!-- График прибыли по тарифам -->
-                    <div class="mb-8">
-                        <h2 class="text-lg font-semibold text-gray-300 mb-4">Прибыль по тарифам</h2>
-                        <div class="mb-8 h-[400px]">
-                            <canvas id="chart_plans"></canvas>
-                        </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <h3 class="font-semibold text-gray-300 mb-3">Прибыль по тарифам</h3>
+                        <div class="h-[300px]"><canvas id="chart_plans" class="w-full h-full"></canvas></div>
                         <script defer>
                             // Строится лениво из /api/admin/stats при первом открытии раздела графиков
                             function buildPlansChart(byTariff, fallbackPlan) {
                             const $plansCtx = $('#chart_plans');
-                            if ($plansCtx.length && !window.__plansBuilt) {
+                            if ($plansCtx.length && !window.__plansBuilt && typeof Chart !== 'undefined') {
                                 const rows = (byTariff && byTariff.length) ? byTariff : ((fallbackPlan && fallbackPlan.revenueByPlan) || []);
                                 const labels = rows.map(function (r) { return window.tariffName ? window.tariffName(r.tariff || r.plan) : (r.tariff || r.plan); });
                                 const data = rows.map(function (r) { return r.revenue; });
 
                                 if (labels.length > 0 && data.length > 0) {
+                                    try { if (window.__plansChart) window.__plansChart.destroy(); } catch (e) {}
                                     window.__plansBuilt = true;
-                                    new Chart($plansCtx[0], {
+                                    window.__plansChart = new Chart($plansCtx[0], {
                                         type: 'doughnut',
                                         data: {
                                             labels: labels,
@@ -1267,7 +2259,8 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                         }
                                     });
                                 } else {
-                                    $plansCtx.parent().html('<div class="text-center text-gray-500 py-8">Нет данных для отображения</div>');
+                                    // Данных нет — canvas не трогаем, попробуем снова при следующем обновлении
+                                    return;
                                 }
                             }
                             }
@@ -1482,7 +2475,248 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 </script>
             </section>
             <?php else: ?>
-            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="charts">
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="price">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-100">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
+
+            <!-- Секция: Прогнозирование прибыли -->
+            <?php if ($groups->isPermission($adminUsername,'roi')): ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="forecast">
+                <!-- Шапка с описанием -->
+                <div class="pb-4 border-b border-white/5">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-line-chart text-2xl text-emerald-400"></i>
+                         <h1 class="text-2xl font-bold text-gray-100">Прогнозирование прибыли</h1>
+                    </div>
+                    <p class="mt-1 text-sm text-gray-500 max-w-2xl">
+                        Прогноз ежемесячной выручки на основе LTV (жизненной ценности клиента).
+                        Анализируются активные подписки с 2+ покупками — они способны рефинансировать.
+                        Данные кэшируются на 2 минуты.
+                    </p>
+                    <p class="mt-2 text-xs text-gray-600">
+                        Прогноз появляется, когда в базе есть активные подписки (<code>status='on'</code>, <code>expiry &gt; now</code>)
+                        с <strong>2+ успешными платежами</strong> (<code>qwees_payments.status='succeeded'</code>). Если показатель <code>—</code>,
+                        значит постоянных клиентов пока нет — нужны повторные покупки.
+                    </p>
+                </div>
+
+                <!-- Период выбора -->
+                <div class="flex items-center gap-3 text-sm">
+                    <span class="text-gray-400">Период:</span>
+                    <div class="flex rounded-lg overflow-hidden ring-1 ring-white/10 text-xs font-medium">
+                        <button data-fc-days="30" class="px-3 py-1.5 bg-blue-600 text-white" title="За 30 дней">30д</button>
+                        <button data-fc-days="90" class="px-3 py-1.5 bg-white/5 text-gray-300 hover:bg-white/10" title="За 90 дней">90д</button>
+                        <button data-fc-days="365" class="px-3 py-1.5 bg-white/5 text-gray-300 hover:bg-white/10" title="За год">год</button>
+                    </div>
+                    <input type="month" data-fc-month title="Выберите конкретный месяц (год-месяц)"
+                        class="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-gray-300 focus:outline-none focus:border-purple-500">
+                    <button data-fc-refresh
+                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors" title="Обновить данные">
+                        <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
+                    </button>
+                </div>
+
+                <!-- KPI прогноза -->
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Фактическая выручка (30д)</div>
+                            <span class="q-tip" tabindex="0" data-tip="Та же цифра что в прибыли (gross ЮKassa за 30 дней). Без кэша кассы — сумма успешных платежей леджера"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-cyan-400" data-fc="actual">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">₽</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Прогнозируемая выручка</div>
+                            <span class="q-tip" tabindex="0" data-tip="Ожидаемая выручка на следующий месяц от постоянных клиентов (базовый сценарий)"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-emerald-400" data-fc="predicted">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">₽ / месяц</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Прогноз (мин)</div>
+                            <span class="q-tip" tabindex="0" data-tip="Минимальный сценарий: 50% постоянных продлят (пессимистично)"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-amber-400" data-fc="forecast-min">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">₽ / месяц</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Прогноз (макс)</div>
+                            <span class="q-tip" tabindex="0" data-tip="Максимальный сценарий: 90% постоянных продлят (оптимистично)"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-cyan-400" data-fc="forecast-max">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">₽ / месяц</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Постоянных клиентов</div>
+                            <span class="q-tip" tabindex="0" data-tip="Активные клиенты с 2+ покупками — вероятны повторные платежи"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-blue-400" data-fc="recurring">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">человек</div>
+                    </div>
+                </div>
+
+                <!-- Доп. KPI: LTV, интервал, клиенты -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Средний LTV</div>
+                            <span class="q-tip" tabindex="0" data-tip="Средняя сумма потраченная одним активным клиентом за выбранный период"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-cyan-400" data-fc="avg_ltv">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">₽ на клиента</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Средний интервал покупки</div>
+                            <span class="q-tip" tabindex="0" data-tip="Средний срок между повторными покупками постоянных клиентов. Помогает прогнозировать, когда клиент снова заплатит"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-amber-400" data-fc="repeat-days">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">дней</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Всего клиентов</div>
+                            <span class="q-tip" tabindex="0" data-tip="Уникальные активные клиенты с expiry > сейчас"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-gray-200" data-fc="total_clients">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">шт.</div>
+                    </div>
+                    <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-xs text-gray-500">Вероятных новых покупок</div>
+                            <span class="q-tip" tabindex="0" data-tip="Пробники, у которых уже есть первый платёж — они в очереди на оплату"><i class="fa-solid fa-circle-info text-gray-600 hover:text-gray-400 text-xs"></i></span>
+                        </div>
+                        <div class="text-2xl font-bold text-purple-400" data-fc="trial-convert">—</div>
+                        <div class="text-[11px] text-gray-600 mt-0.5">чел.</div>
+                    </div>
+                </div>
+
+                <!-- Сценарии прогноза (3 колоны) -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-chart-line text-purple-400 mr-1"></i>
+                        <h3 class="font-semibold text-gray-300">Сценарии прогноза на следующий месяц</h3>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">Пессимистичный 50%</div>
+                            <div class="text-xl font-bold text-amber-400" data-fc="forecast-pes">—</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">Базовый 70%</div>
+                            <div class="text-xl font-bold text-purple-400" data-fc="forecast-base">—</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 mb-1">Оптимистичный 90%</div>
+                            <div class="text-xl font-bold text-cyan-400" data-fc="forecast-opt">—</div>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-600 mt-2">Все сценарии × на количество постоянных клиентов (<span data-fc="recurring-suffix">0</span> человек)</div>
+                    <div class="text-xs text-gray-600 mt-2">Подсказка по ценам живёт в разделе ROI — единый советник на всю админку.</div>
+                </div>
+
+                <!-- Прогнозируемые постоянные клиенты -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <h3 class="font-semibold text-gray-300">Прогнозируемые постоянные клиенты</h3>
+                        <span class="q-tip" tabindex="0" data-tip="Активные клиенты с 2+ покупками — расчёт будущей выручки. Столбец 'Ожид. доход' = amount × 30/count_days. Столбец 'След. платёж' = когда ожидается следующий платёж"><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-left text-gray-500 border-b border-white/5">
+                                    <th class="pb-2">uniID</th>
+                                    <th class="pb-2">LTV</th>
+                                    <th class="pb-2">Покупок</th>
+                                    <th class="pb-2">Ожид. доход / мес</th>
+                                    <th class="pb-2">След. платёж</th>
+                                    <th class="pb-2">Ожид. в месяц</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-300" data-fc-recurring-clients></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Конверсия пробников -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <h3 class="font-semibold text-gray-300">Конверсия пробников в покупатели</h3>
+                        <span class="q-tip" tabindex="0" data-tip="Пробники с уже имеющимся первым платежом — они в очереди на оплату. Интервал = дней между пробной подпиской и первой оплатой"><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-left text-gray-500 border-b border-white/5">
+                                    <th class="pb-2">uniID</th>
+                                    <th class="pb-2">Пробный срок</th>
+                                    <th class="pb-2">Покупок</th>
+                                    <th class="pb-2">Первый платёж</th>
+                                    <th class="pb-2">Интервал конверсии</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-300" data-fc-trial-table></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- График прогноза по месяцам -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-baseline justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                            <h3 class="font-semibold text-gray-300">Прогноз по месяцам создания</h3>
+                            <span class="q-tip" tabindex="0" data-tip="Сумма месячного эквивалента активных подписок (amount / days × 30) по месяцам их создания. Если данных нет, показывается текущий прогноз (predicted)"><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
+                        </div>
+                        <span class="text-xs text-gray-500" data-fc-period-label>—</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="fc-forecast" style="width:100%;height:100%"></canvas>
+                    </div>
+                </div>
+
+                <!-- Легенда прогноза -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-4">
+                    <h4 class="text-xs font-semibold text-gray-500 uppercase mb-2">Как рассчитывается прогноз</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-gray-500">
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-emerald-400 mt-0.5"></i>
+                            <span><strong class="text-gray-400">Прогноз /мес</strong> = Σ активных подписок × (amount / days × 30)</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-blue-400 mt-0.5"></i>
+                            <span><strong class="text-gray-400">Фактическая выручка</strong> = gross ЮKassa за 30 дней (та же цифра что в прибыли; без кэша кассы — сумма успешных платежей леджера)</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-purple-400 mt-0.5"></i>
+                            <span><strong class="text-gray-400">Постоянные</strong> = активные клиенты с 2+ покупками (rebilling)</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-cyan-400 mt-0.5"></i>
+                            <span><strong class="text-gray-400">Мин/Макс</strong> = Прогноз × {50% / 90%} — пессимистичный и оптимистичный сценарии</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-amber-400 mt-0.5"></i>
+                            <span><strong class="text-gray-400">Интервал покупки</strong> = средний срок между повторными платежами постоянных клиентов</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <i class="fa-solid fa-check-circle text-gray-600 mt-0.5"></i>
+                            <span><strong class="text-gray-400">След. платёж</strong> = дата, когда постоянный клиент, скорее всего, снова заплатит (последний платёж + count_days)</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <?php else: ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="forecast">
                 <div class="py-10 flex flex-col items-center gap-3 text-center">
                     <i class="fa-solid fa-lock text-5xl text-red-500"></i>
                     <div class="text-lg font-bold text-gray-100">Недоступно</div>
@@ -1586,7 +2820,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         return '/api/admin/roi?days=' + pfDays;
                     }
                     function pfKey() { return pfMonth ? 'm' + pfMonth : 'd' + pfDays; }
-                    function pfMoney(v) { return Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: v < 100 ? 2 : 0 }) + '₽'; }
+                    function pfMoney(v) { return window.QMoney ? window.QMoney(v) : (Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: Number(v) < 100 ? 2 : 0 }) + '₽'); }
                     function pfPlural(n, one, few, many) {
                         n = Math.abs(parseInt(n, 10) || 0) % 100;
                         var d = n % 10;
@@ -1609,7 +2843,8 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         $('[data-pf="avg"]').text(pfMoney(avg));
                         $('[data-pf="count"]').text(r.succeeded || 0);
                         $('[data-pf-source]').text('источник: ' + (r.source === 'kassa' ? 'ЮKassa' : (r.source === 'ledger' ? 'леджер' : 'БД')) + (r.cached ? ' · кэш' : '') + (r.range ? ' · ' + r.range : ''));
-                        $('[data-pf-sub="mrr"]').text('MRR ' + pfMoney((r.clean || 0) / (r.days / 30)));
+                        var pfDaysN = Number(r.days || 0);
+                        $('[data-pf-sub="mrr"]').text('MRR ' + (pfDaysN > 0 ? pfMoney((r.clean || 0) / (pfDaysN / 30)) : '—'));
                         var el = document.getElementById('pf-daily');
                         if (el && typeof Chart !== 'undefined') {
                             if (window.__pfDaily) { try { window.__pfDaily.destroy(); } catch (e) {} }
@@ -1639,10 +2874,11 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var $t = $('[data-pf-tariffs]').empty();
                         if (!(r.by_tariff || []).length) $t.append($('<span>').addClass('text-gray-500').text('нет данных'));
                         (r.by_tariff || []).forEach(function (row) {
-                            var cnt = parseInt(row.cnt || 0, 10), rev = parseFloat(row.revenue || 0);
+                            var cnt = parseInt(row.cnt != null ? row.cnt : (row.count || 0), 10), rev = parseFloat(row.revenue || 0);
+                            var tkey = row.tariff || row.plan || '—';
                             var avg = cnt > 0 ? ' · ~' + pfMoney(rev / cnt) + '/опл.' : '';
                             $t.append($('<div>').addClass('flex flex-col gap-0.5 py-1 border-b border-white/5 last:border-0')
-                                .append($('<span>').addClass('text-gray-200 text-sm').text(pfTariff(row.tariff)))
+                                .append($('<span>').addClass('text-gray-200 text-sm').text(pfTariff(tkey)))
                                 .append($('<span>').addClass('text-gray-400 text-xs').text(pfMoney(rev) + ' всего · ' + cnt + ' ' + pfPlural(cnt, 'оплата', 'оплаты', 'оплат') + avg)));
                         });
                         var $rc = $('[data-pf-recent]').empty();
@@ -1691,7 +2927,6 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     });
                     $('[data-pf-refresh]').on('click', function () { delete pfCache[pfKey()]; pfLoad(true); });
                     $(document).on('click', '[data-toggle-section="profit"]', function () { setTimeout(function () { pfLoad(false); }, 350); });
-                    pfLoad(false);
                 });
             </script>
             <?php else: ?>
@@ -1714,6 +2949,10 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     </h1>
                     <div class="flex items-center gap-2">
                         <span data-roi-source class="text-xs text-gray-500"></span>
+                        <button data-roi-refresh
+                            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-200 hover:bg-white/10 transition-colors" title="Обновить данные">
+                            <i class="fa-solid fa-rotate-right mr-1"></i>Обновить
+                        </button>
                         <div class="flex rounded-lg overflow-hidden ring-1 ring-white/10 text-xs font-medium">
                             <button data-roi-days="30" class="px-3 py-1.5 bg-blue-600 text-white">30д</button>
                             <button data-roi-days="90" class="px-3 py-1.5 bg-white/5 text-gray-300 hover:bg-white/10">90д</button>
@@ -1775,11 +3014,32 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         </button>
                     </div>
                 </form>
+
+                <!-- Советник цен: один на всю админку. Цель — маржа 30% чистыми -->
+                <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <h3 class="font-semibold text-gray-300">Советник цен: повышать или нет</h3>
+                        <span class="q-tip" tabindex="0" data-tip="Считает по каждому тарифу: доход, комиссию кассы и долю серверных расходов. Цель — 30% чистыми. Статус: убыток / низкая маржа / ок. Колонка «Надо» — цена для целевой маржи, «+Прибыль» — сколько даст в месяц."><i class="fa-solid fa-circle-info text-gray-500 text-xs"></i></span>
+                    </div>
+                    <div class="text-xs text-gray-500 mb-2" data-roi-price-explain>загрузка…</div>
+                    <div class="overflow-x-auto"><table class="w-full text-xs">
+                        <thead><tr class="text-left text-gray-500 border-b border-white/5">
+                            <th class="pb-2">Тариф</th><th class="pb-2">В конфиге</th><th class="pb-2">Надо</th>
+                            <th class="pb-2">Клиентов</th><th class="pb-2">Маржа</th><th class="pb-2">+Прибыль / мес</th>
+                        </tr></thead>
+                        <tbody class="text-gray-300" data-roi-price-tbody></tbody>
+                    </table></div>
+                    <div class="mt-3 text-xs text-gray-500 flex flex-col gap-1">
+                        <div><strong class="text-gray-400">Что такое маржа:</strong> сколько чистыми остаётся с каждого рубля. Маржа = (доход − комиссия кассы − доля серверных расходов) / доход. Цель — 30%: с каждых 100₽ выручки 30₽ прибыли.</div>
+                        <div><strong class="text-gray-400">Лесенка цен:</strong> за месяц длинный срок дешевле короткого (1 мес ≥ 3 мес ≥ 6 мес ≥ 12 мес). Если поднятие ломает порядок — короткие сроки подтягиваются тоже, иначе все купят длинный.</div>
+                    </div>
+                </div>
             </section>
             <script defer>
                 $(document).ready(function () {
-                    var roiDays = 30, roiCache = {};
-                    function roiMoney(v) { return Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + '₽'; }
+                    var roiDays = 30, roiCache = {}, roiLoading = false;
+                    function roiVisible() { return $('[data-section="roi"]:not(.hidden)').length > 0; }
+                    function roiMoney(v) { return window.QMoney ? window.QMoney(v) : (Number(v || 0).toLocaleString('ru-RU', { maximumFractionDigits: 0 }) + '₽'); }
                     function roiRender(r) {
                         if (!r || r.status !== 'ok') return;
                         $('[data-roi="clean"]').text(roiMoney(r.clean));
@@ -1795,19 +3055,37 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var $v = $('[data-roi-verdict]').text(r.profit >= 0 ? 'В плюсе: +' + roiMoney(r.profit) : 'В минусе: ' + roiMoney(r.profit));
                         $v.attr('class', 'text-sm font-semibold rounded-full px-3 py-1 ' + (r.profit >= 0 ? 'text-green-400 bg-green-500/10' : 'text-red-400 bg-red-500/10'));
                         $('[data-roi-source]').text('источник: ' + (r.source === 'kassa' ? 'ЮKassa' : (r.source === 'ledger' ? 'леджер' : 'БД')) + (r.cached ? ' · кэш' : ''));
+                        roiLoadPrices();
                     }
-                    function roiLoad() {
-                        if (roiCache[roiDays]) { roiRender(roiCache[roiDays]); return; }
+                    function roiLoadPrices() {
+                        if (!window.QPrices || !window.QLtvFetch) { $('[data-roi-price-explain]').text('не хватает данных'); return; }
+                        window.QLtvFetch(false).done(function (d) {
+                            var p = (d && d.price_optimization) || null;
+                            if (p && (p.tariffs || []).length) {
+                                var mt = Math.round(Number(p.margin_target || 0.3) * 100);
+                                $('[data-roi-price-explain]').html('Цель: маржа <b>' + mt + '%</b> · Чистыми сейчас: <b>' + window.QMoney(p.total_net_month || 0) + '/мес</b> · Потенциал: <b class="text-emerald-400">+' + window.QMoney(p.total_uplift_month || 0) + '/мес</b><br>' + $('<div>').text(p.explain || '').html());
+                            }
+                            window.QPrices('[data-roi-price-tbody]', '[data-roi-price-explain]', p);
+                        }).fail(function () { $('[data-roi-price-explain]').text('Ошибка загрузки подсказки цен'); });
+                    }
+                    function roiLoad(force) {
+                        if (!force && !roiVisible()) return;
+                        if (!force && roiLoading) return;
+                        if (!force && roiCache[roiDays]) { roiRender(roiCache[roiDays]); return; }
+                        roiLoading = true;
+                        if (force && window.QSpin) QSpin.show('Сбор данных ROI…');
                         $.ajax({
                             url: '/api/admin/roi?days=' + roiDays, method: 'GET', dataType: 'json', timeout: 120000,
-                            success: function (r) { roiCache[roiDays] = r; roiRender(r); }
+                            success: function (r) { roiCache[roiDays] = r; roiRender(r); },
+                            error: function () { $('[data-roi-source]').text('Ошибка загрузки'); },
+                            complete: function () { roiLoading = false; if (window.QSpin) QSpin.hide(); }
                         });
                     }
                     $('[data-roi-days]').on('click', function () {
                         roiDays = parseInt($(this).attr('data-roi-days'), 10) || 30;
                         $('[data-roi-days]').removeClass('bg-blue-600 text-white').addClass('bg-white/5 text-gray-300');
                         $(this).removeClass('bg-white/5 text-gray-300').addClass('bg-blue-600 text-white');
-                        roiLoad();
+                        roiLoad(true);
                     });
                     $('[data-roi-import]').on('click', function () {
                         var $m = $('[data-roi-import-msg]').text('Импорт…');
@@ -1817,12 +3095,12 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             error: function () { $m.text('Ошибка сети'); }
                         });
                     });
-                    $(document).on('click', '[data-toggle-section="roi"]', function () { setTimeout(roiLoad, 350); });
+                    $(document).on('click', '[data-toggle-section="roi"]', function () { setTimeout(function () { roiLoad(false); }, 350); });
+                    $(document).on('click', '[data-roi-refresh]', function () { delete roiCache[roiDays]; roiLoad(true); });
                     $(document).off('click.roireceipt').on('click.roireceipt', '[data-receipt-open]', function (e) {
                         if ($(this).closest('[data-admin-chat]').length) return;//в чате своя делегация
                         if (typeof window.__openReceipt === 'function') window.__openReceipt($(this).attr('data-receipt-open'));
                     });
-                    roiLoad();
                 });
             </script>
             <?php else: ?>
@@ -1861,7 +3139,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             class="bg-black/75 text-white border-b-white p-2 text-start flex items-center px-4 rounded-t-xl">
                             Логи <?= htmlspecialchars(basename($_ENV['LOG_FILE_NAME'] ?? 'qwees.log')) ?></div>
                         <div
-                            class="relative max-h-[42vw] overflow-scroll flex flex-col gap-0.5 bg-black rounded-b-xl py-2">
+                            class="relative h-[calc(100vh-200px)] overflow-y-auto flex flex-col gap-0.5 bg-black rounded-b-xl py-2">
                             <?php
                             $logfile = dirname(__DIR__, 3) . '/' . ($_ENV['LOG_FILE_NAME'] ?? 'qwees.log');//тот же файл, куда пишут логгеры
                             if (file_exists($logfile)) {
@@ -1948,7 +3226,204 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     </div>
                     <div class="bg-[#16181d] border border-white/10 rounded-2xl p-4 sm:p-6">
                         <h3 class="font-semibold text-gray-300 mb-4">Кому показывать</h3>
-                        <style>
+                    <style>
+:root {
+    --ant-blue: #1677FF;
+    --ant-purple: #722ED1;
+    --ant-cyan: #13C2C2;
+    --ant-green: #52C41A;
+    --ant-magenta: #EB2F96;
+    --ant-pink: #EB2F96;
+    --ant-red: #F5222D;
+    --ant-orange: #FA8C16;
+    --ant-yellow: #FADB14;
+    --ant-volcano: #FA541C;
+    --ant-geekblue: #2F54EB;
+    --ant-gold: #FAAD14;
+    --ant-lime: #A0D911;
+    --ant-color-primary: #1668dc;
+    --ant-color-success: #49aa19;
+    --ant-color-warning: #d89614;
+    --ant-color-error: #dc4446;
+    --ant-color-info: #1668dc;
+    --ant-color-link: #1668dc;
+    --ant-color-text-base: #fff;
+    --ant-color-bg-base: #1a1b1f;
+    --ant-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --ant-font-family-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    --ant-font-size: 14px;
+    --ant-line-width: 1px;
+    --ant-line-type: solid;
+    --ant-motion-ease-out-circ: cubic-bezier(0.08, 0.82, 0.17, 1);
+    --ant-motion-ease-in-out-circ: cubic-bezier(0.78, 0.14, 0.15, 0.86);
+    --ant-motion-ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+    --ant-motion-ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+    --ant-motion-ease-out-back: cubic-bezier(0.12, 0.4, 0.29, 1.46);
+    --ant-motion-ease-in-back: cubic-bezier(0.71, -0.46, 0.88, 0.6);
+    --ant-motion-ease-in-quint: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+    --ant-motion-ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+    --ant-border-radius: 6px;
+    --ant-size-unit: 4px;
+    --ant-size-step: 4px;
+    --ant-size-popup-arrow: 16px;
+    --ant-control-height: 32px;
+    --ant-z-index-base: 0;
+    --ant-z-index-popup-base: 1000;
+    --ant-opacity-image: 1;
+    --ant-color-bg-layout: #1a1b1f;
+    --ant-color-bg-container: #23252b;
+    --ant-color-bg-elevated: #2d2f37;
+    --ant-blue-1: #111a2c;
+    --ant-blue-2: #112545;
+    --ant-blue-3: #15325b;
+    --ant-blue-4: #15417e;
+    --ant-blue-5: #1554ad;
+    --ant-blue-6: #1668dc;
+    --ant-blue-7: #3c89e8;
+    --ant-blue-8: #65a9f3;
+    --ant-blue-9: #8dc5f8;
+    --ant-blue-10: #b7dcfa;
+    --ant-purple-1: #1a1325;
+    --ant-purple-2: #24163a;
+    --ant-purple-3: #301c4d;
+    --ant-purple-4: #3e2069;
+    --ant-purple-5: #51258f;
+    --ant-purple-6: #642ab5;
+    --ant-purple-7: #854eca;
+    --ant-purple-8: #ab7ae0;
+    --ant-purple-9: #cda8f0;
+    --ant-purple-10: #ebd7fa;
+    --ant-cyan-1: #112123;
+    --ant-cyan-2: #113536;
+    --ant-cyan-3: #144848;
+    --ant-cyan-4: #146262;
+    --ant-cyan-5: #138585;
+    --ant-cyan-6: #13a8a8;
+    --ant-cyan-7: #33bcb7;
+    --ant-cyan-8: #58d1c9;
+    --ant-cyan-9: #84e2d8;
+    --ant-cyan-10: #b2f1e8;
+    --ant-orange-1: #2b1910;
+    --ant-orange-7: #d89614;
+    --ant-green-1: #162312;
+    --ant-green-2: #1d3712;
+    --ant-green-3: #274916;
+    --ant-green-4: #306317;
+    --ant-green-5: #3c8618;
+    --ant-green-6: #49aa19;
+    --ant-green-7: #6abe39;
+    --ant-green-8: #8fd460;
+    --ant-green-9: #b2e58b;
+    --ant-green-10: #d5f2bb;
+    --ant-geekblue-1: #e8f4fd;
+    --ant-geekblue-7: #113598;
+    --ant-color-text: rgba(255, 255, 255, 0.85);
+    --ant-color-text-secondary: rgba(255, 255, 255, 0.65);
+    --ant-color-text-tertiary: rgba(255, 255, 255, 0.45);
+    --ant-color-text-quaternary: rgba(255, 255, 255, 0.25);
+    --ant-color-fill: rgba(255, 255, 255, 0.18);
+    --ant-color-fill-secondary: rgba(255, 255, 255, 0.12);
+    --ant-color-fill-tertiary: rgba(255, 255, 255, 0.08);
+    --ant-color-fill-quaternary: rgba(255, 255, 255, 0.04);
+    --ant-color-bg-solid: rgba(255, 255, 255, 0.95);
+    --ant-color-bg-text-hover: rgba(255, 255, 255, 0.12);
+    --ant-color-bg-text-active: rgba(255, 255, 255, 0.18);
+    --ant-color-border: #50566e;
+    --ant-color-border-secondary: #414659;
+    --ant-color-primary-bg: #15325b;
+    --ant-color-primary-bg-hover: #15417e;
+    --ant-color-primary-border: #15325b;
+    --ant-color-primary-border-hover: #15417e;
+    --ant-color-primary-hover: #3c89e8;
+    --ant-color-primary-active: #1554ad;
+    --ant-color-primary-text-hover: #3c89e8;
+    --ant-color-primary-text: #1668dc;
+    --ant-color-primary-text-active: #1554ad;
+    --ant-color-success-bg: #162312;
+    --ant-color-success-bg-hover: #1d3712;
+    --ant-color-success-border: #274916;
+    --ant-color-success-border-hover: #306317;
+    --ant-color-success-hover: #306317;
+    --ant-color-success-active: #3c8618;
+    --ant-color-success-text-hover: #6abe39;
+    --ant-color-success-text: #49aa19;
+    --ant-color-success-text-active: #3c8618;
+    --ant-color-error-bg: #2c1618;
+    --ant-color-error-bg-hover: #451d1f;
+    --ant-color-error-border: #5b2526;
+    --ant-color-error-border-hover: #7e2e2f;
+    --ant-color-error-hover: #e86e6b;
+    --ant-color-error-active: #ad393a;
+    --ant-color-error-text-hover: #e86e6b;
+    --ant-color-error-text: #dc4446;
+    --ant-color-error-text-active: #ad393a;
+    --ant-color-warning-bg: #2b2111;
+    --ant-color-warning-bg-hover: #443111;
+    --ant-color-warning-border: #594214;
+    --ant-color-warning-border-hover: #7c5914;
+    --ant-color-warning-hover: #7c5914;
+    --ant-color-warning-active: #aa7714;
+    --ant-color-warning-text-hover: #e8b339;
+    --ant-color-warning-text: #d89614;
+    --ant-color-warning-text-active: #aa7714;
+    --ant-color-info-bg: #111a2c;
+    --ant-info-bg: #111a2c;
+    --ant-color-info-bg-hover: #112545;
+    --ant-color-info-border: #15325b;
+    --ant-color-info-border-hover: #15417e;
+    --ant-color-info-hover: #15417e;
+    --ant-color-info-active: #1554ad;
+    --ant-color-info-text-hover: #3c89e8;
+    --ant-color-info-text: #1668dc;
+    --ant-color-info-text-active: #1554ad;
+    --ant-color-link-hover: #15417e;
+    --ant-color-link-active: #1554ad;
+    --ant-blue-hover: #1554ad;
+    --ant-blue-active: #3c89e8;
+    --ant-purple-hover: #51258f;
+    --ant-purple-active: #854eca;
+    --ant-cyan-hover: #138585;
+    --ant-cyan-active: #33bcb7;
+    --ant-green-hover: #3c8618;
+    --ant-green-active: #6abe39;
+    --ant-orange-hover: #aa6215;
+    --ant-orange-active: #e89a3c;
+    --ant-yellow-hover: #aa9514;
+    --ant-yellow-active: #e8d639;
+    --ant-color-bg-mask: rgba(0, 0, 0, 0.45);
+    --ant-color-white: #fff;
+    --ant-color-bg-container-disabled: rgba(255, 255, 255, 0.08);
+    --ant-color-border-bg: #23252b;
+    --ant-color-split: rgba(171, 187, 252, 0.22);
+    --ant-color-text-placeholder: rgba(255, 255, 255, 0.25);
+    --ant-color-text-disabled: rgba(255, 255, 255, 0.25);
+    --ant-color-text-heading: rgba(255, 255, 255, 0.85);
+    --ant-color-text-label: rgba(255, 255, 255, 0.65);
+    --ant-color-text-description: rgba(255, 255, 255, 0.45);
+    --ant-color-text-light-solid: #fff;
+    --ant-color-highlight: #dc4446;
+    --ant-color-icon: rgba(255, 255, 255, 0.45);
+    --ant-color-icon-hover: rgba(255, 255, 255, 0.85);
+    --ant-color-error-outline: rgba(55, 3, 0, 0.44);
+    --ant-color-warning-outline: rgba(48, 30, 0, 0.6);
+    --ant-font-weight-strong: 600;
+    --ant-opacity-loading: 0.65;
+    --ant-padding-xs: 8px;
+    --ant-padding-sm: 12px;
+    --ant-padding: 16px;
+    --ant-margin-xs: 8px;
+    --ant-margin-sm: 12px;
+    --ant-margin: 16px;
+    --ant-border-radius-sm: 4px;
+    --ant-border-radius-lg: 8px;
+    --ant-border-radius-outer: 4px;
+    --ant-color-fill-content: rgba(255, 255, 255, 0.12);
+    --ant-color-fill-content-hover: rgba(255, 255, 255, 0.18);
+    --ant-color-fill-alter: rgba(255, 255, 255, 0.04);
+    --ant-color-bg-text-hover: rgba(255, 255, 255, 0.12);
+    --ant-color-bg-text-active: rgba(255, 255, 255, 0.18);
+    --ant-tag-default-bg: rgba(255, 255, 255, 0.06);
+}
                         #gifts-list-wrap { overflow:hidden; max-height:1200px; opacity:1; transition:max-height .35s ease, opacity .3s ease; }
                         #gifts-list-wrap.gifts-closed { max-height:0; opacity:0; }
                         </style>
@@ -1984,7 +3459,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         <?php $giftMap = [];
                         foreach ($allUsers as $u) { $giftMap[$u['uniID']] = ['name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')), 'email' => $u['email'] ?? '', 'sub' => $subMap[$u['uniID']] ?? 0]; } ?>
                         <script>
-                        const GIFT_USERS = <?= json_encode($giftMap, JSON_UNESCAPED_UNICODE) ?>;
+                        const GIFT_USERS = <?= json_encode($giftMap, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
                         $(function () {//виджет пробных: все локально, сервер не трогаем
                             const $input = $('#gifts-quick');
                             const $area = $('#gifts-users');
@@ -2041,7 +3516,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                 Сохранить
                             </button>
                         </div>
-                    </form>
+                </form>
             </section>
             <?php else: ?>
             <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="gifts">
@@ -2167,10 +3642,10 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             <!-- count days -->
                             <div class="relative">
                                 <label for="give_days"
-                                    class="absolute left-2 border rounded-md -top-1 bg-white/5 px-1 text-gray-100 text-xs">Количество
+                                    class="absolute left-2 border rounded-md -top-1 bg-red-500/20 px-1 text-red-200 text-xs">Количество
                                     дней</label>
                                 <input type="number" name="days" placeholder="от 1 до ∞"
-                                    class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-100 placeholder-gray-500 focus:ring-blue-500 focus:outline-none mt-2"
+                                    class="w-full px-3 py-2 rounded-lg bg-red-500/5 border border-red-500/20 text-gray-100 placeholder-gray-500 focus:ring-red-500 focus:outline-none mt-2"
                                     required>
                             </div>
 
@@ -2797,6 +4272,9 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     $(document).on('click', '[data-staff-close],[data-staff-modal-bg]', function () {
                         $('[data-staff-modal]').addClass('hidden');
                     });
+                    $(document).on('click', '#user-summary-close,#user-summary-modal-bg', function () {
+                        $('#user-summary-modal').addClass('hidden');
+                    });
                     $(document).on('click', '[data-toggle-section="roles"]', function () { setTimeout(staffLoad, 350); });
                     staffLoad();
                 });
@@ -2828,7 +4306,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
                     const $element = $('<div>', {
                         'class': 'px-6 py-3 rounded-lg text-white z-50 transform translate-x-full transition-transform duration-300 ' + (colors[type] || colors.info),
-                        html: '<i class="fa-solid fa-info-circle"></i> ' + msg
+                        html: '<i class="fa-solid fa-circle-info"></i> ' + msg
                     }).appendTo($container);
                     setTimeout(() => $element.removeClass('translate-x-full'), 100);
                     setTimeout(() => $element.addClass('translate-x-full'), 4100);
@@ -2989,77 +4467,23 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
             <script>
                 // Ленивые графики: строятся из /api/admin/stats (см. загрузчик ниже)
-                var __chartsBuilt = {};
+                function destroyAdminCharts() {
+                    $('[data-chart]').each(function () {
+                        try { if (this.__chart) this.__chart.destroy(); } catch (e) {}
+                        delete this.__chart; delete this.__built;
+                    });
+                    try { if (window.__plansChart) window.__plansChart.destroy(); } catch (e) {}
+                    delete window.__plansChart; window.__plansBuilt = false;
+                }
                 function buildAdminCharts(client, financial, roi365) {
-                $('[data-chart="chart_online"]:visible').each(function () {
-                    var t = window.__overviewTotals || {};
-                    if (!t.clients) return;//ждём данные онлайна, без заглушек
-                    if (this.__built) return; this.__built = true;
-                    var on = Number(t.online_now || 0), all = Number(t.clients || 0);
-                    new Chart(this, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['В сети', 'Не в сети'],
-                            datasets: [{
-                                data: [on, Math.max(0, all - on)],
-                                backgroundColor: ['rgba(52,211,153,0.85)', 'rgba(148,163,184,0.25)'],
-                                borderColor: '#16181d',
-                                borderWidth: 3
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: { display: true, position: 'bottom', labels: { color: '#9aa4b2', boxWidth: 12 } }
-                            }
-                        }
-                    });
-                });
-                $('[data-chart="chart_clients"]:visible').each(function () {
-                    if (this.__built) return; this.__built = true;
-                    new Chart(this, {
-                        type: 'polarArea',
-                        data: {
-                            labels: ['С подписками', 'Без подписок'],
-                            datasets: [{
-                                label: 'Пользователей',
-                                data: [client.usersWithSubscriptions || 0, client.usersWithoutSubscriptions || 0],
-                                backgroundColor: ['rgba(47,129,247,0.75)', 'rgba(239,68,68,0.75)'],
-                                borderColor: '#fff',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(255,255,255,0.06)' },
-                                    ticks: { color: '#9aa4b2' },
-                                    grid: { color: 'rgba(255,255,255,0.06)' }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top',
-                                    labels: { color: '#9aa4b2' }
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'График подписок',
-                                    color: '#e6e9ee'
-                                }
-                            }
-                        }
-                    });
-                });
+                if (typeof Chart === 'undefined') return;
 
                 // График прибыли по месяцам
                 $('[data-chart="chart_revenue_monthly"]:visible').each(function () {
                     if (this.__built) return; this.__built = true;
                     var mrc = ((roi365 || {}).monthly && roi365.monthly.length) ? roi365.monthly : (financial.monthlyRevenueChart || []);
-                    new Chart(this, {
+                    if (!mrc.length) { delete this.__built; return; }
+                    this.__chart = new Chart(this, {
                         type: 'line',
                         data: {
                             labels: mrc.map(function (r) { return r.month; }),
@@ -3113,7 +4537,8 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 $('[data-chart="chart_users_monthly"]:visible').each(function () {
                     if (this.__built) return; this.__built = true;
                     var muc = financial.monthlyUsersChart || [];
-                    new Chart(this, {
+                    if (!muc.length) { delete this.__built; return; }
+                    this.__chart = new Chart(this, {
                         type: 'line',
                         data: {
                             labels: muc.map(function (r) { return r.month; }),
@@ -3167,6 +4592,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 // кэшируются до перезагрузки страницы (повторно не запрашиваем).
                 // Деньги — только из кассы (/api/admin/roi), люди — из БД (/api/admin/stats).
                 $(document).ready(function () {
+                    window.__sectionLoaded = window.__sectionLoaded || {};
                     window.__adminStats = null;
                     window.__roi30 = null;
                     window.__roi365 = null;
@@ -3178,16 +4604,112 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         });
                         $('[data-st="mrr"]').text(money(financial.mrr));
                         $('[data-st]').removeClass('animate-pulse');
+                        loadTodayUsers();
+                        // Онлайн уже есть из мониторинга — лишний запрос не делаем
+                        var ot = window.__overviewTotals || {};
+                        if (ot.clients != null) {
+                            $('[data-m-online]').text(ot.online_now ?? '—');
+                        } else {
+                            $.ajax({
+                                url: '/api/admin/overview', method: 'GET', dataType: 'json', timeout: 60000,
+                                success: function (o) {
+                                    if (o && o.status === 'ok') {
+                                        $('[data-m-online]').text((o.totals || {}).online_now ?? '—');
+                                        window.__overviewTotals = o.totals || {};
+                                    } else $('[data-m-online]').text('—');
+                                },
+                                error: function () { $('[data-m-online]').text('—'); }
+                            });
+                        }
+                    }
+                    function loadTodayUsers() {
                         $.ajax({
-                            url: '/api/admin/overview', method: 'GET', dataType: 'json', timeout: 60000,
-                            success: function (o) {
-                                if (o && o.status === 'ok') {
-                                    $('[data-m-online]').text((o.totals || {}).online_now ?? '—');
-                                    window.__overviewTotals = o.totals || {};
-                                    if (window.__adminStats) buildAdminCharts(window.__adminStats.client || {}, window.__adminStats.financial || {});
-                                } else $('[data-m-online]').text('—');
+                            url: '/api/admin/today-users', method: 'GET', dataType: 'json', timeout: 15000,
+                            success: function (r) {
+                                var $box = $('[data-today-users]');
+                                var users = (r && r.status === 'ok') ? (r.users || []) : [];
+                                $('[data-today-users-count]').text(users.length + ' новых');
+                                if (!users.length) {
+                                    $box.html('<div class="text-gray-500 text-xs">Нет новых пользователей сегодня</div>');
+                                    return;
+                                }
+                                $box.empty();
+                                users.forEach(function (u) {
+                                    var time = u.created_at ? new Date(u.created_at).toLocaleTimeString('ru-RU', {hour: '2-digit', minute: '2-digit'}) : '';
+                                    var $row = $('<div>')
+                                        .addClass('flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.05] transition-colors cursor-pointer group')
+                                        .attr('data-user-row', u.uniID || u.id);
+                                    var badge = (u.sub_status === 'on') ? 'bg-green-500/10 text-green-400 ring-1 ring-green-500/25'
+                                               : (u.sub_status === 'off') ? 'bg-gray-500/10 text-gray-400 ring-1 ring-gray-500/25'
+                                               : 'bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/25';
+                                    $row.append(
+                                        $('<div>').addClass('w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0').append(
+                                            $('<i>').addClass('fa-solid fa-envelope text-sm text-gray-400')
+                                        ),
+                                        $('<div>').addClass('flex-1 min-w-0').append(
+                                            $('<div>').addClass('flex items-center gap-2').append(
+                                                $('<span>').addClass('text-gray-300 text-sm font-medium truncate').text(u.email || '—'),
+                                                $('<span>').addClass('inline-block px-2 py-0.5 rounded text-xs ' + badge).text(u.sub_status === 'on' ? 'Подписка' : (u.sub_status || 'нет подписки'))
+                                            )
+                                        ),
+                                        $('<div>').addClass('text-xs text-gray-500').text(time)
+                                    );
+                                    $box.append($row);
+                                });
+                                $(document).off('click', '[data-user-row]').on('click', '[data-user-row]', function () {
+                                    showUserModal($(this).attr('data-user-row'));
+                                });
                             },
-                            error: function () { $('[data-m-online]').text('—'); }
+                            error: function () {
+                                $('[data-today-users]').html('<div class="text-red-400 text-xs">Ошибка загрузки</div>');
+                            }
+                        });
+                    }
+                    function showUserModal(uniID) {
+                        $('#user-summary-modal').removeClass('hidden');
+                        $('#user-summary-content').html('<div class="text-gray-400 p-6">Загрузка…</div>');
+                        $.ajax({
+                            url: '/api/admin/user-summary?id=' + encodeURIComponent(uniID), method: 'GET', dataType: 'json', timeout: 15000,
+                            success: function (r) {
+                                if (!r || r.status !== 'ok') { $('#user-summary-content').html('<div class="text-red-400 p-4">Ошибка загрузки данных</div>'); return; }
+                                var u = r.user || {};
+                                var s = r.subscription || {};
+                                var html = '';
+                                html += '<div class="p-6">';
+                                html += '<div class="flex items-center gap-3 mb-4">';
+                                html += '<div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fa-solid fa-user"></i></div>';
+                                html += '<div class="flex-1 min-w-0">';
+                                html += '<div class="font-semibold text-white text-lg">' + (u.full_name || u.email || u.uniID || '—') + '</div>';
+                                html += '<div class="text-sm text-gray-400 break-all">' + (u.email || '—') + '</div>';
+                                html += '</div></div>';
+                                html += '<div class="grid grid-cols-2 gap-3 text-sm">';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">uniID</div><div class="text-white font-mono text-xs break-all">' + (u.uniID || '—') + '</div></div>';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">Статус</div><div class="text-white">' + (s.status === 'on' ? '<span class="text-green-400">Активна</span>' : '<span class="text-gray-400">Неактивна</span>') + '</div></div>';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">Срок действия</div><div class="text-white">' + (s.expiry ? new Date(s.expiry).toLocaleString('ru-RU') : '—') + '</div></div>';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">Покупка</div><div class="text-white">' + (s.last_payment ? new Date(s.last_payment).toLocaleString('ru-RU') : '—') + '</div></div>';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">Пробная подписка</div><div class="text-white">' + (s.gift_used ? '<span class="text-green-400">Да</span>' : '<span class="text-gray-400">Нет</span>') + '</div></div>';
+                                html += '<div class="bg-[#12161b] rounded-lg p-3"><div class="text-gray-500 text-xs">Реферал</div><div class="text-white">' + (u.myrefer ? u.myrefer : '—') + '</div></div>';
+                                html += '</div></div>';
+                                html += '<div class="text-xs text-gray-500 mt-3" data-user-activity>Активность: загрузка...</div>';
+                                $('#user-summary-content').html(html);
+                                $.ajax({
+                                    url: '/api/admin/user-activity?id=' + encodeURIComponent(uniID), method: 'GET', dataType: 'json', timeout: 10000,
+                                success: function (a) {
+                                    if (a && a.status === 'ok') {
+                                        var acts = (a.actions || []).map(function(e) {
+                                            return '<span class="inline-block mr-3">' + (e.action || '') + ' (' + (e.when || '') + ')</span>';
+                                        }).join('');
+                                        $('[data-user-activity]').html('Активность: ' + (acts || 'нет данных'));
+                                    } else {
+                                        $('[data-user-activity]').html('Активность: <span class="text-gray-500">нет данных</span>');
+                                    }
+                                },
+                                error: function () {
+                                    $('[data-user-activity]').html('Активность: <span class="text-gray-500">нет данных</span>');
+                                }
+                                });
+                            },
+                            error: function () { $('#user-summary-content').html('<div class="text-red-400 p-4">Ошибка загрузки</div>'); }
                         });
                     }
                     function fillKassa(r) {
@@ -3198,33 +4720,85 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             $(this).text(v == null ? '—' : money(v));
                         });
                         $('[data-kr]').removeClass('animate-pulse');
+                }
+                $('[data-st],[data-kr]').addClass('animate-pulse');
+                    // Старт: только видимая секция. /stats нужен главной (data-st) — остальным подтянется при открытии.
+                    var statsBusy = false;
+                    function loadStats(done, fail) {
+                        if (statsBusy) return;
+                        statsBusy = true;
+                        $.ajax({
+                            url: '/api/admin/stats', method: 'GET', dataType: 'json', timeout: 30000,
+                            success: function (d) {
+                                if (!d || d.status !== 'ok') { if (typeof fail === 'function') fail(); return; }
+                                window.__adminStats = d;
+                                fillStats(d.client || {}, d.financial || {});
+                                if (typeof done === 'function') done(d);
+                            },
+                            error: function () { if (typeof fail === 'function') fail(); },
+                            complete: function () { statsBusy = false; }
+                        });
+                    }
+                    if ($('[data-section="main"]:not(.hidden)').length) {
+                        setTimeout(function () { loadOverview(false); loadTodayUsers(); }, 50);
+                        $('[data-chart-empty="chart_new_users"]').text('Собираю данные…').show();
+                        loadStats(function () { ensureCharts(); }, function () {
+                            $('[data-chart-empty="chart_new_users"]').text('Ошибка загрузки статистики. Обновите страницу.').show();
+                        });
+                    }
+                    function chartsVisible() { return $('[data-section="charts"]:not(.hidden)').length > 0; }
+                    var chartsBusy = false, chartsSpinHtml = null;
+                    function chartsLoad(force) {
+                        if (!force && !chartsVisible()) return;
+                        if (chartsBusy) return;
+                        if (!force && window.__chartsDone) return;
+                        chartsBusy = true;
+                        var $box = $('[data-charts-loading]');
+                        if (chartsSpinHtml === null) chartsSpinHtml = $box.html();
+                        $box.html(chartsSpinHtml).show();
+                        $('[data-charts-updated]').text('');
+                        loadStats(function () {
+                            ensureCharts();
+                            window.__chartsDone = true;
+                            $box.hide();
+                            $('[data-charts-updated]').text('обновлено ' + new Date().toLocaleTimeString('ru-RU'));
+                            chartsBusy = false;
+                        }, function () {
+                            $box.html('<span class="text-red-400">Ошибка загрузки. Нажмите «Обновить».</span>').show();
+                            chartsBusy = false;
+                        });
+                    }
+                    function loadCashRoi() {
+                        if (window.__sectionLoaded._cash) return;
+                        window.__sectionLoaded._cash = true;
+                        $.ajax({ url: '/api/admin/roi?days=30', method: 'GET', dataType: 'json', timeout: 120000,
+                            success: function (r) { window.__roi30 = r; fillKassa(r); } });
+                        $.ajax({ url: '/api/admin/roi?days=365', method: 'GET', dataType: 'json', timeout: 120000,
+                            success: function (r) { window.__roi365 = r; ensureCharts(); } });
                     }
                     function ensureCharts() {
                         var d = window.__adminStats;
-                        if (d) buildAdminCharts(d.client || {}, d.financial || {}, window.__roi365);
-                        if ($('[data-section="charts"]:not(.hidden)').length && !window.__plansBuilt) {
-                            buildPlansChart((window.__roi365 || {}).by_tariff || [], (window.__adminStats || {}).financial);
+                        if (d) buildAdminCharts(d ? (d.client || {}) : {}, d ? (d.financial || {}) : {}, window.__roi365);
+                        if (chartsVisible() && !window.__plansBuilt && typeof window.buildPlansChart === 'function') {
+                            buildPlansChart((window.__roi365 || {}).by_tariff || [], (window.__adminStats || {})?.financial);
+                        }
+                        if ($('[data-section="main"]:not(.hidden)').length && window.__adminStats) {
+                            if (typeof window.renderMainCharts === 'function') renderMainCharts(window.__overviewTotals || {});
+                        }
+                        if (chartsVisible() && !window.__sectionLoaded._cash) {
+                            $('[data-st],[data-kr]').addClass('animate-pulse');
+                            loadCashRoi();
                         }
                     }
-                    $('[data-st],[data-kr]').addClass('animate-pulse');
-                    $.ajax({
-                        url: '/api/admin/stats', method: 'GET', dataType: 'json', timeout: 30000,
-                        success: function (d) {
-                            if (!d || d.status !== 'ok') return;
-                            window.__adminStats = d;
-                            fillStats(d.client || {}, d.financial || {});
-                            ensureCharts();
-                        }
-                    });
-                    $.ajax({
-                        url: '/api/admin/roi?days=30', method: 'GET', dataType: 'json', timeout: 120000,
-                        success: function (r) { window.__roi30 = r; fillKassa(r); }
-                    });
-                    $.ajax({
-                        url: '/api/admin/roi?days=365', method: 'GET', dataType: 'json', timeout: 120000,
-                        success: function (r) { window.__roi365 = r; ensureCharts(); }
-                    });
                     $(document).on('click', '[data-toggle-section]', function () { setTimeout(ensureCharts, 350); });
+                    $(document).on('click', '[data-toggle-section="charts"]', function () { setTimeout(function () { chartsLoad(false); }, 350); });
+                    $(document).on('click', '[data-charts-refresh]', function () {
+                        if (typeof window.destroyAdminCharts === 'function') window.destroyAdminCharts();
+                        window.__chartsDone = false;
+                        window.__sectionLoaded._cash = false;
+                        chartsLoad(true);
+                    });
+                    chartsLoad(false);
                 });
             </script>
             <!-- Глобальная модалка чека (чат + ROI) -->

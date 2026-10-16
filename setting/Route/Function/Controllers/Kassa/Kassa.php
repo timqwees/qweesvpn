@@ -167,6 +167,9 @@ class Kassa
                 FILE_APPEND
             );
         }
+        if (\is_array($last) && ($last['success'] ?? false)) {
+            \Setting\Route\Function\Controllers\User\UserActivity::log($uniID, 'subscribe');
+        }
         return ['vpn' => \is_array($last) ? $last : ['success' => false], 'code' => null];
     }
 

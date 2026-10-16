@@ -56,3 +56,29 @@ CREATE TABLE IF NOT EXISTS qwees_subscriptions (
     KEY idx_subscriptions_status (status),
     KEY idx_subscriptions_expiry (expiry)
 );
+
+-- Таблица платежей
+CREATE TABLE IF NOT EXISTS qwees_payments (
+    payment_id VARCHAR(64) NOT NULL,
+    uniID VARCHAR(255) NOT NULL DEFAULT '',
+    email VARCHAR(255) NOT NULL DEFAULT '',
+    amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    currency VARCHAR(8) NOT NULL DEFAULT 'RUB',
+    status VARCHAR(32) NOT NULL DEFAULT '',
+    tariff VARCHAR(64) NOT NULL DEFAULT '',
+    method VARCHAR(32) NOT NULL DEFAULT '',
+    description VARCHAR(255) NOT NULL DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (payment_id)
+);
+
+-- Снимки трафика по серверам (для графиков мониторинга)
+CREATE TABLE IF NOT EXISTS qwees_traffic_snapshots (
+    server VARCHAR(16) NOT NULL,
+    up_bytes BIGINT NOT NULL DEFAULT 0,
+    down_bytes BIGINT NOT NULL DEFAULT 0,
+    online_now INT NOT NULL DEFAULT 0,
+    at_ms BIGINT NOT NULL,
+    PRIMARY KEY (server, at_ms)
+);

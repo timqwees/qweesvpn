@@ -50,9 +50,9 @@ if (!empty($searchQuery)) {
     $columns = array_values(array_filter($columns, fn($c) => $c !== 'email'));
     $pos = array_search('status', $columns, true);
     array_splice($columns, $pos === false ? count($columns) : $pos + 1, 0, ['email']);
-} elseif ($table === 'qwees_users') {
-    // Пользователи со статусом подписки (JOIN) + колонка status сразу после email
-    $data = AdminDatabase::getUsersWithSubscription(50, $_GET['sort'] ?? 'id', $_GET['dir'] ?? 'ASC');
+    } elseif ($table === 'qwees_users') {
+        // Пользователи со статусом подписки (JOIN) + колонка status сразу после email
+        $data = AdminDatabase::getUsersWithSubscription(100, $_GET['sort'] ?? 'created_at', $_GET['dir'] ?? 'desc');
     $columns = array_values(array_filter($columns, fn($c) => $c !== 'status'));
     $pos = array_search('id', $columns, true);
     array_splice($columns, $pos === false ? 0 : $pos + 1, 0, ['status']);
@@ -125,16 +125,16 @@ $sortIcon = function ($col) {
             });
         </script>
 
-        <!-- navbar с фильтрами -->
+        <!-- navbar миниатюрное (в стиле основного меню) -->
         <aside id="admin-sidebar"
-            class="fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 flex flex-col shadow-xl bg-[#16181d] rounded-xl shrink-0 min-w-[280px] max-w-[280px]">
+            class="fixed inset-y-0 left-0 z-50 -translate-x-full transition-transform duration-300 md:relative md:translate-x-0 flex flex-col shadow-xl bg-[#16181d] rounded-xl shrink-0 min-w-[260px] max-w-[260px]">
             <!-- header -->
             <div class="flex flex-col p-4 gap-4">
                 <div class="flex flex-1 justify-between items-center">
                     <div class="flex items-center gap-3 min-w-0">
                         <div
                             class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 via-transparent to-transparent flex items-center justify-center text-green-500 font-bold text-lg shrink-0 shadow-lg shadow-green-500/30">
-                            <i class="fa-solid fa-coins"></i>
+                            <i class="fa-solid fa-database"></i>
                         </div>
                         <div class="flex flex-col gap-0.5 min-w-0">
                             <span class="font-medium truncate text-gray-100">База данных</span>
@@ -163,122 +163,44 @@ $sortIcon = function ($col) {
                 </div>
             </div>
 
+            <!-- Миниatюрное меню (без запросов к БД) -->
+            <nav class="flex-1 overflow-y-auto py-2 px-2">
+                <ul class="menu menu-xs rounded-box w-full text-xs flex flex-col gap-0.5">
+                    <li class="list-none">
+                        <a href="/admin"
+                            class="flex items-center gap-2 py-1.5 px-2.5 rounded-md cursor-pointer text-gray-400 hover:text-gray-200 hover:bg-white/5 transition-colors duration-150">
+                            <i class="fa-regular fa-house text-gray-500"></i>
+                            <span>Главная</span>
+                        </a>
+                    </li>
+                    <?php
+                    // Миниатюрный список таблиц — без getTables(), используем кэшированный список
+                    $menuTables = AdminDatabase::getTables();
+                    ?>
+                    <?php foreach ($menuTables as $tn): ?>
+                    <li class="list-none">
+                        <a href="/admin/database?table=<?= urlencode($tn) ?>"
+                            class="flex items-center gap-2 py-1.5 px-2.5 rounded-md cursor-pointer transition-colors duration-150 <?= $tn === $table ? 'text-gray-200 bg-white/5' : 'text-gray-500 hover:text-gray-200 hover:bg-white/5' ?>">
+                            <i class="fa-solid fa-database"></i>
+                            <span class="truncate"><?= htmlspecialchars($tn) ?></span>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </nav>
+
             <!-- Поиск -->
-            <div class="flex px-4 flex-col py-4 gap-3">
-                <h5 class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Поиск</h5>
+            <div class="flex px-4 flex-col py-4 gap-3 border-t border-white/5">
                 <form action="/admin/database" method="get" class="flex flex-col gap-2">
                     <input type="hidden" name="table" value="<?= htmlspecialchars($table) ?>">
-                    <?php if ($filterColumn): ?>
-                        <input type="hidden" name="filter_column" value="<?= htmlspecialchars($filterColumn) ?>">
-                        <input type="hidden" name="filter_value" value="<?= htmlspecialchars($filterValue) ?>">
-                    <?php endif; ?>
                     <div class="relative group">
                         <input type="text" name="search" value="<?= htmlspecialchars($searchQuery) ?>"
-                            placeholder="Поиск по таблице..."
-                            class="w-full px-3 py-2.5 pl-9 pr-9 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white/10 transition-all">
+                            placeholder="Поиск..."
+                            class="w-full px-3 py-2 pl-9 pr-9 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white/10 transition-all">
                         <i
                             class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors"></i>
-                        <?php if ($searchQuery): ?>
-                            <a href="<?= buildUrl($table, $filterColumn ? ['filter_column' => $filterColumn, 'filter_value' => $filterValue] : []) ?>"
-                                class="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-white/10 text-gray-400 hover:bg-red-500/10 hover:text-red-500 transition-colors">
-                                <i class="fa-solid fa-xmark text-xs"></i>
-                            </a>
-                        <?php endif; ?>
                     </div>
-                    <button type="submit"
-                        class="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-search"></i>
-                        Найти
-                    </button>
                 </form>
-            </div>
-
-            <!-- Фильтры -->
-            <div class="flex px-4 flex-col flex-1 overflow-y-auto">
-                <h5 class="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-3">Фильтры</h5>
-                <ul class="flex flex-col gap-1">
-
-                    <?php
-                    // Определяем доступные фильтры в зависимости от таблицы
-                    $availableFilters = [];
-                    if ($table === 'qwees_subscriptions') {
-                        $availableFilters = [
-                            'status' => [
-                                'name' => 'Статус подписки',
-                                'icon' => 'fa-circle-check',
-                                'options' => [
-                                    ['value' => 'on', 'label' => 'Активные', 'condition' => '=', 'color' => 'green'],
-                                    ['value' => 'off', 'label' => 'Неактивные', 'condition' => '=', 'color' => 'gray'],
-                                    ['value' => 'banned', 'label' => 'Заблокированные', 'condition' => '=', 'color' => 'red'],
-                                    ['value' => 'pending_vpn', 'label' => 'Ожидают VPN', 'condition' => '=', 'color' => 'yellow'],
-                                ]
-                            ],
-                            'subscription' => [
-                                'name' => 'Наличие подписки',
-                                'icon' => 'fa-credit-card',
-                                'options' => [
-                                    ['value' => '', 'label' => 'Без подписки', 'condition' => '=', 'color' => 'gray'],
-                                    ['value' => '', 'label' => 'С подпиской', 'condition' => '!=', 'color' => 'green'],
-                                ]
-                            ],
-                        ];
-                    }
-                    ?>
-
-                    <?php foreach ($availableFilters as $col => $filter): ?>
-                        <li class="list-none relative">
-                            <details <?= ($filterColumn === $col) ? 'open' : '' ?> class="group">
-                                <summary
-                                    class="flex items-center gap-2 py-2 px-3 rounded-xl cursor-pointer text-gray-300 hover:bg-white/10 transition-colors duration-150 list-none select-none">
-                                    <i
-                                        class="fa-solid fa-chevron-right text-gray-400 text-xs transition-transform group-open:rotate-90"></i>
-                                    <i class="fa-solid <?= $filter['icon'] ?> text-gray-500"></i>
-                                    <span class="text-sm font-medium"><?= $filter['name'] ?></span>
-                                </summary>
-                                <ul class="pl-4 mt-1 flex flex-col gap-0.5">
-                                    <li class="list-none relative">
-                                        <a href="<?= buildUrl($table, $searchQuery ? ['search' => $searchQuery] : []) ?>"
-                                            class="flex items-center gap-2 py-1.5 px-3 rounded-lg text-sm cursor-pointer <?= empty($filterColumn) || $filterColumn !== $col ? 'bg-green-500/10 text-green-400 font-medium' : 'text-gray-400 hover:bg-white/5' ?> transition-colors duration-150">
-                                            <span
-                                                class="w-2 h-2 rounded-full <?= empty($filterColumn) || $filterColumn !== $col ? 'bg-green-500' : 'bg-gray-300' ?>"></span>
-                                            <span>Все записи</span>
-                                        </a>
-                                    </li>
-                                    <?php foreach ($filter['options'] as $opt):
-                                        $isActive = ($filterColumn === $col && $filterValue === $opt['value'] && $filterCondition === $opt['condition']);
-                                        $optParams = ['filter_column' => $col, 'filter_value' => $opt['value'], 'filter_condition' => $opt['condition']];
-                                        if ($searchQuery)
-                                            $optParams['search'] = $searchQuery;
-                                        $colorClass = $opt['color'] ?? 'gray';
-                                        $colorMap = [
-                                            'green' => 'bg-green-500',
-                                            'red' => 'bg-red-500',
-                                            'yellow' => 'bg-yellow-500',
-                                            'gray' => 'bg-gray-400'
-                                        ];
-                                        $activeColor = $colorMap[$colorClass] ?? 'bg-gray-400';
-                                        ?>
-                                        <li class="list-none relative">
-                                            <a href="<?= $isActive ? buildUrl($table, $searchQuery ? ['search' => $searchQuery] : []) : buildUrl($table, $optParams) ?>"
-                                                class="flex items-center gap-2 py-1.5 px-3 rounded-lg text-sm cursor-pointer <?= $isActive ? 'bg-green-500/10 text-green-400 font-medium' : 'text-gray-400 hover:bg-white/5' ?> transition-colors duration-150">
-                                                <span
-                                                    class="w-2 h-2 rounded-full <?= $isActive ? $activeColor : 'bg-gray-300' ?>"></span>
-                                                <span><?= $opt['label'] ?></span>
-                                            </a>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                            </details>
-                        </li>
-                    <?php endforeach; ?>
-
-                    <?php if (empty($availableFilters)): ?>
-                        <li class="list-none relative text-gray-400 text-sm py-3 px-2 bg-white/5 rounded-xl text-center">
-                            <i class="fa-solid fa-filter-circle-xmark mb-2 text-gray-300 text-xl"></i>
-                            <p>Нет фильтров для этой таблицы</p>
-                        </li>
-                    <?php endif; ?>
-                </ul>
             </div>
         </aside>
 
@@ -336,7 +258,7 @@ $sortIcon = function ($col) {
                                                     </div>
                                                 <?php elseif ($col === 'status' && isset(AdminDatabase::USER_STATUSES[$row[$col]])): ?>
                                                     <span
-                                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?= $row[$col] === 'on' ? 'bg-green-500/10 text-green-800' : ($row[$col] === 'banned' ? 'bg-red-500/10 text-red-800' : 'bg-white/10 text-gray-100') ?>">
+                                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <?= $row[$col] === 'on' ? 'bg-green-500/20 text-green-400 ring-1 ring-green-500/30' : ($row[$col] === 'banned' ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30' : 'bg-white/10 text-gray-300') ?>">
                                                         <?= AdminDatabase::USER_STATUSES[$row[$col]] ?>
                                                     </span>
                                                 <?php elseif ($col === 'uniID'): ?>

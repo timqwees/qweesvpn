@@ -132,7 +132,7 @@ class Functions
             'url' => $url,
             'baseUrl' => $baseUrl,
             'ООО' => 'QweesVPN',
-            'versionApp' => 'v5.1.0',
+            'versionApp' => 'v6.0.0',
             'описание' => 'Сетевой продукт от QweesTeam Studio — Венчурное агенство.',
             'банк' => [
                 'Банк' => 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ «ОЗОН БАНК»',

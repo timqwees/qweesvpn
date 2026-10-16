@@ -144,12 +144,19 @@ class Database extends Network
    * _Описание:_
    * Автоматически определяет имя схемы для последующей работы с БД.
    */
-  public static function initSchemaName()
-  {
-    if (empty(self::$schema_name)) {
-      self::$schema_name = dirname(__DIR__, 2) . '/setting/Schema/' . (isset($_ENV['SCHEMA_NAME']) && !empty($_ENV['SCHEMA_NAME']) ? ($_ENV['SCHEMA_NAME'] . '.sql') : 'schema.sql');
-    }
-  }
+   public static function initSchemaName()
+   {
+     if (empty(self::$schema_name)) {
+       $schemaDir = dirname(__DIR__, 2) . '/setting/Schema/';
+       if (isset($_ENV['SCHEMA_NAME']) && !empty($_ENV['SCHEMA_NAME'])) {
+         self::$schema_name = $schemaDir . $_ENV['SCHEMA_NAME'] . '.sql';
+       } elseif (self::isSqlite()) {
+         self::$schema_name = $schemaDir . 'schema_sqlite.sql';
+       } else {
+         self::$schema_name = $schemaDir . 'schema.sql';
+       }
+     }
+   }
 
   /**
    * **[Инициализация имени базы данных]**

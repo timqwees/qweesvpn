@@ -111,6 +111,8 @@ class Dossier
     {
         if ($sub === '' || $sub === 'trial') return 'Пробная';
         if ($sub === 'bonus') return 'Бонусная';
+        if ($sub === 'free') return 'Пробная';
+        if (str_starts_with($sub, 'pending_')) return 'Ожидающая';
         if (str_starts_with($sub, 'http')) return 'Оплаченная';
         return $sub;
     }

@@ -1,5 +1,5 @@
 {
-    "enabled": true,
+    "enabled": false,
     "days": 3,
     "mode": "all",
     "users": []

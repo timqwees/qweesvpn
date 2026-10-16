@@ -98,14 +98,6 @@ class Refer implements InterfaceRefer
             }
             $this->repo->backfillHistory($takes);
 
-            $this->log->log('АКТИВАЦИЯ', [
-                'user_id' => $userId,
-                'referral_uniID' => (string) ($me['uniID'] ?? ''),
-                'code' => $code,
-                'referrer_id' => $referrerId,
-                'referrer_uniID' => (string) ($referrer['uniID'] ?? ''),
-            ]);
-
             return ['status' => true, 'message' => 'Реферальный код успешно активирован'];
         });
         if ($result === false) {

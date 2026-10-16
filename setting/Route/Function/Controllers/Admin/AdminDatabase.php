@@ -139,15 +139,23 @@ class AdminDatabase
      */
     public static function getTables(): array
     {
+        $cacheFile = __DIR__ . '/AdminDatabase_tables_cache.json';
+        $cacheTtl = 60000;
+        if (is_file($cacheFile) && (microtime(true) * 1000 - filemtime($cacheFile) * 1000) < $cacheTtl) {
+            $cached = @json_decode((string) file_get_contents($cacheFile), true);
+            if (is_array($cached)) return $cached;
+        }
         if (Database::isMysql()) {
             // MySQL: используем SHOW TABLES
             $tables = Database::send("SHOW TABLES");
-            return is_array($tables) && !empty($tables) ? array_column($tables, array_key_first($tables[0])) : [];
+            $result = is_array($tables) && !empty($tables) ? array_column($tables, array_key_first($tables[0])) : [];
         } else {
             // SQLite: используем sqlite_master
             $tables = Database::send("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-            return is_array($tables) && !empty($tables) ? array_column($tables, 'name') : [];
+            $result = is_array($tables) && !empty($tables) ? array_column($tables, 'name') : [];
         }
+        @file_put_contents($cacheFile, json_encode($result), LOCK_EX);
+        return $result;
     }
 
     /**
@@ -244,12 +252,12 @@ class AdminDatabase
      * чтобы дубли больше не появлялись. Держим одну строку на uniID —
      * с максимальным expiry. Идемпотентно (один раз за процесс).
      */
-    public static function ensureSubscriptionUnique(): void
-    {
-        if (self::$subUniqueEnsured) {
-            return;
-        }
-        self::$subUniqueEnsured = true;
+     public static function ensureSubscriptionUnique(): void
+     {
+         if (self::$subUniqueEnsured) {
+             return;
+         }
+         self::$subUniqueEnsured = true;
         $dupes = Database::send('SELECT uniID, COUNT(*) AS c FROM qwees_subscriptions GROUP BY uniID HAVING c > 1');
         if (\is_array($dupes)) {
             foreach ($dupes as $d) {
@@ -286,12 +294,12 @@ class AdminDatabase
      * Без подписки — 'off'. Бейдж рисует сама database.php по USER_STATUSES.
      * @return array строки qwees_users + поле status
      */
-    public static function getUsersWithSubscription(int $limit = 50, string $orderBy = 'id', string $orderDir = 'ASC'): array
+    public static function getUsersWithSubscription(int $limit = 100, string $orderBy = 'created_at', string $orderDir = 'DESC'): array
     {
-        $orderBy = preg_match('/^[A-Za-z0-9_]+$/', $orderBy) ? $orderBy : 'id';
+        $orderBy = preg_match('/^[A-Za-z0-9_]+$/', $orderBy) ? $orderBy : 'created_at';
         $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
         $limit = max(1, min(200, $limit));
-        $order = $orderBy === 'status' ? 's.status' : 'u.' . $orderBy;
+        $order = $orderBy === 'status' ? 's.status' : ($orderBy === 'created_at' ? 'u.created_at' : 'u.' . $orderBy);
         $result = Database::send(
             "SELECT u.*, COALESCE(s.status, 'off') AS status FROM qwees_users u
              LEFT JOIN qwees_subscriptions s ON s.uniID = u.uniID

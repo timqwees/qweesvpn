@@ -98,12 +98,14 @@ class Gifts implements InterfaceGifts
 	public function addUser(string $uniID) : bool
 	{
 		if ($uniID === '') return false;//пустого не берем
-		if (!\is_array($this->data)) $this->data = [];//это массив
-		$users = $this->data['users'] ?? [];//заполняем данными
+		$fresh = (new GetGifts())->getGifts();//свежие с диска, а не конструкторный слепок
+		$data = \is_array($fresh) ? $fresh : [];
+		$users = $data['users'] ?? [];//заполняем данными
 		if (!\is_array($users)) $users = [];
 		if (\in_array($uniID, $users, true)) return true;//уже в списке
 		$users[] = $uniID;
-		$this->data['users'] = array_values($users);
+		$data['users'] = array_values($users);
+		$this->data = $data;
 		(new Save())->save($this->data);
 		return true;
 	}

@@ -1880,7 +1880,6 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                     <button class="modal-btn-close"><?= $t('close') ?></button>
                 </div>
             </div>
-            /div>
         </div>
 
         <script>
@@ -2101,18 +2100,12 @@ if (!in_array($activeSection, ['main', 'profile', 'setting', 'referal', 'support
                 }
             }
 
-            // Enter key для активации реферального кода
-            // Referral input enter key handler
-            const referInputs = [
-                document.getElementById('referral-code-input'),
-                document.getElementById('referral-code-input-mobile')
-            ].filter(Boolean);
-            referInputs.forEach((inp) => {
-                inp.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        activateReferralCode(inp.id === 'referral-code-input-mobile' ? 'mobile' : 'desktop');
-                    }
-                });
+            // Enter key для активации реферального кода (делегировано:
+            // инпуты живут в <template> и появляются в DOM только при рендере секции)
+            document.addEventListener('keypress', function (e) {
+                if (e.key !== 'Enter') return;
+                const inp = e.target && e.target.closest ? e.target.closest('#referral-code-input, #referral-code-input-mobile') : null;
+                if (inp) activateReferralCode(inp.id === 'referral-code-input-mobile' ? 'mobile' : 'desktop');
             });
         </script>
 

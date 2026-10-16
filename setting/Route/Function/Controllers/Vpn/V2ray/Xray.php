@@ -195,8 +195,9 @@ class Xray
         } elseif($switch === 'minutes') {
             $expiry = $base->modify('+' . (int) $days . ' minutes')->getTimestamp() * 1000;
         } else {//default
-          // настройка выдачи времени подписки (всем по умолчанию ровно до конца отсеченного дня 23:59:59, пишем 22 так как +1 xray делает при 23 = 00:59:59)
-          $expiry = $base->modify('+' . (int) $days . ' days')->setTime(22, 59, 59)->getTimestamp() * 1000;
+          // Срок считается от момента выдачи/продления (exact expiry) — без окончания конца дня,
+          // чтобы БД совпадала с панельным expiryTime:now(). База = max(сейчас, текущий expiry панели)
+          $expiry = $base->modify('+' . (int) $days . ' days')->getTimestamp() * 1000;
         }
 
         if ($existingIndex !== null) {
@@ -422,7 +423,7 @@ class Xray
      *
      * @return array{status: string, message: string}
      */
-    public static function deleteClientFromPanel(string $uniID, ?string $serverCode = null): array
+     public static function deleteClientFromPanel(string $uniID, ?string $serverCode = null): array
     {
         if ($serverCode !== null) ServerNetwork::selectServer(null, $serverCode);//явный сервер (чистка призраков)
         else ServerNetwork::selectServer($uniID); // сервер клиента по его подписке

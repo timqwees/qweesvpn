@@ -124,7 +124,7 @@ $adminRole = $adminMenu->getRole($menuId);
                         stroke-linejoin="round"></path>
                 </svg>
                 Добавить пользователя
-                <span class="left-2.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                <span class="left-2.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
             </button>
             <? endif; ?>
         </div>
@@ -149,7 +149,7 @@ $adminRole = $adminMenu->getRole($menuId);
                     <i class="fa-regular fa-house text-gray-500"></i>
                     <span>Главная</span>
                 </a>
-                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
             </li>
             <?php endif; ?>
             <!-- Мониторинг -->
@@ -169,7 +169,7 @@ $adminRole = $adminMenu->getRole($menuId);
                     <i class="fa-solid fa-heart-pulse text-gray-500"></i>
                     <span>Мониторинг</span>
                 </a>
-                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
             </li>
             <?php endif; ?>
             <!-- Чат поддержки -->
@@ -225,7 +225,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-ruble-sign text-gray-500"></i>
                                 <span>Настройка цен</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
                         <!-- Панель выдачи -->
@@ -244,7 +244,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-key text-gray-500"></i>
                                 <span>Панель выдачи подписок</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
                         <!-- Панель изьятия -->
@@ -263,7 +263,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-user-slash text-gray-500"></i>
                                 <span>Панель изьятия подписок</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
                     </ul>
@@ -295,7 +295,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-chart-line text-gray-500"></i>
                                 <span>Графики</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
 
@@ -315,7 +315,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-wallet text-gray-500"></i>
                                 <span>Прибыль</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
 
@@ -335,7 +335,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-calculator text-gray-500"></i>
                                 <span>ROI</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
 
@@ -355,8 +355,28 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-scroll text-gray-500"></i>
                                 <span>Логи</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
+                        <?php endif; ?>
+
+                        <!-- Прогнозирование -->
+                        <?php if ($groups->isPermission($adminUsername,'roi')): ?>
+            <li class="list-none relative" data-toggle-section="forecast">
+                            <a
+                                 class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150" title="Прогнозирование прибыли">
+                                 <i class="fa-solid fa-line-chart text-purple-400"></i>
+                                 <span>Прогнозирование прибыли</span>
+                             </a>
+                         </li>
+                         <?php else: ?>
+                             <li class="list-none relative" data-toggle-section="forecast">
+                                 <a
+                                     class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150" title="Прогнозирование прибыли">
+                                     <i class="fa-solid fa-line-chart text-purple-400"></i>
+                                     <span>Прогнозирование прибыли</span>
+                                </a>
+                                <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
+                            </li>
                         <?php endif; ?>
 
                         <!-- База данных -->
@@ -384,7 +404,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                                 <i class="fa-solid fa-database text-gray-500"></i>
                                                 <span><?= htmlspecialchars($tableName) ?></span>
                                             </a>
-                                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                                         </li>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
@@ -421,7 +441,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-user-shield text-gray-500"></i>
                                 <span>Роли и права</span>
                             </a>
-                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>            </li>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>            </li>
                         <?php endif; ?>
                     </ul>
                 </details>
@@ -452,7 +472,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                     <i class="fa-solid fa-list text-gray-500"></i>
                                     <span>Серверы</span>
                                 </a>
-                                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                                <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                             </li>
                         <?php endif; ?>
                         <!-- Переезд -->
@@ -471,7 +491,7 @@ $adminRole = $adminMenu->getRole($menuId);
                                 <i class="fa-solid fa-truck-fast text-gray-500"></i>
                                 <span>Переезд</span>
                             </a>
-                            <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa fa-lock"></span>
+                            <span class="left-1 bottom-0 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
                     </ul>

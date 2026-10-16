@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Router\Routes;
 use App\Config\Session;
+use App\Config\Database;
 use Setting\Route\Function\Controllers\Admin\{AdminDatabase, AdminXray, AdminAuth, Admin};
 use Setting\Route\Function\Controllers\Admin\Group\Groups;
 use Setting\Route\Function\Controllers\Auth\Auth;
@@ -418,6 +419,120 @@ Routes::get('/api/admin/stats', function () {
     ], JSON_UNESCAPED_UNICODE);
     exit;
 });
+//=============================================//TODAY USERS (новые пользователи за сегодня)
+Routes::get('/api/admin/today-users', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    $cond = Database::isMysql() ? "DATE(u.created_at) = CURDATE()" : "DATE(u.created_at) = DATE('now')";
+    $rows = Database::send("SELECT u.email, u.uniID, u.created_at, s.status AS sub_status
+        FROM qwees_users u
+        LEFT JOIN qwees_subscriptions s ON s.uniID = u.uniID
+        WHERE $cond
+        ORDER BY u.created_at DESC LIMIT 50");
+    $users = [];
+    foreach ((array) $rows as $r) {
+        $users[] = [
+            'email' => $r['email'] ?? '',
+            'uniID' => $r['uniID'] ?? '',
+            'created_at' => $r['created_at'] ?? '',
+            'sub_status' => $r['sub_status'] ?? '',
+        ];
+    }
+    echo json_encode(['status' => 'ok', 'users' => $users], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+//=============================================//USER SUMMARY (сводка пользователя)
+Routes::get('/api/admin/user-summary', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    $id = trim((string) ($_GET['id'] ?? ''));
+    if ($id === '') { echo json_encode(['status' => 'error', 'message' => 'ID не передан']); exit; }
+    $u = Database::send("SELECT email, first_name, last_name, uniID, myrefer, created_at FROM qwees_users WHERE uniID = ? LIMIT 1", [$id]);
+    if (!$u || !isset($u[0])) { echo json_encode(['status' => 'error', 'message' => 'Пользователь не найден']); exit; }
+    $u = $u[0];
+    $s = Database::send("SELECT status, subscription, expiry, count_days, updated_at FROM qwees_subscriptions WHERE uniID = ? LIMIT 1", [$id]);
+    $s = ($s && isset($s[0])) ? $s[0] : null;
+    $giftUsed = (bool) Database::send("SELECT 1 FROM qwees_gifts_log WHERE uniID = ? LIMIT 1", [$id]);
+    echo json_encode([
+        'status' => 'ok',
+        'user' => [
+            'full_name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')),
+            'email' => $u['email'] ?? '',
+            'uniID' => $u['uniID'] ?? '',
+            'myrefer' => $u['myrefer'] ?? '',
+            'created_at' => $u['created_at'] ?? '',
+        ],
+        'subscription' => [
+            'status' => $s ? $s['status'] : '',
+            'subscription' => $s ? $s['subscription'] : '',
+            'expiry' => $s ? $s['expiry'] : null,
+            'count_days' => $s ? (int) $s['count_days'] : 0,
+            'last_payment' => null,
+            'gift_used' => $giftUsed,
+        ],
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+//=============================================//USER ACTIVITY (активность пользователя)
+Routes::get('/api/admin/user-activity', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    $id = trim((string) ($_GET['id'] ?? ''));
+    if ($id === '') { echo json_encode(['status' => 'error', 'message' => 'ID не передан']); exit; }
+    $actions = \Setting\Route\Function\Controllers\User\UserActivity::getActions($id, 20);
+    $out = array_map(function($a) {
+        return [
+            'action' => $a['action'] ?? '',
+            'when' => date('d.m H:i', (int) ($a['ts'] ?? 0)),
+        ];
+    }, $actions);
+    echo json_encode(['status' => 'ok', 'actions' => $out], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+Routes::get('/api/admin/panel-clients', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    $ov = \Setting\Route\Function\Controllers\Admin\Overview\Overview::class;
+    $data = $ov::getOverview(true);
+    $clients = [];
+    foreach ((array) ($data['servers'] ?? []) as $s) {
+        if (($s['stale'] ?? true)) continue;
+        $code = (string) ($s['code'] ?? '');
+        $country = (string) ($s['country'] ?? $code);
+        foreach ((array) ($s['clients_list'] ?? []) as $c) {
+            $clients[] = [
+                'server' => $code,
+                'country' => $country,
+                'email' => $c['email'] ?? '',
+                'subId' => $c['subId'] ?? '',
+                'enable' => (bool) ($c['enable'] ?? false),
+                'online' => (bool) ($c['online'] ?? false),
+                'up' => (int) ($c['up'] ?? 0),
+                'down' => (int) ($c['down'] ?? 0),
+                'up_h' => $ov::formatSpeed((int) ($c['up'] ?? 0)),
+                'down_h' => $ov::formatSpeed((int) ($c['down'] ?? 0)),
+            ];
+        }
+    }
+    usort($clients, fn($a, $b) => $b['down'] <=> $a['down']);
+    echo json_encode(['status' => 'ok', 'clients' => $clients, 'total' => \count($clients)], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+Routes::post('/api/admin/panel-client-del', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    if (!AdminAuth::requireAdmin()) { echo json_encode(['status' => 'error', 'message' => 'Только администратор']); exit; }
+    $subId = trim((string) ($_POST['subId'] ?? ''));
+    $server = trim((string) ($_POST['server'] ?? ''));
+    if ($subId === '') { echo json_encode(['status' => 'error', 'message' => 'subId не передан']); exit; }
+    try {
+        $r = \Setting\Route\Function\Controllers\Vpn\V2ray\Xray::deleteClientFromPanel($subId, $server !== '' ? $server : null);
+        echo json_encode(['status' => 'ok', 'result' => $r], JSON_UNESCAPED_UNICODE);
+    } catch (\Throwable $e) {
+        echo json_encode(['status' => 'error', 'message' => mb_substr($e->getMessage(), 0, 200)], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
+});
 //=============================================//MONITORING (живой дашборд)
 Routes::get('/api/admin/overview', function () {
     AdminAuth::requirePermission('monitoring');
@@ -425,7 +540,12 @@ Routes::get('/api/admin/overview', function () {
     $fresh = isset($_GET['fresh']);
     $ov = \Setting\Route\Function\Controllers\Admin\Overview\Overview::class;
     if (!$fresh && \function_exists('fastcgi_finish_request') && ($hit = $ov::getCached()) !== null) {
-        // Мгновенно отдаём прошлое, свежие данные досчитываем в фоне после закрытия соединения
+        // Мгновенно отдаём прошлое; в фоне досчитываем только если кэш старше минуты
+        if (!$ov::shouldRefreshBackground($hit)) {
+            $hit['cached'] = true;
+            echo json_encode($hit, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
         $hit['cached'] = true;
         $hit['refreshing'] = true;
         echo json_encode($hit, JSON_UNESCAPED_UNICODE);
@@ -434,6 +554,42 @@ Routes::get('/api/admin/overview', function () {
         exit;
     }
     echo json_encode($ov::getOverview($fresh), JSON_UNESCAPED_UNICODE);
+    exit;
+});
+//=============================================//MONITORING FLAGS (turn_speed_show и прочие)
+Routes::post('/api/admin/monitoring/toggle_flag', function () {
+    AdminAuth::requirePermission('monitoring');
+    header('Content-Type: application/json; charset=UTF-8');
+    $file = __DIR__ . '/Function/Controllers/Admin/Overview/turn_flags.json';
+    $data = ['turn_speed_show' => true];
+    if (is_file($file)) {
+        $j = json_decode((string) file_get_contents($file), true);
+        if (is_array($j)) $data = array_merge($data, $j);
+    }
+    $key = isset($_POST['flag']) ? (string) $_POST['flag'] : '';
+    $val = isset($_POST['value']) ? (string) $_POST['value'] : 'on';
+    if ($key !== '' && array_key_exists($key, $data)) {
+        if ($val === 'on' || $val === '1' || $val === 'true') {
+            $data[$key] = true;
+        } elseif ($val === 'off' || $val === '0' || $val === 'false') {
+            $data[$key] = false;
+        }
+    }
+    file_put_contents($file, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    \Setting\Route\Function\Controllers\Admin\Overview\Overview::clearHealthCache();
+    \Setting\Route\Function\Controllers\Admin\Overview\Overview::clearCache();
+    echo json_encode(['status' => 'ok', 'flags' => \Setting\Route\Function\Controllers\Admin\Overview\OverviewConfig::getFlags()], JSON_UNESCAPED_UNICODE);
+    exit;
+});
+//=============================================//ANALYTICS (LTV + прогноз прибыли)
+Routes::get('/api/admin/analytics/ltv', function () {
+    AdminAuth::requirePermission('roi');
+    header('Content-Type: application/json; charset=UTF-8');
+    $ov = \Setting\Route\Function\Controllers\Admin\Overview\Overview::class;
+    $fresh = isset($_GET['fresh']);
+    $days = isset($_GET['days']) ? (int) $_GET['days'] : null;
+    $month = isset($_GET['month']) ? (string) $_GET['month'] : null;
+    echo json_encode($ov::getLtvAnalytics($fresh, $days, $month), JSON_UNESCAPED_UNICODE);
     exit;
 });
 //=============================================//GIFTS (пробные, пока не выкатываем)
