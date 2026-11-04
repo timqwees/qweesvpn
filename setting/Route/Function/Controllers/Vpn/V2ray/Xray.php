@@ -140,16 +140,22 @@ class Xray
             return false;
         }
 
-        $inboundIdx = self::inboundNumber();
-        if (empty($data['obj'][$inboundIdx])) {
-            self::log(\sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет inbound с индексом %d\n", date('Y-m-d H:i:s'), $inboundIdx));
+        // Собираем все доступные (enabled) inbound ID
+        $inboundIds = [];
+        foreach ($data['obj'] as $inboundItem) {
+            if (!empty($inboundItem['id']) && ($inboundItem['enable'] ?? true) !== false) {
+                $inboundIds[] = (int) $inboundItem['id'];
+            }
+        }
+
+        if (empty($inboundIds)) {
+            self::log(\sprintf("[%s] [ПОДПИСКА -> СЕРВЕР] Нет доступных входящих соединений (inbounds)\n", date('Y-m-d H:i:s')));
             return false;
         }
 
-        $inbound = $data['obj'][$inboundIdx];
-        if (empty($inbound['id']) || ($inbound['enable'] ?? true) === false) {
-            return false;
-        }
+        // Используем первый доступный inbound для получения настроек (протокол, порт и т.д.)
+        $firstInboundIdx = array_search($inboundIds[0], array_column($data['obj'], 'id'));
+        $inbound = $data['obj'][$firstInboundIdx];
 
         $protocol = strtolower((string) ($inbound['protocol'] ?? ''));
         $rawSettings = $inbound['settings'] ?? '{}';
@@ -238,7 +244,7 @@ class Xray
             ];
 
             $path = '/panel/api/clients/add';
-            $payload = ['client' => $client, 'inboundIds' => [(int) $inbound['id']]];
+            $payload = ['client' => $client, 'inboundIds' => $inboundIds];
         }
 
         $updateUser = PanelHttp::threeXuiHttp('POST', $path, $payload);
@@ -263,7 +269,8 @@ class Xray
                 'limitIp' => $client['limitIp'],
                 'enable' => $client['enable'],
                 'totalGB' => $client['totalGB'] ?? 0,
-                'inbound_id' => $inbound['id'],
+                'inbound_ids' => $inboundIds,
+                'inbound_id' => $inbound['id'], // для совместимости — первый inbound
                 'protocol' => $inbound['protocol'],
                 'host' => self::vlessHost(),
                 'port' => $inbound['port'] ?? 443,

@@ -24,7 +24,7 @@ class Network
         'gb' => [
             'country' => 'London',
             'flag' => 'london.svg',
-            'XUI_API_TOKEN' => "hz4QtjFxLdfuqatWop7yFFiKOpasegmlsV43Bw5KuoiuKA39", #куки токен
+            'XUI_API_TOKEN' => "kaVR0L72QUy4gAwyXltdFJ7rCkbLRmk46Ck2A8NNs016AoRL", #куки токен
             'XUI_LOGIN' => "timqwees", #логин
             'XUI_PASSWORD' => "timqwees2018$", #пароль
             'XUI_LOGIN_NAME_COOKIE' => "x-ui", #имя куки
