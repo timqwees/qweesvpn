@@ -22,9 +22,9 @@ class Network
     /** Серверы по умолчанию (страховка). Живой реестр — servers.json рядом (правится из админки без деплоя). */
     private const DEFAULT_SERVERS = [
         'gb' => [
-            'country' => 'London',
-            'flag' => 'london.svg',
-            'XUI_API_TOKEN' => "kaVR0L72QUy4gAwyXltdFJ7rCkbLRmk46Ck2A8NNs016AoRL", #куки токен
+            'country' => 'Netherlands',
+            'flag' => 'netherlands.svg',
+            'XUI_API_TOKEN' => "ecEhnjKODSKaGDG84aUNFyOw3CAlhwCqTQvCFgHgFR8RnmfB", #куки токен
             'XUI_LOGIN' => "timqwees", #логин
             'XUI_PASSWORD' => "timqwees2018$", #пароль
             'XUI_LOGIN_NAME_COOKIE' => "x-ui", #имя куки
