@@ -24,7 +24,7 @@ class Network
         'gb' => [
             'country' => 'Netherlands',
             'flag' => 'netherlands.svg',
-            'XUI_API_TOKEN' => "ecEhnjKODSKaGDG84aUNFyOw3CAlhwCqTQvCFgHgFR8RnmfB", #куки токен
+            'XUI_API_TOKEN' => "E1BvYl91Jg9RZHBuykqbRkR94UdpR879Xep18CMxxtC6wTRU", #куки токен
             'XUI_LOGIN' => "timqwees", #логин
             'XUI_PASSWORD' => "timqwees2018$", #пароль
             'XUI_LOGIN_NAME_COOKIE' => "x-ui", #имя куки
