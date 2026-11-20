@@ -60,6 +60,7 @@ if ($table === 'qwees_users') {
                 var $overlay = $('#admin-overlay');
 
                 function closeSidebar() {
+                    document.body.classList.remove('qwees_sb_open');
                     $sidebar.removeClass('translate-x-0').addClass('-translate-x-full');
                     $overlay.addClass('hidden');
                 }
@@ -68,6 +69,7 @@ if ($table === 'qwees_users') {
                     var open = $sidebar.hasClass('translate-x-0');
                     $sidebar.toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
                     $overlay.toggleClass('hidden', open);
+                    document.body.classList.toggle('qwees_sb_open', !!open);
                 });
 
                 $overlay.on('click', closeSidebar);

@@ -81,17 +81,19 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                 var $overlay = $('#admin-overlay');
 
                 function closeSidebar() {
-                    $sidebar.removeClass('translate-x-0').addClass('-translate-x-full');
-                    $overlay.addClass('hidden');
+                    document.body.classList.remove('qwees_sb_open');
+                    $('#admin-sidebar').removeClass('translate-x-0').addClass('-translate-x-full');
+                    $('#admin-overlay').addClass('hidden');
                 }
 
                 $('#admin-burger').on('click', function () {
-                    var open = $sidebar.hasClass('translate-x-0');
-                    $sidebar.toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
-                    $overlay.toggleClass('hidden', open);
+                    var open = $('#admin-sidebar').hasClass('translate-x-0');
+                    $('#admin-sidebar').toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
+                    $('#admin-overlay').toggleClass('hidden', open);
+                    document.body.classList.toggle('qwees_sb_open', !!open);
                 });
 
-                $overlay.on('click', closeSidebar);
+                $('#admin-overlay').on('click', closeSidebar);
                 $sidebar.on('click', 'a, [data-toggle-section]', closeSidebar);
             });
         </script>
@@ -325,6 +327,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
 
                 <!-- Онлайн и пользователи -->
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div class="rounded-xl bg-white/[0.03] ring-1 ring-white/5 p-4">
                         <div class="text-[11px] uppercase tracking-wider text-gray-500 mb-1">В сети сейчас</div>
                          <div class="text-2xl sm:text-3xl font-bold text-emerald-400" data-ov-online data-lazy-hint="monitoring" title="Собираются при посещении раздела Мониторинг">—</div>
                          <div class="relative w-12 h-12 sm:w-16 sm:h-16 mt-2">
@@ -493,7 +496,9 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
         max-height: 400px;
         overflow-y: auto;
         overflow-x: auto;
-        min-width: min-content;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
         scrollbar-width: thin;
         scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
     }
@@ -655,6 +660,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
 /* Ant Design v5 table emulation */
 [data-ov-pc-table] {
     table-layout: auto;
+    min-width: 1146px;
     border-collapse: separate;
     border-spacing: 0;
     border-radius: 6px;
@@ -948,7 +954,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var ctx = el.getContext('2d');
                         var g = ctx.createLinearGradient(0, 0, 0, el.height || 56);
                         g.addColorStop(0, color + '55'); g.addColorStop(1, color + '00');
-                        ovCharts[id] = new Chart(el, {
+                        ovCharts[id] = safeChart(el, {
                             type: 'line',
                             data: { labels: labels, datasets: [{ data: vals, borderColor: color, borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: !!fill, backgroundColor: fill ? g : 'transparent' }] },
                             options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } } }
@@ -977,7 +983,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             return ('0' + dt.getHours()).slice(-2) + ':' + ('0' + dt.getMinutes()).slice(-2);
                         }
                         var labels = ups.map(function (p) { return fmtT(p[0]); });
-                        ovCharts[id] = new Chart(el, {
+                        ovCharts[id] = safeChart(el, {
                             type: 'line',
                             data: { labels: labels, datasets: [
                                 { label: 'Загрузка', data: ups.map(function (p) { return p[1]; }), borderColor: '#2f81f7', borderWidth: 1.5, pointRadius: 0, tension: 0.4 },
@@ -1201,7 +1207,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var $oc = $('#chart_online_main');
                         if ($oc.length && all > 0) {
                             $oc[0].previousElementSibling && ($oc[0].previousElementSibling.style.display='none');
-                            if (!$oc[0].__chart) $oc[0].__chart = new Chart($oc, {
+                            if (!$oc[0].__chart) $oc[0].__chart = safeChart($oc, {
                                 type: 'doughnut',
                                 data: { labels: ['В сети', 'Не в сети'], datasets: [{ data: [on, Math.max(0, all - on)], backgroundColor: ['rgba(52,211,153,0.85)', 'rgba(148,163,184,0.25)'], borderWidth: 0 }] },
                                 options: { cutout: '64%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
@@ -1241,21 +1247,21 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                     }
                                 }
                             };
-                            if (!$bar2.__chart) $bar2.__chart = new Chart($bar2, cfg);
+                            if (!$bar2.__chart) $bar2.__chart = safeChart($bar2, cfg);
                             else { $bar2.__chart.data = { labels: labels, datasets: cfg.data.datasets }; $bar2.__chart.update(); }
                         }
                         if ($bar3 && Chart) {
                             var cfg2 = {
                                 type: 'line',
-                                data: { labels: labels, datasets: [{ data: vals, borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: 'rgb(59,130,246)' }] },
+                                data: { labels: labels, datasets: [{ label: 'Новых', data: vals, borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: 'rgb(59,130,246)' }] },
                                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(c){return Number(c.parsed.y).toLocaleString('ru-RU') + ' новых';} } } }, scales: { x: { grid: { color: 'rgba(255,255,255,0.06)' } }, y: { grid: { color: 'rgba(255,255,255,0.06)' } } } }
                             };
-                            if (!$bar3.__chart) $bar3.__chart = new Chart($bar3, cfg2);
+                            if (!$bar3.__chart) $bar3.__chart = safeChart($bar3, cfg2);
                             else { $bar3.__chart.data = { labels: labels, datasets: cfg2.data.datasets }; $bar3.__chart.update(); }
                         }
                         var $sp = $('#chart_users_spark');
                         if ($sp.length && Chart && muc.length) {
-                            if (!$sp[0].__chart) $sp[0].__chart = new Chart($sp, {
+                            if (!$sp[0].__chart) $sp[0].__chart = safeChart($sp, {
                                 type: 'line',
                                 data: { labels: labels, datasets: [{ data: vals, borderColor: 'rgb(59,130,246)', backgroundColor: 'rgba(59,130,246,0.15)', tension: 0.4, fill: true, pointRadius: 2, pointBackgroundColor: 'rgb(59,130,246)' }] },
                                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: true, callbacks: { label: function(c){return Number(c.parsed.y).toLocaleString('ru-RU') + ' новых';} } } }, scales: { x: { display: false, grid: { display: false } }, y: { display: false, grid: { display: false } } } }
@@ -1268,9 +1274,14 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         var ts = (h.turn_speed_show !== undefined) ? !!h.turn_speed_show : true;
                         $('#speed-toggle').prop('checked', ts).off('change.toggleSpeed').on('change.toggleSpeed', function () {
                             var val = $(this).is(':checked') ? 'on' : 'off';
-                            $('#speed-toggle-label').text($(this).is(':checked') ? 'вкл.' : 'выкл.');
-                            $.ajax({ url: '/api/admin/monitoring/toggle_flag', method: 'POST', dataType: 'json', timeout: 15000, data: { flag: 'turn_speed_show', value: val }, success: function (r) { $('#speed-toggle-label').text(r.status === 'ok' ? 'сохранено' : 'ошибка'); } });
-                            renderPanelClients(h);
+                            $.ajax({ url: '/api/admin/monitoring/toggle_flag', method: 'POST', dataType: 'json', timeout: 15000, data: { flag: 'turn_speed_show', value: val }, success: function (r) {
+                                if (r && r.status === 'ok') {
+                                    var f = (r && r.flags) || {};
+                                    $('#speed-toggle').prop('checked', f.turn_speed_show !== undefined ? !!f.turn_speed_show : $(this).is(':checked'));
+                                }
+                                $('#speed-toggle-label').text($('#speed-toggle').is(':checked') ? 'вкл.' : 'выкл.');
+                                loadOverview(true);
+                            }});
                         });
                         $('#speed-toggle-label').text(ts ? 'вкл.' : 'выкл.');
                         $('[data-ov-pill-text]').text('Готово');
@@ -1363,7 +1374,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                             var labels = Object.keys(mr).sort();
                             var data = labels.map(function (k) { return mr[k] || 0; });
                             if (!labels.length) { labels = ['Сегодня']; data = [m.predicted_monthly_revenue || 0]; }
-                            window.__fcChart = new Chart(document.getElementById('fc-forecast'), {
+                            window.__fcChart = safeChart(document.getElementById('fc-forecast'), {
                                 type: 'line',
                                 data: {
                                     labels: labels,
@@ -1627,6 +1638,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         else { stopMonitoringInterval(); }
                     });
                     if (ovVisible()) startMonitoringInterval();
+                    window.loadOverview = loadOverview;//нужен другим блокам (main/charts) — раньше был недоступен
                     $(window).on('beforeunload', function () { stopMonitoringInterval(); });
                 });
             </script>
@@ -1781,7 +1793,6 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         o.code = (o.code || '').toLowerCase().trim();
                         o.XUI_INBOUND_NUMBER = parseInt(o.XUI_INBOUND_NUMBER || '0', 10) || 0;
                         if (!o.flag) o.flag = 'none.svg';
-                        if (!o.XUI_LOGIN_NAME_COOKIE) o.XUI_LOGIN_NAME_COOKIE = 'x-ui';
                         return o;
                     }
                     $('[data-srv-add-open]').on('click', function () {
@@ -1812,9 +1823,14 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         if (!/^[a-z0-9]{1,16}$/.test(o.code)) { $('[data-srv-form-msg]').text('Код: 1-16 символов латиницы/цифр'); return; }
                         if (!o.XUI_URL_PANEL || !o.VLESS_SERVER) { $('[data-srv-form-msg]').text('Нужны URL панели и VLESS-хост'); return; }
                         var all = $.extend(true, {}, srvRaw);
-                        if (srvEditCode && srvEditCode !== o.code) delete all[srvEditCode];
-                        delete o.code;
-                        all[o.code] = o;
+                        var newCode = o.code;
+                        // Не теряем поля, которых нет в форме (cookie-имя, доп. ключи сервера)
+                        var prev = (srvEditCode && srvRaw[srvEditCode]) ? srvRaw[srvEditCode] : {};
+                        var srv = $.extend(true, {}, prev, o);
+                        if (!srv.XUI_LOGIN_NAME_COOKIE) srv.XUI_LOGIN_NAME_COOKIE = 'x-ui';
+                        delete srv.code;
+                        if (srvEditCode && srvEditCode !== newCode) delete all[srvEditCode];
+                        all[newCode] = srv;
                         $('[data-srv-form-msg]').text('Сохраняю…');
                         $.ajax({
                             url: '/api/admin/relocation', method: 'POST',
@@ -2217,7 +2233,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                 if (labels.length > 0 && data.length > 0) {
                                     try { if (window.__plansChart) window.__plansChart.destroy(); } catch (e) {}
                                     window.__plansBuilt = true;
-                                    window.__plansChart = new Chart($plansCtx[0], {
+                                    window.__plansChart = safeChart($plansCtx[0], {
                                         type: 'doughnut',
                                         data: {
                                             labels: labels,
@@ -2848,7 +2864,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                         if (el && typeof Chart !== 'undefined') {
                             if (window.__pfDaily) { try { window.__pfDaily.destroy(); } catch (e) {} }
                             var pts = r.daily || [];
-                            window.__pfDaily = new Chart(el, {
+                            window.__pfDaily = safeChart(el, {
                                 type: 'line',
                                 data: {
                                     labels: pts.map(function (p) { return p.day; }),
@@ -3975,6 +3991,116 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
             </section>
             <?php endif; ?>
 
+            <!-- Секция: Продление подписок -->
+            <?php if ($groups->isPermission($adminUsername,'renew')): ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="renew">
+                <!-- Заголовок -->
+                <div class="py-6 flex-col flex md:flex-row justify-between items-center gap-2">
+                    <h1 class="text-2xl font-bold text-gray-100 mb-4 md:mb-0">
+                        Продление подписок
+                    </h1>
+                    <p class="text-sm text-gray-500">
+                        Продлевает существующий ключ в панели и срок в БД — новый ключ не создаётся
+                    </p>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-6 relative bg-[#16181d] rounded-xl ring-1 ring-white/5 p-6">
+                    <!-- Форма продления -->
+                    <div class="flex flex-1 flex-col lg:w-[400px] w-full">
+                        <h2 class="text-lg sm:text-2xl font-semibold text-white tracking-tight">
+                            Продлить подписку</h2>
+                        <form class="flex flex-col gap-4 mt-4" action="/admin/renewClient" method="POST">
+                            <input type="hidden" name="url"
+                                value="<?= htmlspecialchars($_SERVER['REQUEST_URI']) ?>">
+
+                            <!-- ID клиента -->
+                            <div class="flex items-center gap-2">
+                                <label for="renew_client_id" class="text-gray-400 text-sm">uniID клиента</label>
+                                <input id="renew_client_id" type="text" name="uniID" list="admin_users_list"
+                                    class="px-3 py-2 rounded-lg border border-white/10 text-gray-100 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500 focus:outline-none"
+                                    placeholder="uniID" required>
+                            </div>
+
+                            <!-- Дни -->
+                            <div class="flex flex-col gap-2">
+                                <label for="renew_days" class="text-gray-400 text-sm">Сколько дней добавить</label>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <input id="renew_days" type="number" name="days" min="1" max="3650" value="30" required
+                                        class="w-28 px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-gray-100 focus:ring-blue-500 focus:border-blue-500 focus:outline-none">
+                                    <button type="button" data-renew-days="30"
+                                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10">30 дн</button>
+                                    <button type="button" data-renew-days="90"
+                                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10">90 дн</button>
+                                    <button type="button" data-renew-days="180"
+                                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10">180 дн</button>
+                                    <button type="button" data-renew-days="365"
+                                        class="text-xs font-medium px-3 py-1.5 rounded-lg bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10">365 дн</button>
+                                </div>
+                            </div>
+
+                            <!-- Кнопка -->
+                            <button
+                                class="rounded-lg px-4 py-2 bg-blue-600 text-white font-semibold text-base focus:outline-none hover:bg-blue-500"
+                                type="submit">
+                                Продлить подписку
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Информация об клиенте -->
+                    <div data-user-find class="flex flex-col w-full">
+                        <h2 class="text-lg sm:text-2xl font-semibold text-gray-100/40 tracking-tight">
+                            Информация об клиенте</h2>
+                        <div class="flex flex-col lg:flex-row gap-6 mt-6 min-w-0">
+                            <!-- Contact info -->
+                            <div class="flex min-w-0 flex-1 flex-col gap-4">
+                                <p class="text-gray-500"><span
+                                        class="text-gray-100 uppercase border-solid border-r-2 border-black px-2"
+                                        data-fuser-id></span> Ф.И: <span class="text-gray-100 uppercase"
+                                        data-fuser-name></span></p>
+                                <p class="text-gray-500">UniID: <span
+                                        class="text-gray-100 bg-green-500/10 px-2 py-1 rounded-lg break-all" data-fuser-uniID></span>
+                                </p>
+                            </div>
+                            <!-- Subscription info -->
+                            <div class="flex min-w-0 flex-1 flex-col gap-3">
+                                <p class="text-gray-500">Статус подписки: <span
+                                        class="text-gray-100 px-2 py-1 rounded-lg break-all" data-fuser-status></span></p>
+                                <p class="text-gray-500">Активен до: <span class="text-gray-100 px-2 py-1 rounded-sm"
+                                        data-fuser-expires></span></p>
+                            </div>
+                            <!-- Subscription link info -->
+                            <div class="flex min-w-0 flex-1 flex-col gap-3">
+                                <p class="text-gray-500">Количество дней: <span
+                                        class="text-gray-100 px-2 py-1 rounded-lg break-all" data-fuser-countdays></span></p>
+                                <p class="text-gray-500">Подписка: <span class="text-gray-100 px-2 py-1 rounded-lg break-all"
+                                        data-fuser-subscription></span>
+                                    <button
+                                        onclick="copyToClipboard($('[data-fuser-subscription]').text(), 'Подписка')"><i
+                                            class="fa-solid fa-copy"></i></button>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <script defer>
+                $(document).ready(function () {
+                    $(document).on('click', '[data-renew-days]', function () {
+                        $('#renew_days').val($(this).attr('data-renew-days'));
+                    });
+                });
+            </script>
+            <?php else: ?>
+            <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="renew">
+                <div class="py-10 flex flex-col items-center gap-3 text-center">
+                    <i class="fa-solid fa-lock text-5xl text-red-500"></i>
+                    <div class="text-lg font-bold text-gray-100">Недоступно</div>
+                    <div class="text-sm text-gray-500">Нет прав на раздел</div>
+                </div>
+            </section>
+            <?php endif; ?>
+
             <!-- Секция: Добавление пользователей -->
             <?php if ($groups->isPermission($adminUsername,'add_user')): ?>
                 <section class="box-border flex w-full flex-col gap-4 p-4 md:p-6 hidden" data-section="add_user">
@@ -4372,14 +4498,18 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                                         year: 'numeric'
                                     }) : '-');
                                     $('[data-fuser-expires]').addClass(response.data.status === 'on' ? 'bg-green-500/10' : '');
-                                    setTimeout(() => {
-                                        $('[data-delete-button]').show(250);
-                                    }, 250);
+                                    if ($(event.target).closest('[data-section="reduce"]').length) {
+                                        setTimeout(() => {
+                                            $('[data-delete-button]').show(250);
+                                        }, 250);
+                                    }
                                 } else {
                                     $('[data-user-find]').hide(250);
-                                    setTimeout(() => {
-                                        $('[data-delete-button]').hide(250);
-                                    }, 250);
+                                    if ($(event.target).closest('[data-section="reduce"]').length) {
+                                        setTimeout(() => {
+                                            $('[data-delete-button]').hide(250);
+                                        }, 250);
+                                    }
                                 }
                             }
                         });
@@ -4474,6 +4604,15 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     try { if (window.__plansChart) window.__plansChart.destroy(); } catch (e) {}
                     delete window.__plansChart; window.__plansBuilt = false;
                 }
+                // Единая точка создания графика: снимает прежний экземпляр с canvas,
+                // иначе Chart.js падает «Canvas is already in use».
+                function safeChart(el, cfg) {
+                    el = (el && el.jquery) ? el[0] : el;
+                    if (!el) return null;
+                    try { var old = Chart.getChart(el); if (old) old.destroy(); } catch (e) {}
+                    return new Chart(el, cfg);
+                }
+                window.safeChart = safeChart;
                 function buildAdminCharts(client, financial, roi365) {
                 if (typeof Chart === 'undefined') return;
 
@@ -4482,7 +4621,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     if (this.__built) return; this.__built = true;
                     var mrc = ((roi365 || {}).monthly && roi365.monthly.length) ? roi365.monthly : (financial.monthlyRevenueChart || []);
                     if (!mrc.length) { delete this.__built; return; }
-                    this.__chart = new Chart(this, {
+                    this.__chart = safeChart(this, {
                         type: 'line',
                         data: {
                             labels: mrc.map(function (r) { return r.month; }),
@@ -4537,7 +4676,7 @@ $adminRole = $adminUser->getRole($adminID);//роль работника
                     if (this.__built) return; this.__built = true;
                     var muc = financial.monthlyUsersChart || [];
                     if (!muc.length) { delete this.__built; return; }
-                    this.__chart = new Chart(this, {
+                    this.__chart = safeChart(this, {
                         type: 'line',
                         data: {
                             labels: muc.map(function (r) { return r.month; }),

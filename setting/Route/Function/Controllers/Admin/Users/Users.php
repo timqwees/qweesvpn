@@ -17,7 +17,7 @@ trait Users {
   array (
     'id' => 2,
     'username' => 'ruslan',
-    'password' => 'ruslan1220066$',
+    'password' => '$2y$12$8rSatNDvSJZLuUebYeljU.spgqPtYzrNWlLpMABRFCggpNdIqxA9a',
     'role' => 'admin',
     'session_ver' => 1,
   ),

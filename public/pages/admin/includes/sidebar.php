@@ -266,6 +266,25 @@ $adminRole = $adminMenu->getRole($menuId);
                             <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
                         </li>
                         <?php endif; ?>
+                        <!-- Панель продления -->
+                        <?php if ($groups->isPermission($adminUsername,'renew')): ?>
+                            <li class="list-none relative" data-toggle-section="renew">
+                                <a
+                                    class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
+                                    <i class="fa-solid fa-rotate text-gray-500"></i>
+                                    <span>Продление подписок</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                        <li class="list-none relative" data-toggle-section="renew">
+                            <a
+                                class="flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer text-gray-300 hover:bg-white/5 transition-colors duration-150">
+                                <i class="fa-solid fa-rotate text-gray-500"></i>
+                                <span>Продление подписок</span>
+                            </a>
+                            <span class="left-0.5 -bottom-1 text-[11px] absolute inset-0 flex items-center justify-center text-red-500 fa-solid fa-lock"></span>
+                        </li>
+                        <?php endif; ?>
                     </ul>
                 </details>
             </li>

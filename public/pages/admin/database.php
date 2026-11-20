@@ -28,6 +28,9 @@ $filterColumn = $_GET['filter_column'] ?? '';
 $filterValue = $_GET['filter_value'] ?? '';
 $filterCondition = $_GET['filter_condition'] ?? '=';
 $searchQuery = $_GET['search'] ?? '';
+// Допустимые операторы фильтра (иначе — «равно»)
+$filterConditions = ['=' => 'равно', '!=' => 'не равно', '>' => 'больше', '<' => 'меньше', '>=' => 'больше или равно', '<=' => 'меньше или равно'];
+if (!isset($filterConditions[$filterCondition])) $filterCondition = '=';
 
 if (empty($table)) {
     \App\Models\Network\Network::onRedirect('/admin');
@@ -35,15 +38,21 @@ if (empty($table)) {
 
 AdminDatabase::ensureSubscriptionUnique(); // убрать дубли подписок + уникальный индекс
 $columns = AdminDatabase::getColumns($table); // Получаем имена колонок
+$filterColumns = $columns; // реальные колонки таблицы — только они годятся для SQL-фильтра
+if ($filterColumn !== '' && !in_array($filterColumn, $filterColumns, true)) {
+    // защита от фильтра по JOIN-колонкам (status/email), которых нет в самой таблице
+    $filterColumn = '';
+    $filterValue = '';
+}
 $count = AdminDatabase::getCount($table); //колв записей
 
 //теперь просто выбираем с какими условими будем выводить в случае, если используются
-if (!empty($searchQuery)) {
+if (!empty($filterColumn)) {
+    // Явный фильтр по колонке имеет приоритет над общим поиском
+    $data = AdminDatabase::filter($table, $filterColumn, $filterValue, 50, $filterCondition);
+} elseif (!empty($searchQuery)) {
     // Поиск по всем колонкам
     $data = AdminDatabase::search($table, array_diff($columns, ['id']), $searchQuery, 50);
-} elseif (!empty($filterColumn)) {
-    // Фильтрация по колонке
-    $data = AdminDatabase::filter($table, $filterColumn, $filterValue, 50, $filterCondition);
 } elseif ($table === 'qwees_subscriptions') {
     // Подписки с почтой владельца (JOIN) + колонка email сразу после status
     $data = AdminDatabase::getSubscriptionsWithEmail(50, $_GET['sort'] ?? 'id', $_GET['dir'] ?? 'ASC');
@@ -110,6 +119,7 @@ $sortIcon = function ($col) {
                 var $overlay = $('#admin-overlay');
 
                 function closeSidebar() {
+                    document.body.classList.remove('qwees_sb_open');
                     $sidebar.removeClass('translate-x-0').addClass('-translate-x-full');
                     $overlay.addClass('hidden');
                 }
@@ -118,6 +128,7 @@ $sortIcon = function ($col) {
                     var open = $sidebar.hasClass('translate-x-0');
                     $sidebar.toggleClass('translate-x-0', !open).toggleClass('-translate-x-full', open);
                     $overlay.toggleClass('hidden', open);
+                    document.body.classList.toggle('qwees_sb_open', !!open);
                 });
 
                 $overlay.on('click', closeSidebar);
@@ -212,6 +223,78 @@ $sortIcon = function ($col) {
                     <span class="text-sm font-normal text-gray-500 ml-2">(<?= count($data) ?> из <?= $count ?>)</span>
                 </h1>
             </div>
+            <!-- Фильтры -->
+            <div class="container mx-auto mb-4">
+                <form action="/admin/database" method="get"
+                    class="bg-[#16181d] rounded-xl ring-1 ring-white/5 p-4 flex flex-col gap-3">
+                    <input type="hidden" name="table" value="<?= htmlspecialchars($table) ?>">
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <!-- Поиск по всем колонкам -->
+                        <div class="md:col-span-4 relative group">
+                            <input type="text" name="search" value="<?= htmlspecialchars($searchQuery) ?>"
+                                placeholder="Поиск по всем колонкам…"
+                                class="w-full px-3 py-2 pl-9 text-sm bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white/10 transition-all">
+                            <i
+                                class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors"></i>
+                        </div>
+                        <!-- Колонка -->
+                        <div class="md:col-span-3">
+                            <select name="filter_column"
+                                class="w-full px-3 py-2 text-sm bg-[#1b1e24] border border-white/10 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
+                                <option value="">Колонка: любая</option>
+                                <?php foreach ($filterColumns as $col): ?>
+                                    <option value="<?= htmlspecialchars($col) ?>" <?= $filterColumn === $col ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($col) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <!-- Условие -->
+                        <div class="md:col-span-2">
+                            <select name="filter_condition"
+                                class="w-full px-3 py-2 text-sm bg-[#1b1e24] border border-white/10 rounded-xl text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500">
+                                <?php foreach ($filterConditions as $op => $label): ?>
+                                    <option value="<?= htmlspecialchars($op) ?>" <?= $filterCondition === $op ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($label) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <!-- Значение -->
+                        <div class="md:col-span-3">
+                            <input type="text" name="filter_value" value="<?= htmlspecialchars((string) $filterValue) ?>"
+                                placeholder="Значение фильтра"
+                                class="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-xl text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 focus:bg-white/10 transition-all">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button type="submit"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white text-sm font-semibold transition-colors">
+                            <i class="fa-solid fa-filter"></i>
+                            Применить
+                        </button>
+                        <a href="/admin/database?table=<?= urlencode($table) ?>"
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 ring-1 ring-white/10 text-gray-300 hover:bg-white/10 text-sm transition-colors">
+                            <i class="fa-solid fa-xmark"></i>
+                            Сбросить
+                        </a>
+                        <?php if ($searchQuery !== ''): ?>
+                            <span
+                                class="text-xs text-green-300 bg-green-500/10 ring-1 ring-green-500/20 rounded-full px-2.5 py-1">
+                                Поиск: «<?= htmlspecialchars($searchQuery) ?>»
+                            </span>
+                        <?php endif; ?>
+                        <?php if ($filterColumn !== ''): ?>
+                            <span
+                                class="text-xs text-blue-300 bg-blue-500/10 ring-1 ring-blue-500/20 rounded-full px-2.5 py-1">
+                                Фильтр: <b class="font-mono"><?= htmlspecialchars($filterColumn) ?></b>
+                                <?= htmlspecialchars($filterConditions[$filterCondition]) ?>
+                                «<?= htmlspecialchars((string) $filterValue) ?>»
+                            </span>
+                        <?php endif; ?>
+                    </div>
+                </form>
+            </div>
             <!-- Таблица данных -->
             <section class="container mx-auto">
                 <div class="bg-[#16181d] rounded-xl ring-1 ring-white/5 overflow-hidden">
@@ -268,6 +351,17 @@ $sortIcon = function ($col) {
                                                             class="text-green-400 hover:underline font-medium">
                                                             <?= htmlspecialchars((string) $row[$col]) ?>
                                                         </a>
+                                                    </div>
+                                                <?php elseif ($col === 'expiry'): ?>
+                                                    <?php
+                                                    // expiry хранится в мс (timestamp*1000) — показываем человекочитаемую дату истечения
+                                                    $monthsRu = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+                                                    $expiryMs = (int) ($row[$col] ?? 0);
+                                                    $expiryTs = (int) ($expiryMs / 1000);
+                                                    $expiryDate = $expiryTs > 0 ? date('j', $expiryTs) . ' ' . $monthsRu[(int) date('n', $expiryTs) - 1] . ' ' . date('Y', $expiryTs) : '—';
+                                                    ?>
+                                                    <div title="Истек: <?= htmlspecialchars((string) $expiryMs) ?>">
+                                                        <?= htmlspecialchars($expiryDate) ?>
                                                     </div>
                                                 <?php else: ?>
                                                     <?= isset($row[$col]) ? htmlspecialchars((string) $row[$col]) : '-' ?>

@@ -254,7 +254,7 @@ Routes::post('/api/admin/relocation', function () {
         }
         if (\is_array($servers)) {
             // Нельзя молча выкинуть сервер с живыми клиентами (иначе сироты с мёртвым URL).
-            $gone = array_values(array_diff(array_keys($srv::servers()), array_keys($servers)));
+            $gone = array_values(array_diff(array_keys($srv::effectiveServers()), array_keys($servers)));
             $busy = [];
             foreach ($gone as $code) {
                 try {
@@ -452,7 +452,9 @@ Routes::get('/api/admin/user-summary', function () {
     $u = $u[0];
     $s = Database::send("SELECT status, subscription, expiry, count_days, updated_at FROM qwees_subscriptions WHERE uniID = ? LIMIT 1", [$id]);
     $s = ($s && isset($s[0])) ? $s[0] : null;
-    $giftUsed = (bool) Database::send("SELECT 1 FROM qwees_gifts_log WHERE uniID = ? LIMIT 1", [$id]);
+    // Пробные подписки учитываются в gifts.json (список users), таблицы qwees_gifts_log нет.
+    $giftData = (new \Setting\Route\Function\Controllers\Gifts\Tools\GetGifts())->getGifts();
+    $giftUsed = \in_array($id, (array) ($giftData['users'] ?? []), true);
     echo json_encode([
         'status' => 'ok',
         'user' => [
@@ -741,6 +743,7 @@ Routes::post('/admin/addClientDays', [AdminXray::class, 'onAdminAddClientDays'])
 Routes::post('/admin/addClientHours', [AdminXray::class, 'onAdminAddClientHours']);
 Routes::post('/admin/addClientMinutes', [AdminXray::class, 'onAdminAddClientMinutes']);
 Routes::post('/admin/reduceClient', [AdminXray::class, 'onAdminReduceClient']);
+Routes::post('/admin/renewClient', [AdminXray::class, 'onAdminRenewClient']);
 Routes::post('/admin/cleanlogs', [AdminXray::class, 'onAdminCleanLogs']);
 Routes::post('/admin/login', [AdminAuth::class, 'onLogin']);
 Routes::post('/admin/getUser', function () {

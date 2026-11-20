@@ -452,6 +452,65 @@ class AdminXray
     }
 
     /**
+     * Продление существующей подписки: добавляет дни к текущему сроку в панели
+     * 3x-ui и синхронизирует expiry в БД. Новый ключ при этом не создаётся
+     * (только если клиента в панели уже нет — тогда xui_update выдаст его заново).
+     */
+    public static function onAdminRenewClient()
+    {
+        \Setting\Route\Function\Controllers\Admin\AdminAuth::requirePermission('renew');
+        $url = $_POST['url'] ?? '/admin';
+        $uniID = trim((string) ($_POST['uniID'] ?? ''));
+        $days = (int) ($_POST['days'] ?? 0);
+
+        if ($uniID === '') {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Не указан uniID клиента'));
+            return;
+        }
+        if ($days < 1 || $days > 3650) {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Укажите от 1 до 3650 дней'));
+            return;
+        }
+
+        $user = Database::send('SELECT uniID FROM qwees_users WHERE uniID = ? LIMIT 1', [$uniID]);
+        if (empty($user[0])) {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Пользователь с таким uniID не найден'));
+            return;
+        }
+
+        // Продлеваем только существующую подписку — новую создаёт раздел выдачи.
+        $sub = Database::send('SELECT status FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+        if (empty($sub[0])) {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('У пользователя нет подписки — сначала выдайте её'));
+            return;
+        }
+        if (($sub[0]['status'] ?? '') === 'banned') {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Подписка заблокирована — продление недоступно'));
+            return;
+        }
+
+        $xray = new Xray();
+        $result = $xray->xui_update($uniID, $days);
+        if (($result['status'] ?? 'error') !== 'ok') {
+            Network::onRedirect($url . '?message_status=error&message_msg=' . urlencode('Не удалось продлить: ' . (string) ($result['message'] ?? 'неизвестная ошибка')));
+            return;
+        }
+
+        // Просроченная подписка после продления снова активна.
+        Database::send("UPDATE qwees_subscriptions SET status = 'on', updated_at = CURRENT_TIMESTAMP WHERE uniID = ?", [$uniID]);
+
+        $row = Database::send('SELECT expiry FROM qwees_subscriptions WHERE uniID = ? LIMIT 1', [$uniID]);
+        $expiry = (int) ($row[0]['expiry'] ?? 0);
+        (new Admin())->LoggerCRM("продлил подписку $uniID на $days дн.");
+
+        $msg = 'Подписка продлена на ' . $days . ' дн.';
+        if ($expiry > 0) {
+            $msg .= ', активна до ' . date('d.m.Y H:i', (int) ($expiry / 1000));
+        }
+        Network::onRedirect($url . '?message_status=success&message_msg=' . urlencode($msg));
+    }
+
+    /**
      * Получение информации о пользователе (с данными подписки)
      */
     public function getAdminUser(string $uniID)

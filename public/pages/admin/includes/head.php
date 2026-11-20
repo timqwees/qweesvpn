@@ -28,6 +28,10 @@
         #qwees-spin .ring { width: 44px; height: 44px; border-radius: 9999px; border: 3px solid rgba(255,255,255,.15); border-top-color: #2f81f7; animation: qwees-spin 0.8s linear infinite; }
         #qwees-spin .txt { color: #e5e7eb; font-size: 13px; }
         @keyframes qwees-spin { to { transform: rotate(360deg); } }
+        /* Мобильная шторка: сдвигаем контент вправо, когда меню открыто */
+        @media (max-width: 767px) {
+            body.qwees_sb_open main { padding-left: 260px; }
+        }
     </style>
     <script>
         // Центральный спиннер: QSpin.show('Загрузка...') / QSpin.hide() (счётчик вложенных вызовов)
